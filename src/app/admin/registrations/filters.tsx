@@ -1,41 +1,23 @@
 "use client";
 
-import { useRef, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 
 const PAYMENT_OPTIONS = ["pending", "paid", "waived", "refunded"] as const;
 export type PaymentStatus = (typeof PAYMENT_OPTIONS)[number];
 
+// Same pattern as the other admin filters: direct URL mutation via
+// window.location.href. No router, no form submit, no transitions.
+
+function setParam(key: string, value: string) {
+  const url = new URL(window.location.href);
+  if (value) url.searchParams.set(key, value);
+  else url.searchParams.delete(key);
+  window.location.href = url.toString();
+}
+
 export function RegistrationFilters({ status }: { status: PaymentStatus }) {
-  const router = useRouter();
-  const formRef = useRef<HTMLFormElement>(null);
-  const [, startTransition] = useTransition();
-
-  function navigate() {
-    if (!formRef.current) return;
-    const fd = new FormData(formRef.current);
-    const sp = new URLSearchParams();
-    fd.forEach((value, key) => {
-      const v = String(value).trim();
-      if (v) sp.set(key, v);
-    });
-    const qs = sp.toString();
-    const url = qs ? `/admin/registrations?${qs}` : "/admin/registrations";
-    startTransition(() => {
-      router.push(url, { scroll: false });
-    });
-  }
-
   return (
-    <form
-      ref={formRef}
-      action="/admin/registrations"
-      method="get"
-      onSubmit={(e) => {
-        e.preventDefault();
-        navigate();
-      }}
+    <div
       className="mb-4 flex flex-wrap gap-3"
       role="search"
       aria-label="Filter registrations"
@@ -43,8 +25,8 @@ export function RegistrationFilters({ status }: { status: PaymentStatus }) {
       <Pill label="Payment status">
         <select
           name="status"
-          defaultValue={status}
-          onChange={navigate}
+          value={status}
+          onChange={(e) => setParam("status", e.target.value)}
           className="bg-transparent text-sm focus:outline-none"
           aria-label="Filter by payment status"
         >
@@ -60,22 +42,14 @@ export function RegistrationFilters({ status }: { status: PaymentStatus }) {
         <button
           type="button"
           onClick={() => {
-            startTransition(() => {
-              router.push("/admin/registrations?status=pending", {
-                scroll: false,
-              });
-            });
+            window.location.href = "/admin/registrations?status=pending";
           }}
           className="inline-flex h-10 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground"
         >
           <X size={14} aria-hidden /> Show pending
         </button>
       )}
-
-      <button type="submit" className="hidden" aria-hidden tabIndex={-1}>
-        Apply
-      </button>
-    </form>
+    </div>
   );
 }
 

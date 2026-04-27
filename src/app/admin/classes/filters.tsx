@@ -13,19 +13,18 @@ type Status = "active" | "archived" | "all";
 
 const TEXT_DEBOUNCE_MS = 400;
 
-// Each filter input updates the URL DIRECTLY by manipulating
-// window.location. No form submission, no router, no FormData.
-// The URL is the single source of truth and the browser navigates
-// to whatever URL we hand it. There's literally nothing simpler.
+// Each filter input updates the URL directly via window.location.href.
+// No router, no form submission, no React event-system handoff. The
+// browser navigates to the new URL and the page renders fresh.
 //
-// Console logs are intentional — if a filter change does nothing,
-// open dev tools and check whether the log fires.
+// We do NOT use Next's router.push here — it works with the
+// allowedDevOrigins fix in next.config.ts, but we keep the bulletproof
+// hard-navigation pattern for consistency across all admin filters.
 
 function setParam(key: string, value: string) {
   const url = new URL(window.location.href);
   if (value) url.searchParams.set(key, value);
   else url.searchParams.delete(key);
-  console.log("[filters] navigating to", url.toString());
   window.location.href = url.toString();
 }
 
@@ -42,6 +41,7 @@ export function ClassFilters({
 }) {
   const [text, setText] = useState(q);
 
+  // Sync text input to prop without useEffect.
   const [lastQ, setLastQ] = useState(q);
   if (q !== lastQ) {
     setLastQ(q);
@@ -56,7 +56,10 @@ export function ClassFilters({
   function onTextChange(value: string) {
     setText(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setParam("q", value.trim()), TEXT_DEBOUNCE_MS);
+    debounceRef.current = setTimeout(
+      () => setParam("q", value.trim()),
+      TEXT_DEBOUNCE_MS,
+    );
   }
 
   const hasFilter = !!q || !!level || !!day || status !== "active";
@@ -96,10 +99,7 @@ export function ClassFilters({
           <select
             name="level"
             value={level}
-            onChange={(e) => {
-              console.log("[filters] level onChange ->", e.target.value);
-              setParam("level", e.target.value);
-            }}
+            onChange={(e) => setParam("level", e.target.value)}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by level"
           >
@@ -116,10 +116,7 @@ export function ClassFilters({
           <select
             name="day"
             value={day}
-            onChange={(e) => {
-              console.log("[filters] day onChange ->", e.target.value);
-              setParam("day", e.target.value);
-            }}
+            onChange={(e) => setParam("day", e.target.value)}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by day"
           >
@@ -136,10 +133,7 @@ export function ClassFilters({
           <select
             name="status"
             value={status}
-            onChange={(e) => {
-              console.log("[filters] status onChange ->", e.target.value);
-              setParam("status", e.target.value);
-            }}
+            onChange={(e) => setParam("status", e.target.value)}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by status"
           >
@@ -150,12 +144,15 @@ export function ClassFilters({
         </Pill>
 
         {hasFilter && (
-          <a
-            href="/admin/classes"
+          <button
+            type="button"
+            onClick={() => {
+              window.location.href = "/admin/classes";
+            }}
             className="inline-flex h-10 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground"
           >
             <X size={14} aria-hidden /> Reset
-          </a>
+          </button>
         )}
       </div>
     </div>
