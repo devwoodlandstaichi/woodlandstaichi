@@ -1,10 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import {
-  Badge,
-  Card,
-  PageHeader,
-} from "@/components/admin/ui";
+import { Badge, Card, PageHeader } from "@/components/admin/ui";
 import {
   MEMBER_LEVEL_LABELS,
   MEMBER_LEVEL_VALUES,
@@ -13,6 +9,7 @@ import {
   type MemberLevel,
   type MemberStatus,
 } from "@/lib/format";
+import { MemberFilters } from "./filters";
 
 export const metadata = { title: "Members" };
 export const dynamic = "force-dynamic";
@@ -78,17 +75,17 @@ export default async function MembersPage({
     <>
       <PageHeader
         title="Members"
-        description="Roster snapshot. Read-only for now — editing comes in the next phase."
+        description="Roster. Click a name to view details, edit, or change status."
       />
 
-      <Filters level={level} status={status} />
+      <MemberFilters level={level} status={status} />
 
       {rows.length === 0 ? (
-        <Card className="mt-4 p-8 text-center text-muted-foreground">
+        <Card className="p-8 text-center text-muted-foreground">
           No members match these filters.
         </Card>
       ) : (
-        <Card className="mt-4 overflow-x-auto">
+        <Card className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-foreground/10 text-xs uppercase tracking-[0.14em] text-muted-foreground">
               <tr>
@@ -145,68 +142,5 @@ export default async function MembersPage({
         {rows.length} {rows.length === 1 ? "member" : "members"}.
       </p>
     </>
-  );
-}
-
-function Filters({
-  level,
-  status,
-}: {
-  level: MemberLevel | null;
-  status: MemberStatus;
-}) {
-  return (
-    <form
-      method="get"
-      className="flex flex-wrap items-end gap-3"
-      aria-label="Filter members"
-    >
-      <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-        Level
-        <select
-          name="level"
-          defaultValue={level ?? ""}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-        >
-          <option value="">All</option>
-          {MEMBER_LEVEL_VALUES.map((v) => (
-            <option key={v} value={v}>
-              {MEMBER_LEVEL_LABELS[v]}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-        Status
-        <select
-          name="status"
-          defaultValue={status}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-        >
-          {MEMBER_STATUS_VALUES.map((v) => (
-            <option key={v} value={v}>
-              {memberStatusLabel(v)}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <button
-        type="submit"
-        className="h-10 rounded-md border border-input px-4 text-sm hover:bg-foreground/5"
-      >
-        Apply
-      </button>
-
-      {(level || status !== "active") && (
-        <Link
-          href="/admin/members"
-          className="h-10 inline-flex items-center px-3 text-sm text-muted-foreground hover:text-foreground"
-        >
-          Reset
-        </Link>
-      )}
-    </form>
   );
 }

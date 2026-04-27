@@ -54,7 +54,7 @@ export function PageHeader({
         </div>
         <div className="col-span-12 lg:col-span-3 flex items-end justify-start lg:justify-end">
           <Image
-            src="/logo.png"
+            src="/logo.jpg"
             alt=""
             width={120}
             height={120}

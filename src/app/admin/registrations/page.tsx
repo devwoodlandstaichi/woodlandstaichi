@@ -3,12 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
 import { dayLabel, formatDate, formatTimeRange, levelLabel } from "@/lib/format";
 import { markPaid, markPending, markRefunded, markWaived } from "./actions";
+import { RegistrationFilters, type PaymentStatus } from "./filters";
 
 export const metadata = { title: "Registrations" };
 export const dynamic = "force-dynamic";
 
 const PAYMENT_OPTIONS = ["pending", "paid", "waived", "refunded"] as const;
-type PaymentStatus = (typeof PAYMENT_OPTIONS)[number];
 
 const PAYMENT_TONE: Record<PaymentStatus, "vermillion" | "jade" | "cobalt" | "muted"> = {
   pending: "vermillion",
@@ -74,7 +74,7 @@ export default async function RegistrationsPage({
         description="Pending payments are the queue you work daily — mark paid once funds land and the member auto-activates."
       />
 
-      <Filters status={status} />
+      <RegistrationFilters status={status} />
 
       {rows.length === 0 ? (
         <Card className="mt-4 p-8 text-center text-muted-foreground">
@@ -215,33 +215,3 @@ function ActionButtons({
   );
 }
 
-function Filters({ status }: { status: PaymentStatus }) {
-  return (
-    <form
-      method="get"
-      className="flex flex-wrap items-end gap-3"
-      aria-label="Filter registrations"
-    >
-      <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-        Payment status
-        <select
-          name="status"
-          defaultValue={status}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-        >
-          {PAYMENT_OPTIONS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </label>
-      <button
-        type="submit"
-        className="h-10 rounded-md border border-input px-4 text-sm hover:bg-foreground/5"
-      >
-        Apply
-      </button>
-    </form>
-  );
-}

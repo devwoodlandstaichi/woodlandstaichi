@@ -31,7 +31,7 @@ export function SiteHeader() {
         >
           <span className="relative inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-full ring-1 ring-foreground/10 transition-transform group-hover:scale-105">
             <Image
-              src="/logo.png"
+              src="/logo.jpg"
               alt=""
               fill
               sizes="44px"

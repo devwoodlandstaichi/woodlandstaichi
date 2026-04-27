@@ -80,7 +80,7 @@ export function Hero() {
             />
             <div className="relative h-44 w-44 md:h-56 md:w-56 lg:h-64 lg:w-64">
               <Image
-                src="/logo.png"
+                src="/logo.jpg"
                 alt="Woodlands Tai Chi crane crest"
                 fill
                 sizes="(max-width: 1024px) 18rem, 20rem"
