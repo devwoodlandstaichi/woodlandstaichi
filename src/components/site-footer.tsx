@@ -3,6 +3,7 @@ import Link from "next/link";
 const FOOTER_LINKS = [
   { href: "/about", label: "About" },
   { href: "/classes", label: "Classes" },
+  { href: "/classes/register", label: "Register" },
   { href: "/world-tai-chi-day", label: "World Tai Chi Day" },
   { href: "/gallery", label: "Gallery" },
   { href: "/store", label: "Store" },

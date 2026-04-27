@@ -244,16 +244,16 @@ export default function AboutPage() {
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <Link
-                href="/#classes"
-                className="inline-flex items-center gap-3 rounded-full bg-foreground px-7 py-4 text-base font-medium text-background hover:-translate-y-0.5 transition-transform"
+                href="/classes/register"
+                className="inline-flex items-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors"
               >
-                See the schedule →
+                Register for a beginner cohort →
               </Link>
               <Link
-                href="/#contact"
+                href="/classes"
                 className="inline-flex items-center gap-3 rounded-full border border-foreground/20 px-7 py-4 text-base font-medium hover:bg-foreground/5 transition-colors"
               >
-                Reach out
+                See the schedule
               </Link>
             </div>
           </div>

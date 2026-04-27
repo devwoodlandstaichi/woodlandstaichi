@@ -30,9 +30,16 @@ export function ContactSection() {
             </h2>
             <p className="mt-8 max-w-xl text-lg text-foreground/75 leading-relaxed">
               The next beginner cohorts open in <strong>June 2026</strong> and{" "}
-              <strong>October 2026</strong>. Send a note — we&apos;ll save you a
-              spot or add you to the waitlist if a session is full.
+              <strong>October 2026</strong>. Register online — or send a note
+              and we&apos;ll save you a spot.
             </p>
+            <a
+              href="/classes/register"
+              className="mt-6 inline-flex items-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors"
+            >
+              Register for a beginner cohort
+              <span aria-hidden>→</span>
+            </a>
           </div>
 
           <div className="col-span-12 md:col-span-5 flex flex-col gap-4">

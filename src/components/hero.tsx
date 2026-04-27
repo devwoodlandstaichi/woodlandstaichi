@@ -46,10 +46,10 @@ export function Hero() {
             style={{ animationDelay: "360ms" }}
           >
             <a
-              href="/classes"
-              className="group inline-flex items-center gap-3 rounded-full bg-foreground px-7 py-4 text-base font-medium text-background transition-transform hover:-translate-y-0.5"
+              href="/classes/register"
+              className="group inline-flex items-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background transition-transform hover:-translate-y-0.5 hover:bg-vermillion-600"
             >
-              See the schedule
+              Register for a beginner cohort
               <span
                 aria-hidden
                 className="inline-block transition-transform group-hover:translate-x-1"
@@ -58,10 +58,10 @@ export function Hero() {
               </span>
             </a>
             <a
-              href="/about"
+              href="/classes"
               className="inline-flex items-center gap-3 rounded-full border border-foreground/20 px-7 py-4 text-base font-medium hover:bg-foreground/5 transition-colors"
             >
-              Why Tai Chi?
+              See the schedule
             </a>
           </div>
 
