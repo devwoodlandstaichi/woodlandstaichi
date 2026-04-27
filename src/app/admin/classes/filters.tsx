@@ -13,14 +13,9 @@ type Status = "active" | "archived" | "all";
 
 const TEXT_DEBOUNCE_MS = 400;
 
-// Filters submit via native browser form-get to /admin/classes. No
-// router.push, no useTransition, no client-side routing — every dropdown
-// change triggers `form.submit()` which does a hard browser navigation
-// to the new URL. The server re-renders the page fresh from scratch.
-//
-// Trade-off: a brief full-page transition on each filter change, in
-// exchange for no possibility of router-cache or transition staleness.
-// Reset is a plain anchor — pure HTML.
+// Filters navigate via window.location.assign — the most primitive form
+// of navigation possible. Build the URL from current form values, then
+// assign() to it. Browser does a hard navigation. Cannot fail.
 
 export function ClassFilters({
   q,
@@ -36,7 +31,7 @@ export function ClassFilters({
   const formRef = useRef<HTMLFormElement>(null);
   const [text, setText] = useState(q);
 
-  // Sync local text input to prop without useEffect (React 19 pattern).
+  // Sync local text input to prop without useEffect.
   const [lastQ, setLastQ] = useState(q);
   if (q !== lastQ) {
     setLastQ(q);
@@ -48,14 +43,26 @@ export function ClassFilters({
     if (debounceRef.current) clearTimeout(debounceRef.current);
   }, []);
 
-  function submitNow() {
-    formRef.current?.submit();
+  function navigate() {
+    const form = formRef.current;
+    if (!form) return;
+    const fd = new FormData(form);
+    const sp = new URLSearchParams();
+    fd.forEach((value, key) => {
+      const v = String(value).trim();
+      if (v) sp.set(key, v);
+    });
+    const qs = sp.toString();
+    const url = qs ? `/admin/classes?${qs}` : "/admin/classes";
+    // window.location.assign forces a real browser navigation —
+    // bypasses React, Next router, and any cache layers.
+    window.location.assign(url);
   }
 
   function onTextChange(value: string) {
     setText(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(submitNow, TEXT_DEBOUNCE_MS);
+    debounceRef.current = setTimeout(navigate, TEXT_DEBOUNCE_MS);
   }
 
   const hasFilter = !!q || !!level || !!day || status !== "active";
@@ -65,6 +72,12 @@ export function ClassFilters({
       ref={formRef}
       action="/admin/classes"
       method="get"
+      onSubmit={(e) => {
+        // Pressing Enter in the search box submits the form natively;
+        // intercept so we navigate the same way as onChange does.
+        e.preventDefault();
+        navigate();
+      }}
       className="mb-4 flex flex-col gap-3"
       role="search"
       aria-label="Filter classes"
@@ -91,7 +104,7 @@ export function ClassFilters({
           <select
             name="level"
             defaultValue={level}
-            onChange={submitNow}
+            onChange={navigate}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by level"
           >
@@ -108,7 +121,7 @@ export function ClassFilters({
           <select
             name="day"
             defaultValue={day}
-            onChange={submitNow}
+            onChange={navigate}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by day"
           >
@@ -125,7 +138,7 @@ export function ClassFilters({
           <select
             name="status"
             defaultValue={status}
-            onChange={submitNow}
+            onChange={navigate}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by status"
           >
