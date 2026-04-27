@@ -9,12 +9,14 @@ import {
   Home,
   MessageSquareQuote,
   Newspaper,
+  ScanLine,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
   { href: "/admin", label: "Overview", icon: Home, exact: true },
+  { href: "/admin/attendance", label: "Attendance", icon: ScanLine },
   { href: "/admin/classes", label: "Classes", icon: ClipboardList },
   { href: "/admin/sessions", label: "Sessions", icon: CalendarRange },
   { href: "/admin/members", label: "Members", icon: Users },

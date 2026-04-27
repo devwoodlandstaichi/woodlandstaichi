@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil } from "lucide-react";
+import { Pencil, QrCode } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
 import {
@@ -116,11 +116,18 @@ export default async function MemberDetailPage({
           m.nickname ? `“${m.nickname}”` : `Member since ${formatDate(m.created_at.slice(0, 10))}`
         }
         action={
-          <Link href={`/admin/members/${m.id}/edit`}>
-            <Button variant="outline" size="sm">
-              <Pencil size={14} aria-hidden /> Edit
-            </Button>
-          </Link>
+          <div className="flex shrink-0 gap-2">
+            <Link href={`/admin/members/${m.id}/qr`}>
+              <Button variant="outline" size="sm">
+                <QrCode size={14} aria-hidden /> QR
+              </Button>
+            </Link>
+            <Link href={`/admin/members/${m.id}/edit`}>
+              <Button variant="outline" size="sm">
+                <Pencil size={14} aria-hidden /> Edit
+              </Button>
+            </Link>
+          </div>
         }
       />
 
