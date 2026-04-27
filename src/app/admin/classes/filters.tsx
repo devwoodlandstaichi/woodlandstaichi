@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 import {
   CLASS_LEVEL_LABELS,
@@ -12,12 +11,16 @@ import {
 
 type Status = "active" | "archived" | "all";
 
-const TEXT_DEBOUNCE_MS = 350;
+const TEXT_DEBOUNCE_MS = 400;
 
-// Filters are URL state. We use a real <form method="get"> as the
-// source of truth and intercept submit to do a router.push (so it
-// stays a SPA navigation), with a transition for smooth UI. On any
-// failure path the form would still work via native browser submit.
+// Filters submit via native browser form-get to /admin/classes. No
+// router.push, no useTransition, no client-side routing — every dropdown
+// change triggers `form.submit()` which does a hard browser navigation
+// to the new URL. The server re-renders the page fresh from scratch.
+//
+// Trade-off: a brief full-page transition on each filter change, in
+// exchange for no possibility of router-cache or transition staleness.
+// Reset is a plain anchor — pure HTML.
 
 export function ClassFilters({
   q,
@@ -30,54 +33,38 @@ export function ClassFilters({
   day: string;
   status: Status;
 }) {
-  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
-  const [, startTransition] = useTransition();
-
-  // Controlled-ish text state for the search box, debounced.
   const [text, setText] = useState(q);
+
+  // Sync local text input to prop without useEffect (React 19 pattern).
   const [lastQ, setLastQ] = useState(q);
   if (q !== lastQ) {
     setLastQ(q);
     setText(q);
   }
-  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => {
-    if (debounce.current) clearTimeout(debounce.current);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
   }, []);
 
-  function navigate() {
-    if (!formRef.current) return;
-    const fd = new FormData(formRef.current);
-    const sp = new URLSearchParams();
-    fd.forEach((value, key) => {
-      const v = String(value).trim();
-      if (v) sp.set(key, v);
-    });
-    const qs = sp.toString();
-    const url = qs ? `/admin/classes?${qs}` : "/admin/classes";
-    startTransition(() => {
-      router.push(url, { scroll: false });
-    });
+  function submitNow() {
+    formRef.current?.submit();
   }
 
-  function onText(value: string) {
+  function onTextChange(value: string) {
     setText(value);
-    if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = setTimeout(navigate, TEXT_DEBOUNCE_MS);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(submitNow, TEXT_DEBOUNCE_MS);
   }
 
-  const hasFilter = q || level || day || status !== "active";
+  const hasFilter = !!q || !!level || !!day || status !== "active";
 
   return (
     <form
       ref={formRef}
       action="/admin/classes"
       method="get"
-      onSubmit={(e) => {
-        e.preventDefault();
-        navigate();
-      }}
       className="mb-4 flex flex-col gap-3"
       role="search"
       aria-label="Filter classes"
@@ -92,7 +79,7 @@ export function ClassFilters({
           name="q"
           type="search"
           value={text}
-          onChange={(e) => onText(e.target.value)}
+          onChange={(e) => onTextChange(e.target.value)}
           placeholder="Search by name or location"
           aria-label="Search classes"
           className="h-12 w-full rounded-md border border-input bg-background pl-10 pr-4 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -104,7 +91,7 @@ export function ClassFilters({
           <select
             name="level"
             defaultValue={level}
-            onChange={navigate}
+            onChange={submitNow}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by level"
           >
@@ -121,7 +108,7 @@ export function ClassFilters({
           <select
             name="day"
             defaultValue={day}
-            onChange={navigate}
+            onChange={submitNow}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by day"
           >
@@ -138,7 +125,7 @@ export function ClassFilters({
           <select
             name="status"
             defaultValue={status}
-            onChange={navigate}
+            onChange={submitNow}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by status"
           >
@@ -149,26 +136,14 @@ export function ClassFilters({
         </Pill>
 
         {hasFilter && (
-          <button
-            type="button"
-            onClick={() => {
-              setText("");
-              startTransition(() => {
-                router.push("/admin/classes", { scroll: false });
-              });
-            }}
+          <a
+            href="/admin/classes"
             className="inline-flex h-10 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground"
           >
             <X size={14} aria-hidden /> Reset
-          </button>
+          </a>
         )}
       </div>
-
-      {/* Hidden submit so Enter in the search box still navigates;
-          dropdowns submit immediately via onChange above. */}
-      <button type="submit" className="hidden" aria-hidden tabIndex={-1}>
-        Apply
-      </button>
     </form>
   );
 }
