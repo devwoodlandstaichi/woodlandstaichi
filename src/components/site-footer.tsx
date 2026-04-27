@@ -1,11 +1,21 @@
 import Link from "next/link";
 
+const FOOTER_LINKS = [
+  { href: "/about", label: "About" },
+  { href: "/classes", label: "Classes" },
+  { href: "/world-tai-chi-day", label: "World Tai Chi Day" },
+  { href: "/gallery", label: "Gallery" },
+  { href: "/store", label: "Store" },
+  { href: "/news", label: "News" },
+  { href: "/links", label: "Links" },
+];
+
 export function SiteFooter() {
   return (
     <footer className="mt-32 border-t border-foreground/10 bg-ink-950 text-ink-100">
       <div className="mx-auto max-w-7xl px-6 py-16 md:px-10">
         <div className="grid gap-12 md:grid-cols-12">
-          <div className="md:col-span-5">
+          <div className="md:col-span-4">
             <p className="font-display text-3xl tracking-tight">
               Woodlands <span className="italic text-vermillion-300">Tai Chi</span>
             </p>
@@ -13,6 +23,24 @@ export function SiteFooter() {
               Meditation in motion. A community school in The Woodlands, Texas
               — open to all, free for beginners.
             </p>
+          </div>
+
+          <div className="md:col-span-2">
+            <h3 className="text-xs uppercase tracking-[0.25em] text-ink-300">
+              Pages
+            </h3>
+            <ul className="mt-4 space-y-2 text-sm">
+              {FOOTER_LINKS.map((l) => (
+                <li key={l.href}>
+                  <Link
+                    href={l.href}
+                    className="text-ink-100 hover:text-vermillion-300 transition-colors"
+                  >
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
 
           <div className="md:col-span-3">
@@ -27,7 +55,7 @@ export function SiteFooter() {
             </ul>
           </div>
 
-          <div className="md:col-span-4">
+          <div className="md:col-span-3">
             <h3 className="text-xs uppercase tracking-[0.25em] text-ink-300">
               Reach us
             </h3>

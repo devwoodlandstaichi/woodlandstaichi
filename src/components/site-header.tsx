@@ -9,9 +9,11 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/about", label: "About" },
-  { href: "/#classes", label: "Classes" },
-  { href: "/#locations", label: "Locations" },
-  { href: "/#contact", label: "Contact" },
+  { href: "/classes", label: "Classes" },
+  { href: "/world-tai-chi-day", label: "WTCD" },
+  { href: "/gallery", label: "Gallery" },
+  { href: "/store", label: "Store" },
+  { href: "/news", label: "News" },
 ];
 
 export function SiteHeader() {

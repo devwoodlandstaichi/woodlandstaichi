@@ -110,3 +110,30 @@ insert into public.testimonials (member_name, attribution, quote, display_order)
   ('Kala G', '5/2/23',
    'I joined this Tai Chi class two years ago, and it has been one of the most enriching commitments I''ve made. The sessions are completely free, yet they are run with the kind of professionalism and care you would expect from a top-tier program.',
    150);
+
+-- News posts migrated from /news/ on the legacy site (April 2026).
+insert into public.news_posts (title, slug, body, posted_at, display_order) values
+  ('World Tai Chi Day 2026',
+   'world-tai-chi-day-2026',
+   'Mark your calendar — **April 25, 2026** at **North Shore Park**, The Woodlands. Open to the public. Bring water and a soft pair of shoes.',
+   '2026-04-01', 10),
+
+  ('Schedule change — Intermediate & Advanced',
+   'schedule-change-intermediate',
+   'Friday evening intermediate class is cancelled. New time: **Wednesday evenings 6:15 pm at TWMC**.',
+   '2026-04-25', 20),
+
+  ('Venue change — May to July 2026',
+   'venue-change-may-july-2026',
+   'Friday classes on May 8, June 5, July 3, and July 31 will meet at **KBCC** instead of TWMC. Wednesday classes on June 3, July 1, July 8, and July 29 — venue to be announced.',
+   '2026-04-26', 30),
+
+  ('Bring your own water — now mandatory',
+   'mandatory-water',
+   'It is now mandatory you bring portable water to class. You will not be permitted to leave the dojo during class to fetch water.',
+   '2026-03-15', 40),
+
+  ('Fuego Shoes — 10% member discount',
+   'fuego-shoes-discount',
+   'Effective immediately, Fuego Shoes will give Woodlands Tai Chi members a **10% discount**. Use code **WOODLANDSTAICHI10** at checkout, or [follow the affiliate link](https://fuegodance.com/discount/WOODLANDSTAICHI10).',
+   '2026-02-10', 50);

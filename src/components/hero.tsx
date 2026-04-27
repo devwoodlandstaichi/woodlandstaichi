@@ -46,7 +46,7 @@ export function Hero() {
             style={{ animationDelay: "360ms" }}
           >
             <a
-              href="#classes"
+              href="/classes"
               className="group inline-flex items-center gap-3 rounded-full bg-foreground px-7 py-4 text-base font-medium text-background transition-transform hover:-translate-y-0.5"
             >
               See the schedule
