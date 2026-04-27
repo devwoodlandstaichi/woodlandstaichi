@@ -39,13 +39,9 @@ export function SiteHeader() {
               priority
             />
           </span>
-          <span className="hidden sm:flex flex-col leading-none">
-            <span className="font-display text-lg font-medium tracking-tight">
-              Woodlands
-            </span>
-            <span className="font-display text-lg font-medium tracking-tight italic text-vermillion">
-              Tai Chi
-            </span>
+          <span className="hidden sm:inline-flex items-baseline gap-1.5 font-display text-base font-medium tracking-tight">
+            Woodlands
+            <span className="italic text-vermillion">Tai Chi</span>
           </span>
         </Link>
 
