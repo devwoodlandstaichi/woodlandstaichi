@@ -32,10 +32,10 @@ export default function WorldTaiChiDayPage() {
         {upcoming && (
           <section
             aria-labelledby="upcoming-title"
-            className="relative bg-foreground text-background py-24 md:py-32"
+            className="relative bg-foreground text-background py-14 md:py-20"
           >
             <div className="mx-auto max-w-7xl px-6 md:px-10">
-              <div className="grid grid-cols-12 gap-x-6 gap-y-10">
+              <div className="grid grid-cols-12 gap-x-6 gap-y-6">
                 <div className="col-span-12 lg:col-span-6">
                   <p className="text-xs uppercase tracking-[0.45em] text-background/55 mb-6">
                     <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
@@ -43,14 +43,14 @@ export default function WorldTaiChiDayPage() {
                   </p>
                   <h2
                     id="upcoming-title"
-                    className="font-display text-5xl md:text-7xl leading-[0.95] tracking-tight"
+                    className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight"
                   >
                     {upcoming.year}
                     <span className="block italic text-vermillion-300">
                       {upcoming.date.split(", ")[0]}.
                     </span>
                   </h2>
-                  <dl className="mt-10 space-y-4 text-lg text-background/85">
+                  <dl className="mt-6 space-y-4 text-lg text-background/85">
                     <div className="flex flex-wrap gap-3">
                       <dt className="text-xs uppercase tracking-[0.3em] text-background/55 min-w-24 pt-1">
                         Date
@@ -76,7 +76,7 @@ export default function WorldTaiChiDayPage() {
                       <dd>Water, soft-soled shoes, sunscreen.</dd>
                     </div>
                   </dl>
-                  <div className="mt-10 flex flex-wrap items-center gap-4">
+                  <div className="mt-6 flex flex-wrap items-center gap-4">
                     <Link
                       href="/#contact"
                       className="inline-flex items-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors"
@@ -105,9 +105,9 @@ export default function WorldTaiChiDayPage() {
         {/* Past events archive */}
         <section
           aria-labelledby="archive-title"
-          className="mx-auto max-w-7xl px-6 py-24 md:px-10 md:py-32"
+          className="mx-auto max-w-7xl px-6 py-14 md:px-10 md:py-20"
         >
-          <div className="grid grid-cols-12 gap-x-6 gap-y-10 mb-16">
+          <div className="grid grid-cols-12 gap-x-6 gap-y-6 mb-10">
             <div className="col-span-12 md:col-span-5">
               <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
                 <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
@@ -115,7 +115,7 @@ export default function WorldTaiChiDayPage() {
               </p>
               <h2
                 id="archive-title"
-                className="font-display text-5xl md:text-6xl leading-[1] tracking-tight"
+                className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight"
               >
                 Posters
                 <span className="block italic text-vermillion">

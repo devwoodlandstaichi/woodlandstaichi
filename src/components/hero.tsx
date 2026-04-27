@@ -14,7 +14,7 @@ export function Hero() {
         靜
       </span>
 
-      <div className="mx-auto grid max-w-7xl grid-cols-12 gap-x-6 gap-y-10 px-6 py-20 md:px-10 md:py-32">
+      <div className="mx-auto grid max-w-7xl grid-cols-12 gap-x-6 gap-y-6 px-6 py-12 md:px-10 md:py-20">
         {/* Headline column */}
         <div className="col-span-12 lg:col-span-8 relative">
           <p className="rise text-xs uppercase tracking-[0.45em] text-foreground/55 mb-8">
@@ -24,7 +24,7 @@ export function Hero() {
 
           <h1
             id="hero-title"
-            className="rise font-display text-[clamp(3rem,9vw,7.5rem)] leading-[0.95] tracking-[-0.02em] text-foreground"
+            className="rise font-display text-[clamp(2.75rem,7vw,5.5rem)] leading-[0.95] tracking-[-0.02em] text-foreground"
             style={{ animationDelay: "120ms" }}
           >
             Meditation
@@ -32,7 +32,7 @@ export function Hero() {
           </h1>
 
           <p
-            className="rise mt-10 max-w-xl text-xl md:text-2xl leading-relaxed text-foreground/75"
+            className="rise mt-6 max-w-xl text-xl md:text-2xl leading-relaxed text-foreground/75"
             style={{ animationDelay: "240ms" }}
           >
             A community school teaching Tai Chi in the lineage of{" "}
@@ -42,7 +42,7 @@ export function Hero() {
           </p>
 
           <div
-            className="rise mt-12 flex flex-wrap items-center gap-4"
+            className="rise mt-8 flex flex-wrap items-center gap-4"
             style={{ animationDelay: "360ms" }}
           >
             <a
@@ -65,7 +65,7 @@ export function Hero() {
             </a>
           </div>
 
-          <p className="rise mt-10 text-sm text-foreground/60" style={{ animationDelay: "480ms" }}>
+          <p className="rise mt-6 text-sm text-foreground/60" style={{ animationDelay: "480ms" }}>
             <span className="text-vermillion font-medium">Free</span> for beginners ·{" "}
             Now enrolling for <span className="font-medium text-foreground">June &amp; October 2026</span>
           </p>
@@ -78,7 +78,7 @@ export function Hero() {
               aria-hidden
               className="absolute -inset-10 -z-10 rounded-full bg-gradient-to-br from-vermillion/15 via-transparent to-cobalt/10 blur-3xl"
             />
-            <div className="relative h-56 w-56 md:h-72 md:w-72 lg:h-80 lg:w-80">
+            <div className="relative h-44 w-44 md:h-56 md:w-56 lg:h-64 lg:w-64">
               <Image
                 src="/logo.png"
                 alt="Woodlands Tai Chi crane crest"

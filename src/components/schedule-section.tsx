@@ -42,10 +42,10 @@ export async function ScheduleSection() {
     <section
       id="classes"
       aria-labelledby="classes-title"
-      className="relative bg-foreground text-background py-24 md:py-32"
+      className="relative bg-foreground text-background py-14 md:py-20"
     >
       <div className="mx-auto max-w-7xl px-6 md:px-10">
-        <div className="grid grid-cols-12 gap-x-6 gap-y-10 mb-16">
+        <div className="grid grid-cols-12 gap-x-6 gap-y-6 mb-10">
           <div className="col-span-12 md:col-span-7">
             <p className="text-xs uppercase tracking-[0.45em] text-background/55 mb-6">
               <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
@@ -53,7 +53,7 @@ export async function ScheduleSection() {
             </p>
             <h2
               id="classes-title"
-              className="font-display text-5xl md:text-6xl leading-[1] tracking-tight"
+              className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight"
             >
               When we
               <span className="italic text-vermillion-300"> practice.</span>
@@ -128,7 +128,7 @@ export async function ScheduleSection() {
           ))}
         </div>
 
-        <div className="mt-14 flex flex-wrap items-center gap-4">
+        <div className="mt-8 flex flex-wrap items-center gap-4">
           <a
             href="#contact"
             className="inline-flex items-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors"

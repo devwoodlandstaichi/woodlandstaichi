@@ -24,13 +24,13 @@ export default function StorePage() {
           glyph="服"
         />
 
-        <section className="mx-auto max-w-7xl px-6 py-16 md:px-10 md:py-24">
-          <ul className="space-y-12">
+        <section className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-14">
+          <ul className="space-y-8">
             {STORE_ITEMS.map((item) => (
               <li
                 key={item.slug}
                 id={item.slug}
-                className="grid grid-cols-12 gap-x-6 gap-y-6 border-t border-foreground/10 pt-12"
+                className="grid grid-cols-12 gap-x-6 gap-y-6 border-t border-foreground/10 pt-8"
               >
                 <div className="col-span-12 md:col-span-4">
                   <p className="text-xs uppercase tracking-[0.3em] text-foreground/55">
@@ -119,7 +119,7 @@ export default function StorePage() {
             ))}
           </ul>
 
-          <div className="mt-20 rounded-2xl border border-foreground/10 bg-secondary p-10 md:p-14">
+          <div className="mt-12 rounded-2xl border border-foreground/10 bg-secondary p-8 md:p-10">
             <h3 className="font-display text-3xl md:text-4xl tracking-tight">
               How to order
             </h3>

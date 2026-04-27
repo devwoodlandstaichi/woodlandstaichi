@@ -27,9 +27,9 @@ export async function TestimonialsSection({ limit }: { limit?: number } = {}) {
     <section
       id="testimonials"
       aria-labelledby="testimonials-title"
-      className="relative mx-auto max-w-7xl px-6 py-24 md:px-10 md:py-32"
+      className="relative mx-auto max-w-7xl px-6 py-14 md:px-10 md:py-20"
     >
-      <div className="grid grid-cols-12 gap-x-6 gap-y-12 mb-16">
+      <div className="grid grid-cols-12 gap-x-6 gap-y-8 mb-10">
         <div className="col-span-12 md:col-span-5">
           <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
             <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
@@ -37,7 +37,7 @@ export async function TestimonialsSection({ limit }: { limit?: number } = {}) {
           </p>
           <h2
             id="testimonials-title"
-            className="font-display text-5xl md:text-6xl leading-[1] tracking-tight"
+            className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight"
           >
             What members
             <span className="block italic text-vermillion">say.</span>

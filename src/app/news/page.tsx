@@ -94,17 +94,17 @@ export default async function NewsPage() {
           glyph="報"
         />
 
-        <section className="mx-auto max-w-3xl px-6 py-16 md:py-24">
+        <section className="mx-auto max-w-3xl px-6 py-10 md:py-14">
           {posts.length === 0 ? (
             <p className="text-foreground/60 italic">
               No posts yet. Check back soon.
             </p>
           ) : (
-            <ul className="space-y-12">
+            <ul className="space-y-8">
               {posts.map((post, i) => (
                 <li
                   key={post.id}
-                  className={`${i > 0 ? "border-t border-foreground/10 pt-12" : ""}`}
+                  className={`${i > 0 ? "border-t border-foreground/10 pt-8" : ""}`}
                 >
                   <article>
                     <p className="text-xs uppercase tracking-[0.3em] text-foreground/55">

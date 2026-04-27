@@ -23,7 +23,7 @@ export default function RegisterPage() {
           glyph="始"
         />
 
-        <section className="mx-auto max-w-4xl px-6 py-16 md:py-24">
+        <section className="mx-auto max-w-2xl px-6 py-12 md:py-16">
           <RegistrationForm />
         </section>
       </main>

@@ -5,9 +5,9 @@ export function ContactSection() {
     <section
       id="contact"
       aria-labelledby="contact-title"
-      className="relative mx-auto max-w-7xl px-6 pb-24 md:px-10 md:pb-32"
+      className="relative mx-auto max-w-7xl px-6 pb-14 md:px-10 md:pb-20"
     >
-      <div className="relative overflow-hidden rounded-2xl border border-foreground/10 bg-gradient-to-br from-card to-secondary p-10 md:p-16">
+      <div className="relative overflow-hidden rounded-2xl border border-foreground/10 bg-gradient-to-br from-card to-secondary p-8 md:p-12">
         <span
           aria-hidden
           className="vertical-mark absolute right-8 top-8 hidden md:block text-7xl select-none"
@@ -15,7 +15,7 @@ export function ContactSection() {
           歡
         </span>
 
-        <div className="grid grid-cols-12 gap-x-6 gap-y-10">
+        <div className="grid grid-cols-12 gap-x-6 gap-y-6">
           <div className="col-span-12 md:col-span-7">
             <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
               <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
@@ -23,7 +23,7 @@ export function ContactSection() {
             </p>
             <h2
               id="contact-title"
-              className="font-display text-5xl md:text-6xl leading-[1] tracking-tight"
+              className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight"
             >
               You&apos;re welcome
               <span className="block italic text-vermillion">to start.</span>

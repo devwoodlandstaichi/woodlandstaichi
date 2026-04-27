@@ -13,7 +13,7 @@ const FOOTER_LINKS = [
 
 export function SiteFooter() {
   return (
-    <footer className="mt-32 border-t border-foreground/10 bg-ink-950 text-ink-100">
+    <footer className="mt-20 border-t border-foreground/10 bg-ink-950 text-ink-100">
       <div className="mx-auto max-w-7xl px-6 py-16 md:px-10">
         <div className="grid gap-12 md:grid-cols-12">
           <div className="md:col-span-4">
@@ -91,7 +91,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-16 flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-t border-ink-800 pt-8 text-xs text-ink-300">
+        <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between border-t border-ink-800 pt-8 text-xs text-ink-300">
           <p>
             © {new Date().getFullYear()} Woodlands Tai Chi. Taught in the
             lineage of Master George Ling Hu.

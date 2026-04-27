@@ -54,7 +54,7 @@ export function Field({
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
         className={cn(
-          "rounded-md border bg-background px-4 py-3 text-base",
+          "rounded-md border bg-background px-3.5 py-2.5 text-base",
           "border-foreground/20 focus:border-vermillion",
           "transition-colors",
           error && "border-vermillion bg-vermillion/5",
@@ -103,9 +103,9 @@ export function Textarea({
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
         className={cn(
-          "rounded-md border bg-background px-4 py-3 text-base",
+          "rounded-md border bg-background px-3.5 py-2.5 text-base",
           "border-foreground/20 focus:border-vermillion",
-          "transition-colors resize-y min-h-24",
+          "transition-colors resize-y min-h-20",
           error && "border-vermillion bg-vermillion/5",
         )}
       />
@@ -154,7 +154,7 @@ export function Select({
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
         className={cn(
-          "rounded-md border bg-background px-4 py-3 text-base",
+          "rounded-md border bg-background px-3.5 py-2.5 text-base",
           "border-foreground/20 focus:border-vermillion",
           "transition-colors",
           error && "border-vermillion bg-vermillion/5",
@@ -212,7 +212,7 @@ export function RadioGroup({
           <label
             key={o.value}
             className={cn(
-              "flex items-start gap-3 rounded-md border border-foreground/15 bg-background p-4 cursor-pointer",
+              "flex items-center gap-3 rounded-md border border-foreground/15 bg-background px-3.5 py-2.5 cursor-pointer",
               "hover:border-vermillion/40 transition-colors",
               error && "border-vermillion/40",
             )}
@@ -223,7 +223,7 @@ export function RadioGroup({
               value={o.value}
               defaultChecked={defaultValue === o.value}
               required={required}
-              className="mt-1 h-5 w-5 accent-vermillion"
+              className="h-4 w-4 accent-vermillion"
             />
             <span className="text-base">{o.label}</span>
           </label>
@@ -299,19 +299,19 @@ export function FormSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="grid grid-cols-12 gap-x-6 gap-y-6 border-t border-foreground/10 pt-12 first:border-0 first:pt-0">
-      <div className="col-span-12 md:col-span-4">
-        <p className="font-mono text-xs tabular-nums text-vermillion">
+    <section className="border-t border-foreground/10 pt-8 first:border-0 first:pt-0">
+      <header className="mb-5 flex items-baseline gap-3 flex-wrap">
+        <span className="font-mono text-xs tabular-nums text-vermillion">
           {String(number).padStart(2, "0")} / 06
-        </p>
-        <h2 className="mt-2 font-display text-3xl tracking-tight">{title}</h2>
+        </span>
+        <h2 className="font-display text-2xl tracking-tight">{title}</h2>
         {description && (
-          <p className="mt-3 text-sm text-foreground/65 leading-relaxed">
+          <p className="basis-full mt-1 text-sm text-foreground/65 leading-relaxed">
             {description}
           </p>
         )}
-      </div>
-      <div className="col-span-12 md:col-span-8 grid gap-5">{children}</div>
+      </header>
+      <div className="grid gap-4">{children}</div>
     </section>
   );
 }

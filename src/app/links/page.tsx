@@ -23,7 +23,7 @@ export default function LinksPage() {
           glyph="鏈"
         />
 
-        <section className="mx-auto max-w-4xl px-6 py-16 md:py-24 space-y-16">
+        <section className="mx-auto max-w-4xl px-6 py-10 md:py-14 space-y-10">
           {RESOURCE_LINKS.map((group) => (
             <div key={group.category}>
               <h2 className="font-display text-3xl md:text-4xl tracking-tight border-b border-foreground/10 pb-4">

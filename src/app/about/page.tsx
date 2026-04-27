@@ -70,9 +70,9 @@ export default function AboutPage() {
         {/* Origin / mission */}
         <section
           aria-labelledby="origin-title"
-          className="mx-auto max-w-7xl px-6 py-24 md:px-10 md:py-32"
+          className="mx-auto max-w-7xl px-6 py-14 md:px-10 md:py-20"
         >
-          <div className="grid grid-cols-12 gap-x-6 gap-y-12">
+          <div className="grid grid-cols-12 gap-x-6 gap-y-8">
             <div className="col-span-12 md:col-span-5">
               <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
                 <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
@@ -80,7 +80,7 @@ export default function AboutPage() {
               </p>
               <h2
                 id="origin-title"
-                className="font-display text-5xl md:text-6xl leading-[1] tracking-tight"
+                className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight"
               >
                 To exercise
                 <span className="block italic text-vermillion">
@@ -132,10 +132,10 @@ export default function AboutPage() {
         {/* Lineage */}
         <section
           aria-labelledby="lineage-title"
-          className="relative bg-foreground text-background py-24 md:py-32"
+          className="relative bg-foreground text-background py-14 md:py-20"
         >
           <div className="mx-auto max-w-7xl px-6 md:px-10">
-            <div className="grid grid-cols-12 gap-x-6 gap-y-10">
+            <div className="grid grid-cols-12 gap-x-6 gap-y-6">
               <div className="col-span-12 md:col-span-5">
                 <p className="text-xs uppercase tracking-[0.45em] text-background/55 mb-6">
                   <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
@@ -143,7 +143,7 @@ export default function AboutPage() {
                 </p>
                 <h2
                   id="lineage-title"
-                  className="font-display text-5xl md:text-6xl leading-[1] tracking-tight"
+                  className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight"
                 >
                   Master
                   <span className="block italic text-vermillion-300">
@@ -174,27 +174,27 @@ export default function AboutPage() {
         {/* Three pillars — expanded */}
         <section
           aria-labelledby="pillars-title"
-          className="mx-auto max-w-7xl px-6 py-24 md:px-10 md:py-32"
+          className="mx-auto max-w-7xl px-6 py-14 md:px-10 md:py-20"
         >
-          <div className="mb-16 max-w-3xl">
+          <div className="mb-10 max-w-3xl">
             <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
               <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
               The practice
             </p>
             <h2
               id="pillars-title"
-              className="font-display text-5xl md:text-6xl leading-[1] tracking-tight"
+              className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight"
             >
               Three threads,
               <span className="block italic text-vermillion">one motion.</span>
             </h2>
           </div>
 
-          <div className="space-y-16">
+          <div className="space-y-10">
             {PILLARS.map((p, i) => (
               <article
                 key={p.label}
-                className="grid grid-cols-12 gap-x-6 gap-y-6 border-t border-foreground/10 pt-12"
+                className="grid grid-cols-12 gap-x-6 gap-y-6 border-t border-foreground/10 pt-8"
               >
                 <div className="col-span-12 md:col-span-3">
                   <span
@@ -222,7 +222,7 @@ export default function AboutPage() {
             ))}
           </div>
 
-          <p className="mt-16 text-sm text-foreground/55 italic max-w-2xl">
+          <p className="mt-6 text-sm text-foreground/55 italic max-w-2xl">
             — Based on the teaching and writings of Master George Ling Hu.
           </p>
         </section>
@@ -230,8 +230,8 @@ export default function AboutPage() {
         <TestimonialsSection />
 
         {/* Closing CTA */}
-        <section className="mx-auto max-w-7xl px-6 pb-24 md:px-10 md:pb-32">
-          <div className="rounded-2xl border border-foreground/10 bg-gradient-to-br from-card to-secondary p-10 md:p-14 text-center">
+        <section className="mx-auto max-w-7xl px-6 pb-14 md:px-10 md:pb-20">
+          <div className="rounded-2xl border border-foreground/10 bg-gradient-to-br from-card to-secondary p-8 md:p-10 text-center">
             <h2 className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight max-w-2xl mx-auto">
               Show up.
               <span className="italic text-vermillion"> Breathe. </span>

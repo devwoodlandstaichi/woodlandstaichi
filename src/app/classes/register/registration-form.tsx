@@ -26,7 +26,7 @@ export function RegistrationForm() {
   const errors = state.status === "error" ? state.fieldErrors ?? {} : {};
 
   return (
-    <form action={formAction} className="space-y-16" noValidate>
+    <form action={formAction} className="space-y-10" noValidate>
       {state.status === "error" && (
         <div
           role="alert"
