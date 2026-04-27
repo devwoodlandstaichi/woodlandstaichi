@@ -16,7 +16,7 @@ export function PageHeader({
   return (
     <section
       aria-labelledby="page-header-title"
-      className="relative overflow-hidden border-b border-foreground/8"
+      className="relative overflow-hidden"
     >
       {glyph && (
         <span
