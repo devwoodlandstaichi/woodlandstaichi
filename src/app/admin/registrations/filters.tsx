@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 
@@ -10,6 +10,7 @@ export type PaymentStatus = (typeof PAYMENT_OPTIONS)[number];
 export function RegistrationFilters({ status }: { status: PaymentStatus }) {
   const router = useRouter();
   const params = useSearchParams();
+  const [, startTransition] = useTransition();
   const baseParams = useMemo(() => params?.toString() ?? "", [params]);
 
   function navigateWith(value: string) {
@@ -17,10 +18,10 @@ export function RegistrationFilters({ status }: { status: PaymentStatus }) {
     if (value) next.set("status", value);
     else next.delete("status");
     const qs = next.toString();
-    router.replace(qs ? `/admin/registrations?${qs}` : "/admin/registrations", {
-      scroll: false,
+    const url = qs ? `/admin/registrations?${qs}` : "/admin/registrations";
+    startTransition(() => {
+      router.replace(url, { scroll: false });
     });
-    router.refresh();
   }
 
   return (

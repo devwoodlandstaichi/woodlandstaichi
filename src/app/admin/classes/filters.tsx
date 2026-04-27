@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
 import {
@@ -11,6 +11,13 @@ import {
 } from "@/lib/format";
 
 type Status = "active" | "archived" | "all";
+
+const TEXT_DEBOUNCE_MS = 350;
+
+// Filters are pure URL state. Each change calls `router.replace(?…)` inside
+// a transition. We do NOT call `router.refresh()` afterwards — replace()
+// with new searchParams is enough on a force-dynamic page; the redundant
+// refresh can race with the URL change and re-fetch with stale params.
 
 export function ClassFilters({
   q,
@@ -25,25 +32,53 @@ export function ClassFilters({
 }) {
   const router = useRouter();
   const params = useSearchParams();
+  const [, startTransition] = useTransition();
+
+  const [text, setText] = useState(q);
+  const [lastQ, setLastQ] = useState(q);
+  if (q !== lastQ) {
+    setLastQ(q);
+    setText(q);
+  }
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function setParam(key: string, value: string) {
-    const next = new URLSearchParams(params?.toString() ?? "");
+  useEffect(() => () => {
+    if (debounce.current) clearTimeout(debounce.current);
+  }, []);
+
+  const baseParams = useMemo(
+    () => params?.toString() ?? "",
+    [params],
+  );
+
+  function navigateWith(key: string, value: string) {
+    const next = new URLSearchParams(baseParams);
     if (value) next.set(key, value);
     else next.delete(key);
-    router.replace(`/admin/classes?${next.toString()}`, { scroll: false });
+    const qs = next.toString();
+    const url = qs ? `/admin/classes?${qs}` : "/admin/classes";
+    startTransition(() => {
+      router.replace(url, { scroll: false });
+    });
   }
 
-  useEffect(() => {
-    return () => {
-      if (debounce.current) clearTimeout(debounce.current);
-    };
-  }, []);
+  function onText(value: string) {
+    setText(value);
+    if (debounce.current) clearTimeout(debounce.current);
+    debounce.current = setTimeout(
+      () => navigateWith("q", value.trim()),
+      TEXT_DEBOUNCE_MS,
+    );
+  }
 
   const hasFilter = q || level || day || status !== "active";
 
   return (
-    <div className="mb-4 flex flex-col gap-3">
+    <div
+      className="mb-4 flex flex-col gap-3"
+      role="search"
+      aria-label="Filter classes"
+    >
       <div className="relative">
         <Search
           size={16}
@@ -52,15 +87,10 @@ export function ClassFilters({
         />
         <input
           type="search"
-          name="q"
-          defaultValue={q}
+          value={text}
+          onChange={(e) => onText(e.target.value)}
           placeholder="Search by name or location"
           aria-label="Search classes"
-          onChange={(e) => {
-            const value = e.target.value;
-            if (debounce.current) clearTimeout(debounce.current);
-            debounce.current = setTimeout(() => setParam("q", value), 200);
-          }}
           className="h-12 w-full rounded-md border border-input bg-background pl-10 pr-4 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         />
       </div>
@@ -69,7 +99,7 @@ export function ClassFilters({
         <Pill label="Level">
           <select
             value={level}
-            onChange={(e) => setParam("level", e.target.value)}
+            onChange={(e) => navigateWith("level", e.target.value)}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by level"
           >
@@ -85,7 +115,7 @@ export function ClassFilters({
         <Pill label="Day">
           <select
             value={day}
-            onChange={(e) => setParam("day", e.target.value)}
+            onChange={(e) => navigateWith("day", e.target.value)}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by day"
           >
@@ -101,7 +131,7 @@ export function ClassFilters({
         <Pill label="Status">
           <select
             value={status}
-            onChange={(e) => setParam("status", e.target.value)}
+            onChange={(e) => navigateWith("status", e.target.value)}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by status"
           >
@@ -114,7 +144,12 @@ export function ClassFilters({
         {hasFilter && (
           <button
             type="button"
-            onClick={() => router.replace("/admin/classes", { scroll: false })}
+            onClick={() => {
+              setText("");
+              startTransition(() => {
+                router.replace("/admin/classes", { scroll: false });
+              });
+            }}
             className="inline-flex h-10 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground"
           >
             <X size={14} aria-hidden /> Reset

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 import {
@@ -12,9 +12,8 @@ import {
   type MemberStatus,
 } from "@/lib/format";
 
-// Mirrors src/app/admin/classes/filters.tsx — onChange triggers a
-// router.replace so the server component re-runs with new searchParams.
-// No Apply button needed.
+// onChange triggers router.replace inside a transition. No router.refresh
+// (race condition) and no Apply button.
 
 export function MemberFilters({
   level,
@@ -25,6 +24,7 @@ export function MemberFilters({
 }) {
   const router = useRouter();
   const params = useSearchParams();
+  const [, startTransition] = useTransition();
   const baseParams = useMemo(() => params?.toString() ?? "", [params]);
 
   function navigateWith(key: string, value: string) {
@@ -32,10 +32,10 @@ export function MemberFilters({
     if (value) next.set(key, value);
     else next.delete(key);
     const qs = next.toString();
-    router.replace(qs ? `/admin/members?${qs}` : "/admin/members", {
-      scroll: false,
+    const url = qs ? `/admin/members?${qs}` : "/admin/members";
+    startTransition(() => {
+      router.replace(url, { scroll: false });
     });
-    router.refresh();
   }
 
   const hasFilter = !!level || status !== "active";
@@ -81,8 +81,9 @@ export function MemberFilters({
         <button
           type="button"
           onClick={() => {
-            router.replace("/admin/members", { scroll: false });
-            router.refresh();
+            startTransition(() => {
+              router.replace("/admin/members", { scroll: false });
+            });
           }}
           className="inline-flex h-10 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground"
         >
