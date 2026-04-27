@@ -58,7 +58,7 @@ export function Hero() {
               </span>
             </a>
             <a
-              href="#about"
+              href="/about"
               className="inline-flex items-center gap-3 rounded-full border border-foreground/20 px-7 py-4 text-base font-medium hover:bg-foreground/5 transition-colors"
             >
               Why Tai Chi?

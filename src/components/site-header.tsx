@@ -8,10 +8,10 @@ import { FontScaler } from "@/components/font-scaler";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "#about", label: "About" },
-  { href: "#classes", label: "Classes" },
-  { href: "#locations", label: "Locations" },
-  { href: "#contact", label: "Contact" },
+  { href: "/about", label: "About" },
+  { href: "/#classes", label: "Classes" },
+  { href: "/#locations", label: "Locations" },
+  { href: "/#contact", label: "Contact" },
 ];
 
 export function SiteHeader() {
