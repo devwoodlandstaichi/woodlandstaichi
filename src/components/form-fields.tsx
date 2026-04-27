@@ -299,7 +299,7 @@ export function FormSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="border-t border-foreground/10 pt-8 first:border-0 first:pt-0">
+    <section>
       <header className="mb-5 flex items-baseline gap-3 flex-wrap">
         <span className="font-mono text-xs tabular-nums text-vermillion">
           {String(number).padStart(2, "0")} / 06
