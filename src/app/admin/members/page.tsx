@@ -1,0 +1,212 @@
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import {
+  Badge,
+  Card,
+  PageHeader,
+} from "@/components/admin/ui";
+import {
+  MEMBER_LEVEL_LABELS,
+  MEMBER_LEVEL_VALUES,
+  MEMBER_STATUS_VALUES,
+  memberStatusLabel,
+  type MemberLevel,
+  type MemberStatus,
+} from "@/lib/format";
+
+export const metadata = { title: "Members" };
+export const dynamic = "force-dynamic";
+
+type MemberRow = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string | null;
+  level: MemberLevel;
+  status: MemberStatus;
+  created_at: string;
+};
+
+type SearchParams = Promise<{ level?: string; status?: string }>;
+
+function isLevel(v: string | undefined): v is MemberLevel {
+  return !!v && (MEMBER_LEVEL_VALUES as readonly string[]).includes(v);
+}
+function isStatus(v: string | undefined): v is MemberStatus {
+  return !!v && (MEMBER_STATUS_VALUES as readonly string[]).includes(v);
+}
+
+const LEVEL_TONE: Record<MemberLevel, "vermillion" | "cobalt" | "jade" | "neutral"> = {
+  instructor: "vermillion",
+  beginners: "neutral",
+  intermediate: "cobalt",
+  advanced: "jade",
+};
+
+const STATUS_TONE: Record<MemberStatus, "jade" | "cobalt" | "muted"> = {
+  active: "jade",
+  waitlist: "cobalt",
+  inactive: "muted",
+};
+
+export default async function MembersPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const params = await searchParams;
+  const level = isLevel(params.level) ? params.level : null;
+  const status = isStatus(params.status) ? params.status : "active";
+
+  const supabase = await createClient();
+  let query = supabase
+    .from("members")
+    .select(
+      "id,first_name,last_name,email,phone,level,status,created_at",
+    )
+    .order("last_name", { ascending: true })
+    .order("first_name", { ascending: true });
+
+  if (level) query = query.eq("level", level);
+  if (status) query = query.eq("status", status);
+
+  const { data } = await query;
+  const rows = (data ?? []) as MemberRow[];
+
+  return (
+    <>
+      <PageHeader
+        title="Members"
+        description="Roster snapshot. Read-only for now — editing comes in the next phase."
+      />
+
+      <Filters level={level} status={status} />
+
+      {rows.length === 0 ? (
+        <Card className="mt-4 p-8 text-center text-muted-foreground">
+          No members match these filters.
+        </Card>
+      ) : (
+        <Card className="mt-4 overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-foreground/10 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3 font-medium">Name</th>
+                <th className="px-4 py-3 font-medium">Email</th>
+                <th className="px-4 py-3 font-medium">Phone</th>
+                <th className="px-4 py-3 font-medium">Level</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((m) => (
+                <tr
+                  key={m.id}
+                  className="border-b border-foreground/5 last:border-0"
+                >
+                  <td className="px-4 py-3 font-medium">
+                    <Link
+                      href={`/admin/members/${m.id}`}
+                      className="hover:text-vermillion"
+                    >
+                      {m.last_name}, {m.first_name}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3">
+                    <a
+                      href={`mailto:${m.email}`}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      {m.email}
+                    </a>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {m.phone ?? "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge tone={LEVEL_TONE[m.level]}>
+                      {MEMBER_LEVEL_LABELS[m.level]}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge tone={STATUS_TONE[m.status]}>
+                      {memberStatusLabel(m.status)}
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
+
+      <p className="mt-4 text-xs text-muted-foreground">
+        {rows.length} {rows.length === 1 ? "member" : "members"}.
+      </p>
+    </>
+  );
+}
+
+function Filters({
+  level,
+  status,
+}: {
+  level: MemberLevel | null;
+  status: MemberStatus;
+}) {
+  return (
+    <form
+      method="get"
+      className="flex flex-wrap items-end gap-3"
+      aria-label="Filter members"
+    >
+      <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+        Level
+        <select
+          name="level"
+          defaultValue={level ?? ""}
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+        >
+          <option value="">All</option>
+          {MEMBER_LEVEL_VALUES.map((v) => (
+            <option key={v} value={v}>
+              {MEMBER_LEVEL_LABELS[v]}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+        Status
+        <select
+          name="status"
+          defaultValue={status}
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+        >
+          {MEMBER_STATUS_VALUES.map((v) => (
+            <option key={v} value={v}>
+              {memberStatusLabel(v)}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <button
+        type="submit"
+        className="h-10 rounded-md border border-input px-4 text-sm hover:bg-foreground/5"
+      >
+        Apply
+      </button>
+
+      {(level || status !== "active") && (
+        <Link
+          href="/admin/members"
+          className="h-10 inline-flex items-center px-3 text-sm text-muted-foreground hover:text-foreground"
+        >
+          Reset
+        </Link>
+      )}
+    </form>
+  );
+}
