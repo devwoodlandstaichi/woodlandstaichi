@@ -13,9 +13,21 @@ type Status = "active" | "archived" | "all";
 
 const TEXT_DEBOUNCE_MS = 400;
 
-// Filters navigate via window.location.assign — the most primitive form
-// of navigation possible. Build the URL from current form values, then
-// assign() to it. Browser does a hard navigation. Cannot fail.
+// Each filter input updates the URL DIRECTLY by manipulating
+// window.location. No form submission, no router, no FormData.
+// The URL is the single source of truth and the browser navigates
+// to whatever URL we hand it. There's literally nothing simpler.
+//
+// Console logs are intentional — if a filter change does nothing,
+// open dev tools and check whether the log fires.
+
+function setParam(key: string, value: string) {
+  const url = new URL(window.location.href);
+  if (value) url.searchParams.set(key, value);
+  else url.searchParams.delete(key);
+  console.log("[filters] navigating to", url.toString());
+  window.location.href = url.toString();
+}
 
 export function ClassFilters({
   q,
@@ -28,10 +40,8 @@ export function ClassFilters({
   day: string;
   status: Status;
 }) {
-  const formRef = useRef<HTMLFormElement>(null);
   const [text, setText] = useState(q);
 
-  // Sync local text input to prop without useEffect.
   const [lastQ, setLastQ] = useState(q);
   if (q !== lastQ) {
     setLastQ(q);
@@ -43,41 +53,16 @@ export function ClassFilters({
     if (debounceRef.current) clearTimeout(debounceRef.current);
   }, []);
 
-  function navigate() {
-    const form = formRef.current;
-    if (!form) return;
-    const fd = new FormData(form);
-    const sp = new URLSearchParams();
-    fd.forEach((value, key) => {
-      const v = String(value).trim();
-      if (v) sp.set(key, v);
-    });
-    const qs = sp.toString();
-    const url = qs ? `/admin/classes?${qs}` : "/admin/classes";
-    // window.location.assign forces a real browser navigation —
-    // bypasses React, Next router, and any cache layers.
-    window.location.assign(url);
-  }
-
   function onTextChange(value: string) {
     setText(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(navigate, TEXT_DEBOUNCE_MS);
+    debounceRef.current = setTimeout(() => setParam("q", value.trim()), TEXT_DEBOUNCE_MS);
   }
 
   const hasFilter = !!q || !!level || !!day || status !== "active";
 
   return (
-    <form
-      ref={formRef}
-      action="/admin/classes"
-      method="get"
-      onSubmit={(e) => {
-        // Pressing Enter in the search box submits the form natively;
-        // intercept so we navigate the same way as onChange does.
-        e.preventDefault();
-        navigate();
-      }}
+    <div
       className="mb-4 flex flex-col gap-3"
       role="search"
       aria-label="Filter classes"
@@ -93,6 +78,13 @@ export function ClassFilters({
           type="search"
           value={text}
           onChange={(e) => onTextChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              if (debounceRef.current) clearTimeout(debounceRef.current);
+              setParam("q", text.trim());
+            }
+          }}
           placeholder="Search by name or location"
           aria-label="Search classes"
           className="h-12 w-full rounded-md border border-input bg-background pl-10 pr-4 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -103,8 +95,11 @@ export function ClassFilters({
         <Pill label="Level">
           <select
             name="level"
-            defaultValue={level}
-            onChange={navigate}
+            value={level}
+            onChange={(e) => {
+              console.log("[filters] level onChange ->", e.target.value);
+              setParam("level", e.target.value);
+            }}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by level"
           >
@@ -120,8 +115,11 @@ export function ClassFilters({
         <Pill label="Day">
           <select
             name="day"
-            defaultValue={day}
-            onChange={navigate}
+            value={day}
+            onChange={(e) => {
+              console.log("[filters] day onChange ->", e.target.value);
+              setParam("day", e.target.value);
+            }}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by day"
           >
@@ -137,8 +135,11 @@ export function ClassFilters({
         <Pill label="Status">
           <select
             name="status"
-            defaultValue={status}
-            onChange={navigate}
+            value={status}
+            onChange={(e) => {
+              console.log("[filters] status onChange ->", e.target.value);
+              setParam("status", e.target.value);
+            }}
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by status"
           >
@@ -157,7 +158,7 @@ export function ClassFilters({
           </a>
         )}
       </div>
-    </form>
+    </div>
   );
 }
 
