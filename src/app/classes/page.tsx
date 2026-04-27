@@ -224,17 +224,15 @@ export default function ClassesPage() {
           </ol>
 
           <div className="mt-12 flex flex-wrap items-center gap-4">
-            <a
-              href="https://form.jotform.com/92546360539160"
-              target="_blank"
-              rel="noreferrer"
+            <Link
+              href="/classes/register"
               className="inline-flex items-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors"
             >
-              Open the registration form
+              Register for a beginner cohort
               <span aria-hidden>→</span>
-            </a>
+            </Link>
             <p className="text-sm text-foreground/55">
-              Hosted by JotForm — a built-in form is coming to this site soon.
+              Free to join. Only the shirt fee is required at enrollment.
             </p>
           </div>
         </section>

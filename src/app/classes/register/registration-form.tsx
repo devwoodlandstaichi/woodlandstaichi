@@ -1,0 +1,321 @@
+"use client";
+
+import { useActionState } from "react";
+import {
+  Field,
+  Textarea,
+  Select,
+  RadioGroup,
+  Checkbox,
+  FormSection,
+} from "@/components/form-fields";
+import { submitRegistration, type RegistrationState } from "./actions";
+import {
+  COHORT_OPTIONS,
+  PAYMENT_METHODS,
+  SESSION_OPTIONS,
+  SHIRT_SIZES,
+} from "./schema";
+
+const SHIRT_OPTIONS = SHIRT_SIZES.map((s) => ({ value: s, label: s }));
+
+const INITIAL: RegistrationState = { status: "idle" };
+
+export function RegistrationForm() {
+  const [state, formAction, pending] = useActionState(submitRegistration, INITIAL);
+  const errors = state.status === "error" ? state.fieldErrors ?? {} : {};
+
+  return (
+    <form action={formAction} className="space-y-16" noValidate>
+      {state.status === "error" && (
+        <div
+          role="alert"
+          className="rounded-md border border-vermillion bg-vermillion/5 p-4 text-vermillion"
+        >
+          {state.message}
+        </div>
+      )}
+
+      <FormSection
+        number={1}
+        title="About you"
+        description="Where to reach you and a little context."
+      >
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field
+            name="first_name"
+            label="First name"
+            required
+            autoComplete="given-name"
+            error={errors.first_name}
+          />
+          <Field
+            name="last_name"
+            label="Last name"
+            required
+            autoComplete="family-name"
+            error={errors.last_name}
+          />
+        </div>
+        <Field
+          name="nickname"
+          label="Nickname"
+          hint="What you'd like us to call you in class."
+          autoComplete="nickname"
+          error={errors.nickname}
+        />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field
+            name="email"
+            label="Email"
+            type="email"
+            required
+            inputMode="email"
+            autoComplete="email"
+            error={errors.email}
+          />
+          <Field
+            name="phone"
+            label="Cell phone"
+            type="tel"
+            required
+            inputMode="tel"
+            autoComplete="tel"
+            placeholder="(000) 000-0000"
+            error={errors.phone}
+          />
+        </div>
+        <Field
+          name="street"
+          label="Street address"
+          required
+          autoComplete="address-line1"
+          error={errors.street}
+        />
+        <div className="grid gap-5 sm:grid-cols-3">
+          <Field
+            name="city"
+            label="City"
+            required
+            autoComplete="address-level2"
+            error={errors.city}
+          />
+          <Field
+            name="state"
+            label="State"
+            required
+            autoComplete="address-level1"
+            error={errors.state}
+          />
+          <Field
+            name="postal_code"
+            label="ZIP"
+            required
+            inputMode="numeric"
+            autoComplete="postal-code"
+            error={errors.postal_code}
+          />
+        </div>
+        <Field
+          name="birthday"
+          label="Birthday"
+          type="date"
+          required
+          hint="Your real birthday — kept private."
+          autoComplete="bday"
+          error={errors.birthday}
+        />
+      </FormSection>
+
+      <FormSection
+        number={2}
+        title="Pick a cohort"
+        description="Cohorts open in February, June, and late September. Pick the one whose schedule you can fully commit to."
+      >
+        <Select
+          name="cohort"
+          label="Beginner cohort"
+          required
+          options={COHORT_OPTIONS}
+          error={errors.cohort}
+        />
+        <RadioGroup
+          name="session"
+          label="Preferred session"
+          required
+          options={SESSION_OPTIONS}
+          error={errors.session}
+        />
+      </FormSection>
+
+      <FormSection
+        number={3}
+        title="Health & experience"
+        description="So instructors can support you well from day one."
+      >
+        <Textarea
+          name="physical_limitations"
+          label="Any physical limitations?"
+          hint="Optional. Anything we should know — knee, back, balance, recent injuries, surgeries, etc."
+          rows={3}
+          error={errors.physical_limitations}
+        />
+        <Textarea
+          name="prior_experience"
+          label="Any prior Tai Chi experience?"
+          hint="Optional. Style, school, instructor, how long."
+          rows={3}
+          error={errors.prior_experience}
+        />
+      </FormSection>
+
+      <FormSection
+        number={4}
+        title="Shirt & payment"
+        description="Class is free — the WTC shirt is the only fee, paid at registration."
+      >
+        <Select
+          name="shirt_size"
+          label="Shirt size"
+          required
+          options={SHIRT_OPTIONS}
+          hint="See the size chart on the Store page."
+          error={errors.shirt_size}
+        />
+        <RadioGroup
+          name="payment_method"
+          label="Payment method"
+          required
+          options={PAYMENT_METHODS}
+          error={errors.payment_method}
+        />
+      </FormSection>
+
+      <FormSection
+        number={5}
+        title="A little more about you"
+        description="We're a small community — these answers help us welcome you."
+      >
+        <Textarea
+          name="found_us_via"
+          label="How did you find Woodlands Tai Chi?"
+          required
+          rows={2}
+          error={errors.found_us_via}
+        />
+        <Textarea
+          name="expectations"
+          label="What do you hope to gain from Tai Chi?"
+          required
+          rows={3}
+          error={errors.expectations}
+        />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field
+            name="emergency_name"
+            label="Emergency contact name"
+            required
+            autoComplete="off"
+            error={errors.emergency_name}
+          />
+          <Field
+            name="emergency_relationship"
+            label="Relationship"
+            required
+            placeholder="Spouse, child, friend…"
+            error={errors.emergency_relationship}
+          />
+        </div>
+        <Field
+          name="emergency_phone"
+          label="Emergency contact phone"
+          type="tel"
+          required
+          inputMode="tel"
+          placeholder="(000) 000-0000"
+          error={errors.emergency_phone}
+        />
+      </FormSection>
+
+      <FormSection
+        number={6}
+        title="Waiver"
+        description="Required for all participants. Read carefully before signing."
+      >
+        <div className="rounded-md border border-foreground/15 bg-secondary p-5 text-sm text-foreground/80 leading-relaxed max-h-72 overflow-y-auto space-y-3">
+          <p>
+            Prior to registering for this class, it is recommended that you
+            consult your physician.
+          </p>
+          <p>
+            In consideration of being allowed to participate in any program,
+            activity, or event sponsored by, performed by, or in any way
+            involving Woodlands Tai Chi and/or Sifu Sesco Saegusa (the
+            &ldquo;Program&rdquo;), I — as Participant, or as parent or
+            guardian of a minor Participant — and intending to be legally
+            bound, do hereby acknowledge and agree to the following:
+          </p>
+          <p>
+            I waive, discharge, and release any and all rights and claims for
+            damages — whether based upon negligence or any other theory of law
+            — which I, my child, or my heirs may have against Woodlands Tai
+            Chi and/or Sifu Sesco Saegusa, their affiliates, agents,
+            representatives, assigns, successors, and any officers, directors,
+            shareholders, agents, or employees, the municipalities or counties
+            in or through which the programs take place, or any other person,
+            entity, or sponsor connected with the Program, for any and all
+            injuries or damages I or my child may suffer while participating.
+          </p>
+          <p>
+            I assume any and all risks resulting from my or my child&apos;s
+            participation, and accept full personal responsibility for any
+            resulting damage including injury, permanent disability, or death.
+          </p>
+          <p>
+            I verify that I (or my child) am in good physical health and able
+            to participate in and/or complete the Program.
+          </p>
+          <p>
+            I agree to indemnify and hold Woodlands Tai Chi and Sifu Sesco
+            Saegusa harmless from and against all liabilities for any injury
+            arising out of or connected with participation in the Program.
+          </p>
+          <p>
+            I have read and fully understood this waiver and release. I
+            understand that by participating, I/we will have waived
+            substantial rights. I have knowingly and voluntarily agreed to
+            this waiver and release.
+          </p>
+        </div>
+        <Checkbox
+          name="waiver_accepted"
+          label="I have read and agree to the Waiver and Release."
+          required
+          error={errors.waiver_accepted}
+        />
+        <Field
+          name="waiver_signature"
+          label="Type your full name as your signature"
+          required
+          hint="By typing your name, you electronically sign the waiver above."
+          error={errors.waiver_signature}
+        />
+      </FormSection>
+
+      <div className="flex flex-col gap-4 border-t border-foreground/10 pt-8">
+        <p className="text-sm text-foreground/60">
+          You aren&apos;t enrolled until payment is received. We&apos;ll email
+          you with the next steps right after submission.
+        </p>
+        <button
+          type="submit"
+          disabled={pending}
+          className="inline-flex items-center justify-center gap-3 self-start rounded-full bg-vermillion px-8 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {pending ? "Submitting…" : "Submit registration"}
+          {!pending && <span aria-hidden>→</span>}
+        </button>
+      </div>
+    </form>
+  );
+}
