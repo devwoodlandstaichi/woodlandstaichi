@@ -32,6 +32,15 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Next 16 blocks dev-resource requests from any origin other than the
+  // one it bound to. We bind to localhost but tend to hit 127.0.0.1 (and
+  // sometimes the LAN IP for phone testing) — whitelist them so HMR,
+  // RSC payloads, and dev fonts load. Production is unaffected.
+  allowedDevOrigins: [
+    "127.0.0.1",
+    "localhost",
+    "192.168.16.123",
+  ],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
