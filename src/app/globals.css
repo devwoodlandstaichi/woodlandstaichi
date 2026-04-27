@@ -3,52 +3,81 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* =============================================================================
+   PALETTE — sampled from the Woodlands Tai Chi crane crest:
+     ink-black background · cream-white crane · vermillion sun ·
+     cobalt waves/clouds · jade-teal feather accents.
+   We dominate the surface with warm parchment + ink, and reserve vermillion
+   as a single, deliberate accent. Cobalt and jade appear sparingly for depth.
+============================================================================= */
+
 :root {
-  --radius: 0.625rem;
+  --radius: 0.5rem;
 
-  /* Light theme — placeholder palette; will replace with logo-sampled colors */
-  --background: oklch(0.99 0.005 85);
-  --foreground: oklch(0.18 0.02 30);
+  /* Brand */
+  --ink-50:  oklch(0.98 0.005 75);   /* parchment highlight */
+  --ink-100: oklch(0.96 0.008 78);   /* paper */
+  --ink-200: oklch(0.92 0.012 80);   /* warm light tan */
+  --ink-300: oklch(0.85 0.014 80);
+  --ink-500: oklch(0.55 0.014 60);
+  --ink-700: oklch(0.32 0.012 50);
+  --ink-800: oklch(0.22 0.012 40);
+  --ink-900: oklch(0.15 0.01 40);    /* near-black warm */
+  --ink-950: oklch(0.09 0.008 40);   /* deep ink */
+
+  --vermillion-300: oklch(0.78 0.12 25);
+  --vermillion-500: oklch(0.55 0.18 28);   /* the logo sun */
+  --vermillion-600: oklch(0.48 0.19 28);
+  --vermillion-700: oklch(0.40 0.18 28);
+
+  --cobalt-500:  oklch(0.42 0.13 250);     /* logo waves */
+  --cobalt-700:  oklch(0.30 0.14 252);
+
+  --jade-500:    oklch(0.55 0.07 175);     /* feather accents */
+
+  /* Map to shadcn semantic tokens */
+  --background: var(--ink-50);
+  --foreground: var(--ink-900);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 30);
+  --card-foreground: var(--ink-900);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 30);
-  --primary: oklch(0.45 0.15 25);
-  --primary-foreground: oklch(0.98 0.01 85);
-  --secondary: oklch(0.95 0.01 85);
-  --secondary-foreground: oklch(0.25 0.02 30);
-  --muted: oklch(0.95 0.01 85);
-  --muted-foreground: oklch(0.5 0.02 30);
-  --accent: oklch(0.92 0.04 130);
-  --accent-foreground: oklch(0.25 0.02 30);
-  --destructive: oklch(0.55 0.2 25);
-  --border: oklch(0.9 0.01 85);
-  --input: oklch(0.9 0.01 85);
-  --ring: oklch(0.45 0.15 25);
+  --popover-foreground: var(--ink-900);
+  --primary: var(--ink-950);
+  --primary-foreground: var(--ink-50);
+  --secondary: var(--ink-100);
+  --secondary-foreground: var(--ink-900);
+  --muted: var(--ink-100);
+  --muted-foreground: var(--ink-700);
+  --accent: var(--vermillion-500);
+  --accent-foreground: var(--ink-50);
+  --destructive: var(--vermillion-700);
+  --border: var(--ink-200);
+  --input: var(--ink-200);
+  --ring: var(--vermillion-500);
 
-  /* User-controllable font scale (1 = 100%, 1.15 = +15%, 1.3 = +30%) */
+  /* User-controllable font scale (1 / 1.125 / 1.25) */
   --font-scale: 1;
 }
 
 .dark {
-  --background: oklch(0.15 0.02 30);
-  --foreground: oklch(0.95 0.01 85);
-  --card: oklch(0.2 0.02 30);
-  --card-foreground: oklch(0.95 0.01 85);
-  --popover: oklch(0.2 0.02 30);
-  --popover-foreground: oklch(0.95 0.01 85);
-  --primary: oklch(0.65 0.15 25);
-  --primary-foreground: oklch(0.15 0.02 30);
-  --secondary: oklch(0.25 0.02 30);
-  --secondary-foreground: oklch(0.95 0.01 85);
-  --muted: oklch(0.25 0.02 30);
-  --muted-foreground: oklch(0.65 0.02 30);
-  --accent: oklch(0.3 0.04 130);
-  --accent-foreground: oklch(0.95 0.01 85);
-  --destructive: oklch(0.65 0.2 25);
-  --border: oklch(0.3 0.02 30);
-  --input: oklch(0.3 0.02 30);
-  --ring: oklch(0.65 0.15 25);
+  --background: var(--ink-950);
+  --foreground: var(--ink-100);
+  --card: var(--ink-900);
+  --card-foreground: var(--ink-100);
+  --popover: var(--ink-900);
+  --popover-foreground: var(--ink-100);
+  --primary: var(--ink-50);
+  --primary-foreground: var(--ink-950);
+  --secondary: var(--ink-800);
+  --secondary-foreground: var(--ink-100);
+  --muted: var(--ink-800);
+  --muted-foreground: var(--ink-300);
+  --accent: var(--vermillion-500);
+  --accent-foreground: var(--ink-50);
+  --destructive: var(--vermillion-300);
+  --border: var(--ink-800);
+  --input: var(--ink-800);
+  --ring: var(--vermillion-500);
 }
 
 @theme inline {
@@ -70,18 +99,36 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --color-ink-50: var(--ink-50);
+  --color-ink-100: var(--ink-100);
+  --color-ink-200: var(--ink-200);
+  --color-ink-300: var(--ink-300);
+  --color-ink-500: var(--ink-500);
+  --color-ink-700: var(--ink-700);
+  --color-ink-800: var(--ink-800);
+  --color-ink-900: var(--ink-900);
+  --color-ink-950: var(--ink-950);
+  --color-vermillion: var(--vermillion-500);
+  --color-vermillion-600: var(--vermillion-600);
+  --color-cobalt: var(--cobalt-500);
+  --color-jade: var(--jade-500);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
+/* Base typography — accessible defaults for an older audience */
 html {
-  /* Larger base size for older audience; user can scale further */
   font-size: calc(18px * var(--font-scale));
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -100,8 +147,28 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
   line-height: 1.65;
+  font-weight: 400;
+  /* Subtle paper grain — barely perceptible warmth, not noisy */
+  background-image:
+    radial-gradient(ellipse 1200px 800px at 70% -10%, color-mix(in oklch, var(--vermillion-500) 4%, transparent), transparent 60%),
+    radial-gradient(ellipse 900px 600px at 0% 110%, color-mix(in oklch, var(--cobalt-500) 5%, transparent), transparent 55%);
+  background-attachment: fixed;
+}
+
+.dark body {
+  background-image:
+    radial-gradient(ellipse 1200px 800px at 70% -10%, color-mix(in oklch, var(--vermillion-500) 8%, transparent), transparent 60%),
+    radial-gradient(ellipse 900px 600px at 0% 110%, color-mix(in oklch, var(--cobalt-500) 8%, transparent), transparent 55%);
+}
+
+/* Display type — Fraunces tuned for editorial elegance */
+.font-display {
+  font-family: var(--font-display), ui-serif, Georgia, serif;
+  font-feature-settings: "ss01", "ss02", "cv11";
+  font-optical-sizing: auto;
 }
 
 /* Generous focus ring for accessibility */
@@ -118,10 +185,54 @@ body {
   top: 0;
   background: var(--primary);
   color: var(--primary-foreground);
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1.25rem;
   z-index: 100;
   border-radius: 0 0 var(--radius-md) 0;
+  font-weight: 500;
 }
 .skip-link:focus {
   left: 0;
+}
+
+/* Decorative thin rule — used as section dividers */
+.rule {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in oklch, var(--foreground) 25%, transparent),
+    transparent
+  );
+}
+
+/* Vertical CJK-style accent — used decoratively as a brand mark */
+.vertical-mark {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.4em;
+  font-family: var(--font-display), serif;
+  font-weight: 300;
+  color: color-mix(in oklch, var(--foreground) 50%, transparent);
+}
+
+/* Subtle entrance animations — gentle, slow (mimicking tai chi pace) */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.rise {
+  animation: rise 900ms cubic-bezier(0.2, 0.6, 0.2, 1) both;
+}
+.fade {
+  animation: fade 1200ms ease-out both;
 }
