@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRef, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import {
   MEMBER_LEVEL_LABELS,
@@ -12,8 +12,10 @@ import {
   type MemberStatus,
 } from "@/lib/format";
 
-// onChange triggers router.replace inside a transition. No router.refresh
-// (race condition) and no Apply button.
+// Real <form method="get"> as the source of truth. onChange on each
+// dropdown submits the form, which we intercept and route via
+// router.push inside a transition. Falls back to native browser form
+// submission if anything goes wrong.
 
 export function MemberFilters({
   level,
@@ -23,33 +25,44 @@ export function MemberFilters({
   status: MemberStatus;
 }) {
   const router = useRouter();
-  const params = useSearchParams();
+  const formRef = useRef<HTMLFormElement>(null);
   const [, startTransition] = useTransition();
-  const baseParams = useMemo(() => params?.toString() ?? "", [params]);
 
-  function navigateWith(key: string, value: string) {
-    const next = new URLSearchParams(baseParams);
-    if (value) next.set(key, value);
-    else next.delete(key);
-    const qs = next.toString();
+  function navigate() {
+    if (!formRef.current) return;
+    const fd = new FormData(formRef.current);
+    const sp = new URLSearchParams();
+    fd.forEach((value, key) => {
+      const v = String(value).trim();
+      if (v) sp.set(key, v);
+    });
+    const qs = sp.toString();
     const url = qs ? `/admin/members?${qs}` : "/admin/members";
     startTransition(() => {
-      router.replace(url, { scroll: false });
+      router.push(url, { scroll: false });
     });
   }
 
   const hasFilter = !!level || status !== "active";
 
   return (
-    <div
+    <form
+      ref={formRef}
+      action="/admin/members"
+      method="get"
+      onSubmit={(e) => {
+        e.preventDefault();
+        navigate();
+      }}
       className="mb-4 flex flex-wrap gap-3"
       role="search"
       aria-label="Filter members"
     >
       <Pill label="Level">
         <select
-          value={level ?? ""}
-          onChange={(e) => navigateWith("level", e.target.value)}
+          name="level"
+          defaultValue={level ?? ""}
+          onChange={navigate}
           className="bg-transparent text-sm focus:outline-none"
           aria-label="Filter by level"
         >
@@ -64,8 +77,9 @@ export function MemberFilters({
 
       <Pill label="Status">
         <select
-          value={status}
-          onChange={(e) => navigateWith("status", e.target.value)}
+          name="status"
+          defaultValue={status}
+          onChange={navigate}
           className="bg-transparent text-sm focus:outline-none"
           aria-label="Filter by status"
         >
@@ -82,7 +96,7 @@ export function MemberFilters({
           type="button"
           onClick={() => {
             startTransition(() => {
-              router.replace("/admin/members", { scroll: false });
+              router.push("/admin/members", { scroll: false });
             });
           }}
           className="inline-flex h-10 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground"
@@ -90,7 +104,11 @@ export function MemberFilters({
           <X size={14} aria-hidden /> Reset
         </button>
       )}
-    </div>
+
+      <button type="submit" className="hidden" aria-hidden tabIndex={-1}>
+        Apply
+      </button>
+    </form>
   );
 }
 
