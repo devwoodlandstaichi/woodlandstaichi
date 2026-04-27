@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/admin/ui";
 import { TestimonialForm } from "../../testimonial-form";
-import { updateTestimonial, type TestimonialFormState } from "../../actions";
+import { updateTestimonial } from "../../actions";
 
 export const metadata = { title: "Edit testimonial" };
 export const dynamic = "force-dynamic";
@@ -21,10 +21,7 @@ export default async function EditTestimonialPage({
     .maybeSingle();
   if (!data) notFound();
 
-  const action = (
-    state: TestimonialFormState,
-    formData: FormData,
-  ): Promise<TestimonialFormState> => updateTestimonial(id, state, formData);
+  const action = updateTestimonial.bind(null, id);
 
   return (
     <>

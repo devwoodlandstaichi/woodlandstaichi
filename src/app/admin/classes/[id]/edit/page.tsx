@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/admin/ui";
 import { ClassForm, type ClassFormDefaults } from "../../class-form";
-import { updateClass, type ClassFormState } from "../../actions";
+import { updateClass } from "../../actions";
 import { DeleteClassButton } from "../../delete-class-button";
 
 export const metadata = { title: "Edit class" };
@@ -28,11 +28,10 @@ export default async function EditClassPage({
 
   const defaults = data as ClassFormDefaults;
 
-  // Bind the id into the action so we can keep the (state, formData) shape.
-  const boundUpdate = (
-    state: ClassFormState,
-    formData: FormData,
-  ) => updateClass(id, state, formData);
+  // Use .bind() so React 19 keeps the server-action metadata. An arrow-
+  // function closure here breaks the form-action protocol and can render
+  // a blank screen when useActionState mounts.
+  const boundUpdate = updateClass.bind(null, id);
 
   return (
     <>

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/admin/ui";
 import { NewsForm } from "../../post-form";
-import { updatePost, type NewsFormState } from "../../actions";
+import { updatePost } from "../../actions";
 
 export const metadata = { title: "Edit post" };
 export const dynamic = "force-dynamic";
@@ -21,10 +21,7 @@ export default async function EditPostPage({
     .maybeSingle();
   if (!data) notFound();
 
-  const action = (
-    state: NewsFormState,
-    formData: FormData,
-  ): Promise<NewsFormState> => updatePost(id, state, formData);
+  const action = updatePost.bind(null, id);
 
   return (
     <>

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/admin/ui";
 import { MemberForm } from "../../member-form";
-import { updateMember, type MemberFormState } from "../../actions";
+import { updateMember } from "../../actions";
 
 export const metadata = { title: "Edit member" };
 export const dynamic = "force-dynamic";
@@ -21,10 +21,9 @@ export default async function EditMemberPage({
     .maybeSingle();
   if (!data) notFound();
 
-  const action = (
-    state: MemberFormState,
-    formData: FormData,
-  ): Promise<MemberFormState> => updateMember(id, state, formData);
+  // .bind() preserves the server-action metadata; arrow-closure wrappers
+  // break the form-action protocol on React 19.
+  const action = updateMember.bind(null, id);
 
   return (
     <>
