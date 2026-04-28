@@ -3,15 +3,18 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Camera, CameraOff, Check, AlertCircle, RotateCw } from "lucide-react";
 import { Button, Card } from "@/components/admin/ui";
+import { cn } from "@/lib/utils";
 import { recordByToken, recordByMember, searchMembers } from "../../actions";
 
 type RecordResult = Awaited<ReturnType<typeof recordByToken>>;
 type Toast =
-  | { tone: "ok"; title: string; subtitle?: string }
-  | { tone: "warn"; title: string; subtitle?: string }
-  | { tone: "err"; title: string; subtitle?: string };
+  | { tone: "ok"; title: string; subtitle?: string; visible: boolean }
+  | { tone: "warn"; title: string; subtitle?: string; visible: boolean }
+  | { tone: "err"; title: string; subtitle?: string; visible: boolean };
 
 const COOLDOWN_MS = 1500; // ignore the same QR for this long after a scan
+const TOAST_HOLD_MS = 1900; // visible time
+const TOAST_FADE_MS = 380; // exit animation duration
 
 export function Scanner({ sessionId }: { sessionId: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -21,6 +24,16 @@ export function Scanner({ sessionId }: { sessionId: string }) {
 
   // last-token-and-when, to debounce repeated reads of the same QR
   const lastSeen = useRef<{ token: string; at: number } | null>(null);
+
+  // toast lifecycle timers — we cancel and reschedule them for each new
+  // result so a rapid succession of scans always shows the latest result
+  // cleanly without piling up timers.
+  const toastFadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (toastFadeTimer.current) clearTimeout(toastFadeTimer.current);
+    if (toastClearTimer.current) clearTimeout(toastClearTimer.current);
+  }, []);
 
   // start/stop the underlying zxing reader
   const readerRef = useRef<unknown>(null);
@@ -88,26 +101,46 @@ export function Scanner({ sessionId }: { sessionId: string }) {
         const result = await recordByToken(sessionId, encoded);
         showResult(result);
       } catch {
-        setToast({ tone: "err", title: "Scan failed.", subtitle: "Try again." });
+        showToast({
+          tone: "err",
+          title: "Scan failed.",
+          subtitle: "Try again.",
+          visible: true,
+        });
       }
     })();
   }
 
   function showResult(r: RecordResult) {
     if (r.ok) {
-      setToast({
+      showToast({
         tone: r.duplicate ? "warn" : "ok",
-        title: r.duplicate ? `Already scanned: ${r.memberName}` : `Welcome, ${r.memberName}`,
+        title: r.duplicate
+          ? `Already scanned: ${r.memberName}`
+          : `Welcome, ${r.memberName}`,
         subtitle: r.method === "manual" ? "Manual entry." : undefined,
+        visible: true,
       });
     } else {
-      setToast({
-        tone: "err",
-        title: r.message,
-      });
+      showToast({ tone: "err", title: r.message, visible: true });
     }
-    // auto-clear after a moment
-    setTimeout(() => setToast(null), 2400);
+  }
+
+  /** Two-phase toast lifecycle so we get smooth enter AND exit:
+   *    t=0      mount with visible=true → enter animation runs
+   *    t=HOLD   flip visible=false → exit animation runs
+   *    t=HOLD+FADE  unmount entirely
+   *  Any new toast cancels the old timers so we don't pile up. */
+  function showToast(t: Toast) {
+    if (toastFadeTimer.current) clearTimeout(toastFadeTimer.current);
+    if (toastClearTimer.current) clearTimeout(toastClearTimer.current);
+    setToast(t);
+    toastFadeTimer.current = setTimeout(() => {
+      setToast((prev) => (prev ? { ...prev, visible: false } : null));
+    }, TOAST_HOLD_MS);
+    toastClearTimer.current = setTimeout(() => {
+      setToast(null);
+    }, TOAST_HOLD_MS + TOAST_FADE_MS);
   }
 
   return (
@@ -122,13 +155,24 @@ export function Scanner({ sessionId }: { sessionId: string }) {
             muted
           />
 
-          {/* Crosshair / framing guide */}
+          {/* Crosshair / framing guide. Border tone briefly shifts to
+              jade on a successful scan as a subtle non-toast cue. */}
           {scanning && (
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0 flex items-center justify-center"
             >
-              <div className="aspect-square w-1/2 max-w-xs rounded-2xl border-2 border-vermillion/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+              <div
+                className={cn(
+                  "aspect-square w-1/2 max-w-xs rounded-2xl border-2 transition-all duration-300 ease-out",
+                  "shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]",
+                  toast?.visible && toast.tone === "ok"
+                    ? "border-jade shadow-[0_0_0_9999px_rgba(0,0,0,0.35),0_0_60px_rgba(74,138,106,0.6)] scale-[1.02]"
+                    : toast?.visible && toast.tone === "warn"
+                      ? "border-vermillion shadow-[0_0_0_9999px_rgba(0,0,0,0.35),0_0_50px_rgba(169,29,29,0.5)]"
+                      : "border-vermillion/80",
+                )}
+              />
             </div>
           )}
 
@@ -142,26 +186,50 @@ export function Scanner({ sessionId }: { sessionId: string }) {
             </div>
           )}
 
-          {/* Toast overlay */}
+          {/* Toast overlay — two-phase animated lifecycle.
+              data-state drives Tailwind's animate-in / animate-out
+              classes for both enter (slide-down + fade + zoom-up)
+              and exit (fade-out + zoom-down). */}
           {toast && (
             <div
               role="status"
-              className={`pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium shadow-lg ${
+              data-state={toast.visible ? "open" : "closed"}
+              className={cn(
+                "pointer-events-none absolute left-1/2 top-4 -translate-x-1/2",
+                "inline-flex items-center gap-2.5 rounded-full px-5 py-2.5 text-sm font-medium shadow-2xl backdrop-blur",
+                "duration-300 ease-out",
+                "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-top-3",
+                "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:slide-out-to-top-2 data-[state=closed]:duration-300",
                 toast.tone === "ok"
                   ? "bg-jade text-background"
                   : toast.tone === "warn"
-                    ? "bg-vermillion/85 text-background"
-                    : "bg-foreground text-background"
-              }`}
-            >
-              {toast.tone === "ok" ? (
-                <Check size={16} aria-hidden />
-              ) : toast.tone === "warn" ? (
-                <RotateCw size={16} aria-hidden />
-              ) : (
-                <AlertCircle size={16} aria-hidden />
+                    ? "bg-vermillion/90 text-background"
+                    : "bg-foreground text-background",
               )}
-              <span>{toast.title}</span>
+            >
+              <span
+                aria-hidden
+                className={cn(
+                  "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
+                  toast.tone === "ok"
+                    ? "bg-background/20"
+                    : toast.tone === "warn"
+                      ? "bg-background/15"
+                      : "bg-background/15",
+                  // tiny pop on the icon when it appears
+                  "data-[state=open]:animate-in data-[state=open]:zoom-in-50 duration-500",
+                )}
+                data-state={toast.visible ? "open" : "closed"}
+              >
+                {toast.tone === "ok" ? (
+                  <Check size={14} strokeWidth={2.5} />
+                ) : toast.tone === "warn" ? (
+                  <RotateCw size={14} strokeWidth={2.5} />
+                ) : (
+                  <AlertCircle size={14} strokeWidth={2.5} />
+                )}
+              </span>
+              <span className="leading-tight">{toast.title}</span>
               {toast.subtitle && (
                 <span className="text-background/80 text-xs">
                   {toast.subtitle}
