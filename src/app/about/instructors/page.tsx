@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Image from "next/image";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
 import { createClient } from "@/lib/supabase/server";
+import { ContactSection } from "@/components/contact-section";
 
 export const metadata: Metadata = {
   title: "Volunteer instructors — who teaches",
@@ -23,6 +23,26 @@ type Instructor = {
   title: string | null;
   bio: string | null;
   photo_url: string | null;
+  member_id: string | null;
+  members: { bio: string | null; photo_url: string | null } | null;
+};
+
+const TIER_LABEL: Record<Tier, string> = {
+  founder: "Founder · Group Director",
+  senior: "Senior Instructor",
+  instructor: "Instructor",
+  assistant: "Assistant Instructor",
+};
+
+const TIER_BANNER: Record<Tier, string> = {
+  founder:
+    "bg-[linear-gradient(135deg,color-mix(in_oklch,var(--vermillion-500)_45%,transparent),color-mix(in_oklch,var(--vermillion-500)_15%,transparent))]",
+  senior:
+    "bg-[linear-gradient(135deg,color-mix(in_oklch,var(--cobalt-500)_40%,transparent),color-mix(in_oklch,var(--cobalt-500)_10%,transparent))]",
+  instructor:
+    "bg-[linear-gradient(135deg,color-mix(in_oklch,var(--jade-500)_35%,transparent),color-mix(in_oklch,var(--jade-500)_8%,transparent))]",
+  assistant:
+    "bg-[linear-gradient(135deg,color-mix(in_oklch,var(--ink-500)_18%,transparent),color-mix(in_oklch,var(--ink-500)_5%,transparent))]",
 };
 
 function initials(name: string): string {
@@ -34,10 +54,12 @@ export default async function InstructorsPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("instructors")
-    .select("id,name,tier,title,bio,photo_url")
+    .select(
+      "id,name,tier,title,bio,photo_url,member_id,members(bio,photo_url)",
+    )
     .eq("active", true)
     .order("display_order", { ascending: true });
-  const all = (data ?? []) as Instructor[];
+  const all = (data ?? []) as unknown as Instructor[];
 
   const founders = all.filter((i) => i.tier === "founder");
   const seniors = all.filter((i) => i.tier === "senior");
@@ -64,9 +86,11 @@ export default async function InstructorsPage() {
                 <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
                 Founder &amp; group director
               </p>
-              {founders.map((f) => (
-                <FounderCard key={f.id} instructor={f} />
-              ))}
+              <div className="grid gap-6 md:grid-cols-1">
+                {founders.map((f) => (
+                  <InstructorCard key={f.id} instructor={f} featured />
+                ))}
+              </div>
             </div>
           )}
 
@@ -94,7 +118,7 @@ export default async function InstructorsPage() {
               </p>
               <div className="grid gap-6 md:grid-cols-3">
                 {instructors.map((i) => (
-                  <InstructorCard key={i.id} instructor={i} compact />
+                  <InstructorCard key={i.id} instructor={i} />
                 ))}
               </div>
             </div>
@@ -107,170 +131,102 @@ export default async function InstructorsPage() {
                 <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
                 Assistant instructors
               </p>
-              <ul className="flex flex-wrap gap-3">
+              <div className="grid gap-6 md:grid-cols-3">
                 {assistants.map((a) => (
-                  <li
-                    key={a.id}
-                    className="inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-card px-4 py-2 text-sm"
-                  >
-                    {a.photo_url ? (
-                      <Image
-                        src={a.photo_url}
-                        alt=""
-                        width={28}
-                        height={28}
-                        className="h-7 w-7 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span
-                        aria-hidden
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-foreground/5 text-foreground/70 text-xs font-medium"
-                      >
-                        {initials(a.name)}
-                      </span>
-                    )}
-                    {a.name}
-                  </li>
+                  <InstructorCard key={a.id} instructor={a} />
                 ))}
-              </ul>
+              </div>
               <p className="mt-6 text-sm text-foreground/55 italic">
                 Plus countless hands across every cohort.
               </p>
             </div>
           )}
 
-          {/* Closing CTA */}
-          <div className="mt-10 rounded-2xl border border-foreground/10 bg-gradient-to-br from-card to-secondary p-8 md:p-10 text-center">
-            <h2 className="font-display text-3xl md:text-4xl leading-[1.1] tracking-tight max-w-2xl mx-auto">
-              Want to learn from them?
-              <span className="block italic text-vermillion mt-1">
-                Class is free.
-              </span>
-            </h2>
-            <p className="mt-5 text-base text-foreground/75 max-w-xl mx-auto">
-              The next beginner cohorts open in <strong>June 2026</strong> and{" "}
-              <strong>October 2026</strong>.
-            </p>
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-4">
-              <Link
-                href="/classes/register"
-                className="inline-flex items-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors"
-              >
-                Register for a beginner cohort →
-              </Link>
-              <Link
-                href="/about"
-                className="inline-flex items-center gap-3 rounded-full border border-foreground/20 px-7 py-4 text-base font-medium hover:bg-foreground/5 transition-colors"
-              >
-                Back to About
-              </Link>
-            </div>
-          </div>
         </section>
+
+        <ContactSection />
       </main>
       <SiteFooter />
     </>
   );
 }
 
-function FounderCard({ instructor }: { instructor: Instructor }) {
-  const firstName = instructor.name.split(" ")[0];
-  const rest = instructor.name.split(" ").slice(1).join(" ");
+function InstructorCard({
+  instructor,
+  featured = false,
+}: {
+  instructor: Instructor;
+  featured?: boolean;
+}) {
+  const subtitle = instructor.title ?? TIER_LABEL[instructor.tier];
+  const photo = instructor.photo_url ?? instructor.members?.photo_url ?? null;
+  const bio = instructor.bio ?? instructor.members?.bio ?? null;
+  const avatar = featured ? "h-28 w-28 md:h-32 md:w-32" : "h-20 w-20";
+  const avatarOffset = featured ? "-mt-14 md:-mt-16" : "-mt-10";
+  const banner = featured ? "h-32 md:h-40" : "h-14";
+  const nameSize = featured
+    ? "font-display text-3xl md:text-4xl leading-[1.05] tracking-tight"
+    : "font-display text-xl md:text-2xl leading-tight tracking-tight";
+
   return (
-    <article className="grid grid-cols-12 gap-6 md:gap-8 rounded-2xl border border-foreground/10 bg-card p-7 md:p-10">
-      <div className="col-span-12 md:col-span-3 flex md:flex-col items-center md:items-start gap-4">
-        {instructor.photo_url ? (
+    <article className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-foreground/10 bg-card shadow-sm">
+      <div className={`relative ${banner} ${TIER_BANNER[instructor.tier]}`} />
+
+      <div className={`px-6 ${avatarOffset}`}>
+        {photo ? (
           <Image
-            src={instructor.photo_url}
+            src={photo}
             alt={instructor.name}
-            width={160}
-            height={160}
-            className="h-20 w-20 md:h-32 md:w-32 rounded-full object-cover"
+            width={featured ? 160 : 96}
+            height={featured ? 160 : 96}
+            className={`${avatar} rounded-full object-cover border-4 border-card shadow-sm`}
           />
         ) : (
           <span
             aria-hidden
-            className="inline-flex h-20 w-20 md:h-28 md:w-28 items-center justify-center rounded-full bg-vermillion/10 text-vermillion font-display text-3xl md:text-4xl"
+            className={`inline-flex ${avatar} items-center justify-center rounded-full bg-vermillion/10 text-vermillion font-display text-3xl border-4 border-card shadow-sm`}
           >
             {initials(instructor.name)}
           </span>
         )}
-        <div>
-          <h2 className="font-display text-3xl md:text-4xl leading-[1.1] tracking-tight">
-            Sifu {firstName}
-            {rest && (
-              <span className="block italic text-vermillion text-2xl md:text-3xl">
-                {rest}
-              </span>
-            )}
-          </h2>
-          {instructor.title && (
-            <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/55">
-              {instructor.title}
-            </p>
-          )}
-        </div>
       </div>
-      <div className="col-span-12 md:col-span-9">
-        {instructor.bio ? (
-          <p className="text-lg text-foreground/85 leading-relaxed">
-            {instructor.bio}
+
+      <div className="px-6 pt-4">
+        <h3 className={nameSize}>
+          {featured && instructor.tier === "founder" ? (
+            <>
+              Sifu{" "}
+              <span className="italic text-vermillion">{instructor.name}</span>
+            </>
+          ) : (
+            instructor.name
+          )}
+        </h3>
+        <p className="mt-1.5 text-[11px] uppercase tracking-[0.22em] text-foreground/55">
+          {subtitle}
+        </p>
+      </div>
+
+      <div className="px-6 pt-5 pb-6 flex-1">
+        <p className="text-[11px] uppercase tracking-[0.22em] text-foreground/45 mb-2">
+          About
+        </p>
+        {bio ? (
+          <p
+            className={
+              featured
+                ? "text-base md:text-lg text-foreground/85 leading-relaxed"
+                : "text-sm text-foreground/80 leading-relaxed"
+            }
+          >
+            {bio}
           </p>
         ) : (
-          <p className="text-base text-foreground/55 italic">
+          <p className="text-sm text-foreground/55 italic">
             Bio coming soon.
           </p>
         )}
       </div>
-    </article>
-  );
-}
-
-function InstructorCard({
-  instructor,
-  compact = false,
-}: {
-  instructor: Instructor;
-  compact?: boolean;
-}) {
-  return (
-    <article className="rounded-xl border border-foreground/10 bg-card p-6 h-full flex flex-col">
-      <div className="flex items-center gap-3 mb-4">
-        {instructor.photo_url ? (
-          <Image
-            src={instructor.photo_url}
-            alt={instructor.name}
-            width={48}
-            height={48}
-            className="h-12 w-12 shrink-0 rounded-full object-cover"
-          />
-        ) : (
-          <span
-            aria-hidden
-            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-vermillion/10 text-vermillion font-display text-lg"
-          >
-            {initials(instructor.name)}
-          </span>
-        )}
-        <h3 className="font-display text-xl tracking-tight leading-tight">
-          {instructor.name}
-        </h3>
-      </div>
-      {instructor.bio ? (
-        <p
-          className={
-            compact
-              ? "text-sm text-foreground/75 leading-relaxed"
-              : "text-base text-foreground/80 leading-relaxed"
-          }
-        >
-          {instructor.bio}
-        </p>
-      ) : (
-        <p className="text-sm text-foreground/55 italic">
-          Bio coming soon.
-        </p>
-      )}
     </article>
   );
 }

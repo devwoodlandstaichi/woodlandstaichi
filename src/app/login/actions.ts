@@ -10,8 +10,9 @@ export type LoginState =
 
 function safeNext(next: FormDataEntryValue | null): string {
   if (typeof next !== "string") return "/admin";
-  // Only allow redirects to internal admin paths to avoid open redirects.
-  if (next.startsWith("/admin")) return next;
+  // Only allow redirects to internal admin/member paths to avoid open
+  // redirects.
+  if (next.startsWith("/admin") || next.startsWith("/members")) return next;
   return "/admin";
 }
 

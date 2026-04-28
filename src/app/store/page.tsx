@@ -124,17 +124,23 @@ export default function StorePage() {
               How to order
             </h3>
             <p className="mt-4 text-lg text-foreground/80 leading-relaxed max-w-2xl">
-              For shirts, fans, and special-order items: use the JotForm we
-              already have, or speak to an instructor. Payment via Zelle,
-              Venmo, Apple Pay, or PayPal. A built-in store and form will
-              replace JotForm in a later phase.
+              Pick your sizes, submit the order form, and we&apos;ll confirm
+              by email within a few days. Pay via Zelle, Apple Cash, PayPal,
+              or Venmo — pickup at class. Shirts and jackets are special
+              order, so allow up to four weeks.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link
-                href="/#contact"
-                className="inline-flex items-center gap-3 rounded-full bg-foreground px-7 py-4 text-base font-medium text-background hover:-translate-y-0.5 transition-transform"
+                href="/store/order"
+                className="inline-flex items-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors"
               >
-                Email us →
+                Place an order →
+              </Link>
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-3 rounded-full border border-foreground/20 px-7 py-4 text-base font-medium hover:bg-foreground/5 transition-colors"
+              >
+                Questions? Contact us
               </Link>
             </div>
           </div>

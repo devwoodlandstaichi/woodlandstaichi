@@ -43,6 +43,16 @@ export default function RootLayout({
       className={`${fraunces.variable} ${dmSans.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        {/* Apply the saved font-scale before paint so each navigation
+            doesn't briefly show the SSR default size. Runs synchronously
+            in <head>; the <html> element already exists. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var v=localStorage.getItem('wtc:font-scale');var n=v?Number(v):NaN;if([14,16,18].indexOf(n)>-1){document.documentElement.style.setProperty('--font-scale',String(n));}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         <a href="#main" className="skip-link">
           Skip to content

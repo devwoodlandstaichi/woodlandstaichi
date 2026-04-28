@@ -3,11 +3,30 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
-export const metadata: Metadata = {
-  title: "Thank you — registration received",
-};
+type SearchParams = Promise<{ id?: string; mode?: string }>;
 
-export default function ThanksPage() {
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  return {
+    title:
+      params.mode === "returning"
+        ? "Thank you — re-registration received"
+        : "Thank you — registration received",
+  };
+}
+
+export default async function ThanksPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const params = await searchParams;
+  const isReturning = params.mode === "returning";
+
   return (
     <>
       <SiteHeader />
@@ -19,20 +38,40 @@ export default function ThanksPage() {
           </p>
           <h1 className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight">
             Thank you.
-            <span className="block italic text-vermillion">We&apos;ve got you.</span>
+            <span className="block italic text-vermillion">
+              {isReturning ? "Welcome back." : "We've got you."}
+            </span>
           </h1>
           <div className="mt-8 space-y-5 text-lg text-foreground/85 leading-relaxed">
-            <p>
-              Your registration has been recorded. We&apos;ll send a follow-up
-              email shortly with shirt payment instructions and a confirmation
-              of your cohort and session.
-            </p>
-            <p>
-              You aren&apos;t fully enrolled until payment is received — once
-              the shirt fee lands, your spot moves from waitlist to active.
-            </p>
+            {isReturning ? (
+              <>
+                <p>
+                  Your re-registration has been recorded. We&apos;ll confirm
+                  your spot by email and let you know if anything else is
+                  needed before your first class.
+                </p>
+                <p>
+                  See you in the dojo — bring water and arrive a few minutes
+                  early.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>
+                  Your registration has been recorded. We&apos;ll send a
+                  follow-up email shortly with shirt payment instructions and
+                  a confirmation of your cohort and session.
+                </p>
+                <p>
+                  You aren&apos;t fully enrolled until payment is received —
+                  once the shirt fee lands, your spot moves from waitlist to
+                  active.
+                </p>
+              </>
+            )}
             <p className="text-base text-foreground/65 italic">
-              If you don&apos;t hear back within a couple of days, please email{" "}
+              If you don&apos;t hear back within a couple of days, please
+              email{" "}
               <a
                 href="mailto:info@woodlandstaichi.com"
                 className="text-vermillion hover:underline"

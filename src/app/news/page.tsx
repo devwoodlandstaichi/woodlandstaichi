@@ -15,6 +15,7 @@ type Post = {
   title: string;
   body: string;
   posted_at: string;
+  cover_image_url: string | null;
 };
 
 function formatDate(d: string) {
@@ -77,7 +78,7 @@ export default async function NewsPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("news_posts")
-    .select("id,title,body,posted_at")
+    .select("id,title,body,posted_at,cover_image_url")
     .eq("published", true)
     .order("posted_at", { ascending: false });
   const posts: Post[] = data ?? [];
@@ -107,6 +108,17 @@ export default async function NewsPage() {
                   className={`${i > 0 ? "border-t border-foreground/10 pt-8" : ""}`}
                 >
                   <article>
+                    {post.cover_image_url && (
+                      <div className="mb-6 overflow-hidden rounded-lg border border-foreground/10">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL, no Image domain config needed */}
+                        <img
+                          src={post.cover_image_url}
+                          alt=""
+                          className="aspect-[16/9] w-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
                     <p className="text-xs uppercase tracking-[0.3em] text-foreground/55">
                       {formatDate(post.posted_at)}
                     </p>

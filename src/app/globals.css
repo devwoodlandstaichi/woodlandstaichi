@@ -55,8 +55,8 @@
   --input: var(--ink-200);
   --ring: var(--vermillion-500);
 
-  /* User-controllable font scale (1 / 1.125 / 1.25) */
-  --font-scale: 1;
+  /* User-controllable base font-size in px (14 / 16 / 18) */
+  --font-scale: 16;
 }
 
 .dark {
@@ -126,7 +126,7 @@
 
 /* Base typography — accessible defaults for an older audience */
 html {
-  font-size: calc(18px * var(--font-scale));
+  font-size: calc(1px * var(--font-scale));
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
 }

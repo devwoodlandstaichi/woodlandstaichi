@@ -3,22 +3,26 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
 
+// Values are absolute base font-size in pixels. Plugs into globals.css
+// via `font-size: calc(1px * var(--font-scale))`.
 const STEPS = [
-  { label: "A", value: 1, name: "Default text size" },
-  { label: "A+", value: 1.125, name: "Larger text" },
-  { label: "A++", value: 1.25, name: "Largest text" },
+  { label: "A", value: 14, name: "Smaller text" },
+  { label: "A+", value: 16, name: "Default text" },
+  { label: "A++", value: 18, name: "Larger text" },
 ] as const;
 
 const STORAGE_KEY = "wtc:font-scale";
 const CHANGE_EVENT = "wtc:scale-change";
 
+const DEFAULT_VALUE = 16;
+
 function readScale(): number {
-  if (typeof window === "undefined") return 1;
+  if (typeof window === "undefined") return DEFAULT_VALUE;
   const stored = window.localStorage.getItem(STORAGE_KEY);
   const parsed = stored ? Number(stored) : NaN;
   return !Number.isNaN(parsed) && STEPS.some((s) => s.value === parsed)
     ? parsed
-    : 1;
+    : DEFAULT_VALUE;
 }
 
 function subscribe(cb: () => void) {
@@ -37,7 +41,7 @@ export function FontScaler() {
   const scale = useSyncExternalStore(
     subscribe,
     readScale,
-    () => 1, // server snapshot
+    () => DEFAULT_VALUE, // server snapshot
   );
 
   // Sync CSS variable to <html> whenever scale changes

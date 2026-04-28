@@ -16,6 +16,7 @@ export default async function LoginPage({
 }) {
   const { next, error } = await searchParams;
   const nextPath = typeof next === "string" ? next : "/admin";
+  const isMember = nextPath.startsWith("/members");
 
   return (
     <main
@@ -30,11 +31,12 @@ export default async function LoginPage({
       </Link>
 
       <h1 className="font-display text-3xl font-medium tracking-tight">
-        Staff sign-in
+        {isMember ? "Member sign-in" : "Sign in"}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        For instructors and admins only. If you&rsquo;re a member, you
-        don&rsquo;t need an account yet.
+        {isMember
+          ? "Sign in to view your profile, write your bio, and manage your details."
+          : "Members, instructors, and admins all sign in here."}
       </p>
 
       {error === "unauthorized" && (

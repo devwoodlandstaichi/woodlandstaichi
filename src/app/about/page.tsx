@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
 import { TestimonialsSection } from "@/components/testimonials-section";
+import { ContactSection } from "@/components/contact-section";
 
 export const metadata: Metadata = {
   title: "About — Meditation in motion",
@@ -256,35 +257,7 @@ export default function AboutPage() {
 
         <TestimonialsSection />
 
-        {/* Closing CTA */}
-        <section className="mx-auto max-w-7xl px-6 pb-14 md:px-10 md:pb-20">
-          <div className="rounded-2xl border border-foreground/10 bg-gradient-to-br from-card to-secondary p-8 md:p-10 text-center">
-            <h2 className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight max-w-2xl mx-auto">
-              Show up.
-              <span className="italic text-vermillion"> Breathe. </span>
-              Begin.
-            </h2>
-            <p className="mt-6 text-lg text-foreground/75 max-w-xl mx-auto">
-              No prior fitness required. No prerequisites. The next beginner
-              cohorts open in <strong>June 2026</strong> and{" "}
-              <strong>October 2026</strong>.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <Link
-                href="/classes/register"
-                className="inline-flex items-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors"
-              >
-                Register for a beginner cohort →
-              </Link>
-              <Link
-                href="/classes"
-                className="inline-flex items-center gap-3 rounded-full border border-foreground/20 px-7 py-4 text-base font-medium hover:bg-foreground/5 transition-colors"
-              >
-                See the schedule
-              </Link>
-            </div>
-          </div>
-        </section>
+        <ContactSection />
       </main>
       <SiteFooter />
     </>

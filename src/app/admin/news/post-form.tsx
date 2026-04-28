@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
+import { Image as ImageIcon, Trash2, Upload } from "lucide-react";
 import {
   Button,
   Field,
@@ -16,6 +17,7 @@ export type NewsDefaults = {
   posted_at?: string;
   display_order?: number;
   published?: boolean;
+  cover_image_url?: string | null;
 };
 
 export function NewsForm({
@@ -57,8 +59,121 @@ export function NewsForm({
 
   const formKey = state && state.ok === false ? "errored" : "fresh";
 
+  // Cover-image preview state. We track:
+  //   - localPreview: data URL of the just-picked file (replaces existing).
+  //   - markedRemoved: when toggled, the existing image is hidden and the
+  //     hidden remove_cover_image=1 flag is sent to the server.
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [markedRemoved, setMarkedRemoved] = useState(false);
+
+  const showExisting =
+    !!defaults.cover_image_url && !localPreview && !markedRemoved;
+  const showLocalPreview = !!localPreview && !markedRemoved;
+
+  function onPickFile(file: File | null) {
+    if (!file) {
+      setLocalPreview(null);
+      return;
+    }
+    setMarkedRemoved(false);
+    const reader = new FileReader();
+    reader.onload = () => setLocalPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  function clearPick() {
+    setLocalPreview(null);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
   return (
-    <form key={formKey} action={formAction} className="grid gap-5" noValidate>
+    <form
+      key={formKey}
+      action={formAction}
+      encType="multipart/form-data"
+      className="grid gap-5"
+      noValidate
+    >
+      {/* Cover image */}
+      <div className="flex flex-col gap-3">
+        <span className="text-sm font-medium tracking-wide text-foreground/85">
+          Cover image
+        </span>
+
+        <div className="flex items-start gap-4">
+          <div className="relative flex h-28 w-44 shrink-0 items-center justify-center overflow-hidden rounded-md border border-dashed border-foreground/20 bg-secondary/40 text-muted-foreground">
+            {showLocalPreview ? (
+              // eslint-disable-next-line @next/next/no-img-element -- data URL preview
+              <img
+                src={localPreview!}
+                alt="Selected cover preview"
+                className="h-full w-full object-cover"
+              />
+            ) : showExisting ? (
+              // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL
+              <img
+                src={defaults.cover_image_url!}
+                alt="Current cover"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-1 text-xs">
+                <ImageIcon size={20} aria-hidden />
+                No image
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-1 flex-col gap-2">
+            <label className="inline-flex h-10 w-fit cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 text-sm hover:bg-accent/10 hover:border-accent">
+              <Upload size={14} aria-hidden />
+              {showLocalPreview || showExisting ? "Replace" : "Upload"}
+              <input
+                ref={fileRef}
+                type="file"
+                name="cover_image"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
+                className="sr-only"
+              />
+            </label>
+
+            {showLocalPreview && (
+              <button
+                type="button"
+                onClick={clearPick}
+                className="inline-flex h-9 w-fit items-center gap-1 rounded-md px-2 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Cancel pick
+              </button>
+            )}
+
+            {/* If there's an existing image and the user hasn't picked a new
+                one, offer an explicit "remove" toggle. We send the literal
+                "1" string in form data so the server can detect intent. */}
+            {defaults.cover_image_url && !localPreview && (
+              <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={markedRemoved}
+                  onChange={(e) => setMarkedRemoved(e.target.checked)}
+                  className="h-4 w-4 rounded border border-input"
+                />
+                <Trash2 size={12} aria-hidden /> Remove current image
+              </label>
+            )}
+            {markedRemoved && (
+              <input type="hidden" name="remove_cover_image" value="1" />
+            )}
+
+            <p className="text-xs text-muted-foreground">
+              JPEG, PNG, WebP, or GIF · up to 5 MB.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <Field label="Title" htmlFor="title" error={errors.title}>
         <Input
           id="title"

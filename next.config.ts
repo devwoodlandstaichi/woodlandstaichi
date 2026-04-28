@@ -17,8 +17,12 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https:",
-      "media-src 'self' blob:",
+      // Local Supabase Storage serves over http://127.0.0.1:54321 — without
+      // an explicit allow-listed entry the CSP `img-src https:` clause
+      // blocks it. Production URLs are https://*.supabase.co so they match
+      // the https: keyword.
+      "img-src 'self' data: blob: https: http://127.0.0.1:54321",
+      "media-src 'self' blob: http://127.0.0.1:54321 https://*.supabase.co",
       "font-src 'self' data:",
       "connect-src 'self' http://127.0.0.1:54321 https://*.supabase.co wss://*.supabase.co",
       "frame-ancestors 'self'",
@@ -52,6 +56,12 @@ const nextConfig: NextConfig = {
       // Cloud Supabase Storage (any project ref under supabase.co)
       { protocol: "https", hostname: "*.supabase.co" },
     ],
+    // Next 16 added an SSRF guard that refuses to proxy any image whose
+    // host resolves to a private/loopback IP. Local Supabase Storage runs
+    // on 127.0.0.1, which trips this. Production Supabase URLs resolve to
+    // public IPs so this flag is a dev-only concession.
+    // Ref: node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md
+    dangerouslyAllowLocalIP: process.env.NODE_ENV !== "production",
   },
 };
 

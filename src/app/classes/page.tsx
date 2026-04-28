@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
 import { ScheduleSection } from "@/components/schedule-section";
+import { ContactSection } from "@/components/contact-section";
 import {
   CLASS_LEVELS,
   HOLIDAY_CLOSURES,
@@ -231,8 +232,28 @@ export default function ClassesPage() {
               Register for a beginner cohort
               <span aria-hidden>→</span>
             </Link>
-            <p className="text-sm text-foreground/55">
-              Free to join. Only the shirt fee is required at enrollment.
+            <Link
+              href="/classes/beginners"
+              className="inline-flex items-center gap-3 rounded-full border border-foreground/20 px-7 py-4 text-base font-medium hover:bg-foreground/5 transition-colors"
+            >
+              Read the beginner&apos;s guide
+            </Link>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-foreground/10 bg-secondary/40 p-6">
+            <p className="text-xs uppercase tracking-[0.25em] text-foreground/55 mb-2">
+              Returning to WTC?
+            </p>
+            <p className="text-base text-foreground/80 leading-relaxed">
+              If you&apos;ve practiced with us before, you don&apos;t need to
+              start a new beginner registration. Use the{" "}
+              <Link
+                href="/classes/register?mode=returning"
+                className="underline decoration-vermillion underline-offset-4 hover:text-vermillion transition-colors font-medium"
+              >
+                returning-player re-registration
+              </Link>{" "}
+              instead — it&apos;s a shorter form that keeps your record on file.
             </p>
           </div>
         </section>
@@ -320,32 +341,7 @@ export default function ClassesPage() {
           </div>
         </section>
 
-        {/* CTA */}
-        <section className="mx-auto max-w-7xl px-6 pb-14 md:px-10 md:pb-20">
-          <div className="rounded-2xl border border-foreground/10 bg-gradient-to-br from-card to-secondary p-8 md:p-10 text-center">
-            <h2 className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight max-w-2xl mx-auto">
-              Questions before
-              <span className="italic text-vermillion"> you begin?</span>
-            </h2>
-            <p className="mt-6 text-lg text-foreground/75 max-w-xl mx-auto">
-              Email or text us — happy to answer anything before you commit.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <Link
-                href="/#contact"
-                className="inline-flex items-center gap-3 rounded-full bg-foreground px-7 py-4 text-base font-medium text-background hover:-translate-y-0.5 transition-transform"
-              >
-                Reach out →
-              </Link>
-              <Link
-                href="/about"
-                className="inline-flex items-center gap-3 rounded-full border border-foreground/20 px-7 py-4 text-base font-medium hover:bg-foreground/5 transition-colors"
-              >
-                About the practice
-              </Link>
-            </div>
-          </div>
-        </section>
+        <ContactSection />
       </main>
       <SiteFooter />
     </>

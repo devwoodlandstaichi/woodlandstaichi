@@ -21,13 +21,14 @@ const NAV: NavItem[] = [
       { href: "/about", label: "Our community" },
       { href: "/about/why", label: "Why Tai Chi" },
       { href: "/about/instructors", label: "Instructors" },
+      { href: "/gallery", label: "Gallery" },
+      { href: "/world-tai-chi-day", label: "World Tai Chi Day" },
     ],
   },
   { href: "/classes", label: "Classes" },
-  { href: "/world-tai-chi-day", label: "WTCD" },
-  { href: "/gallery", label: "Gallery" },
   { href: "/store", label: "Store" },
   { href: "/news", label: "News" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export function SiteHeader() {

@@ -158,7 +158,7 @@ function InstructorCard({ instructor: r }: { instructor: Row }) {
       }`}
     >
       {/* Banner — gradient by tier */}
-      <div className={`relative h-24 ${TIER_BANNER[r.tier]}`}>
+      <div className={`relative h-14 ${TIER_BANNER[r.tier]}`}>
         {/* Display order pill, top-right */}
         <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/85 px-2.5 py-1 text-[11px] font-mono tabular-nums text-muted-foreground backdrop-blur">
           <Hash size={10} aria-hidden />

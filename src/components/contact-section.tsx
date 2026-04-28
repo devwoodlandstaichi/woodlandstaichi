@@ -1,11 +1,16 @@
+import Link from "next/link";
 import { Mail, MessageSquare } from "lucide-react";
 
-export function ContactSection() {
+export function ContactSection({
+  className = "",
+}: {
+  className?: string;
+} = {}) {
   return (
     <section
       id="contact"
       aria-labelledby="contact-title"
-      className="relative mx-auto max-w-7xl px-6 pb-14 md:px-10 md:pb-20"
+      className={`relative mx-auto max-w-7xl px-6 pb-14 md:px-10 md:pb-20 ${className}`}
     >
       <div className="relative overflow-hidden rounded-2xl border border-foreground/10 bg-gradient-to-br from-card to-secondary p-8 md:p-12">
         {/* CJK watermark — Welcome (歡). Sized down vs PageHeader
@@ -32,16 +37,22 @@ export function ContactSection() {
             </h2>
             <p className="mt-8 max-w-xl text-lg text-foreground/75 leading-relaxed">
               The next beginner cohorts open in <strong>June 2026</strong> and{" "}
-              <strong>October 2026</strong>. Register online — or send a note
+              <strong>October 2026</strong>. Register online — or{" "}
+              <Link
+                href="/contact"
+                className="underline decoration-vermillion underline-offset-4 hover:text-vermillion transition-colors"
+              >
+                send us a note
+              </Link>{" "}
               and we&apos;ll save you a spot.
             </p>
-            <a
+            <Link
               href="/classes/register"
               className="mt-6 inline-flex items-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors"
             >
               Register for a beginner cohort
               <span aria-hidden>→</span>
-            </a>
+            </Link>
           </div>
 
           <div className="col-span-12 md:col-span-5 flex flex-col gap-4">
@@ -60,7 +71,10 @@ export function ContactSection() {
                   info@woodlandstaichi.com
                 </span>
               </span>
-              <span aria-hidden className="text-foreground/40 group-hover:translate-x-1 transition-transform">
+              <span
+                aria-hidden
+                className="text-foreground/40 group-hover:translate-x-1 transition-transform"
+              >
                 →
               </span>
             </a>
@@ -78,15 +92,13 @@ export function ContactSection() {
                 </span>
                 <span className="block font-medium">(832) 381-6078</span>
               </span>
-              <span aria-hidden className="text-foreground/40 group-hover:translate-x-1 transition-transform">
+              <span
+                aria-hidden
+                className="text-foreground/40 group-hover:translate-x-1 transition-transform"
+              >
                 →
               </span>
             </a>
-
-            <p className="text-xs text-foreground/55 px-1 leading-relaxed">
-              A registration form is coming soon. For now, email or text is the
-              fastest way to reach us.
-            </p>
           </div>
         </div>
       </div>

@@ -16,7 +16,9 @@ export default async function EditPostPage({
   const supabase = await createClient();
   const { data } = await supabase
     .from("news_posts")
-    .select("title,slug,body,posted_at,display_order,published")
+    .select(
+      "title,slug,body,posted_at,display_order,published,cover_image_url",
+    )
     .eq("id", id)
     .maybeSingle();
   if (!data) notFound();

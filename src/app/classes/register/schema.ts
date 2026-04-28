@@ -99,3 +99,46 @@ export const registrationSchema = z.object({
 });
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;
+
+// Returning-player re-registration: a near-strict subset of the new-member
+// form. Beginner-only commitments (shirt, payment, "how you found us",
+// expectations, cohort) are dropped; address fields are optional; a new
+// "change in status" textarea collects any updates since last enrollment.
+export const returningRegistrationSchema = z.object({
+  // Identity
+  first_name: requiredString("First name", 100),
+  last_name: requiredString("Last name", 100),
+  email: requiredString("Email")
+    .email({ message: "Please enter a valid email address." }),
+  phone: requiredString("Phone")
+    .regex(/^[\d\s().+-]{7,}$/, { message: "Please enter a valid phone number." }),
+
+  // Address — optional, change-of-address only.
+  street: optionalString(200),
+  city: optionalString(100),
+  state: optionalString(50),
+  postal_code: optionalString(20),
+
+  // The chosen class (any active non-beginner class).
+  class_id: z.uuid({ message: "Please pick a class." }),
+
+  // What's changed since last registration.
+  status_changes: optionalString(2000),
+
+  // Emergency contact
+  emergency_name: requiredString("Emergency contact name", 200),
+  emergency_relationship: requiredString("Relationship", 100),
+  emergency_phone: requiredString("Emergency phone")
+    .regex(/^[\d\s().+-]{7,}$/, { message: "Please enter a valid phone number." }),
+
+  // Waiver
+  waiver_accepted: z
+    .union([z.literal("on"), z.literal("true"), z.literal("1")])
+    .transform(() => true)
+    .pipe(z.literal(true)),
+  waiver_signature: requiredString("Signature", 200),
+});
+
+export type ReturningRegistrationInput = z.infer<
+  typeof returningRegistrationSchema
+>;

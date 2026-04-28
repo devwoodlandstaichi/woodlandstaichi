@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
+import { ContactSection } from "@/components/contact-section";
 
 export const metadata: Metadata = {
   title: "Why Tai Chi — what the form does",
@@ -154,33 +154,9 @@ export default function WhyTaiChiPage() {
             — Based on the teaching and writings of Master George Ling Hu.
           </p>
 
-          {/* CTA */}
-          <div className="mt-4 rounded-2xl border border-foreground/10 bg-gradient-to-br from-card to-secondary p-8 md:p-10 text-center">
-            <h2 className="font-display text-3xl md:text-4xl leading-[1.1] tracking-tight max-w-2xl mx-auto">
-              Show up.
-              <span className="italic text-vermillion"> Breathe. </span>
-              Begin.
-            </h2>
-            <p className="mt-5 text-base text-foreground/75 max-w-xl mx-auto">
-              The next beginner cohorts open in <strong>June 2026</strong> and{" "}
-              <strong>October 2026</strong>.
-            </p>
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-4">
-              <Link
-                href="/classes/register"
-                className="inline-flex items-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors"
-              >
-                Register for a beginner cohort →
-              </Link>
-              <Link
-                href="/about"
-                className="inline-flex items-center gap-3 rounded-full border border-foreground/20 px-7 py-4 text-base font-medium hover:bg-foreground/5 transition-colors"
-              >
-                Back to About
-              </Link>
-            </div>
-          </div>
         </section>
+
+        <ContactSection />
       </main>
       <SiteFooter />
     </>

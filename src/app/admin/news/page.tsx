@@ -8,6 +8,7 @@ import {
   publishPost,
   unpublishPost,
 } from "./actions";
+import { NewsFilters } from "./filters";
 
 export const metadata = { title: "News" };
 export const dynamic = "force-dynamic";
@@ -19,17 +20,50 @@ type Row = {
   posted_at: string;
   published: boolean;
   display_order: number;
+  cover_image_url: string | null;
 };
 
-export default async function NewsAdminPage() {
+type Status = "all" | "published" | "draft";
+type SearchParams = Promise<{ q?: string; status?: string }>;
+
+function asStatus(v: string | undefined): Status {
+  return v === "published" || v === "draft" ? v : "all";
+}
+
+export default async function NewsAdminPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const params = await searchParams;
+  const q = (params.q ?? "").trim();
+  const status = asStatus(params.status);
+
   const supabase = await createClient();
-  const { data } = await supabase
+  let query = supabase
     .from("news_posts")
-    .select("id,title,slug,posted_at,published,display_order")
+    .select(
+      "id,title,slug,posted_at,published,display_order,cover_image_url",
+    )
     .order("posted_at", { ascending: false })
     .order("display_order", { ascending: true });
 
+  if (status === "published") query = query.eq("published", true);
+  else if (status === "draft") query = query.eq("published", false);
+
+  if (q) {
+    // PostgREST ilike inside .or() uses `*` as the wildcard. Strip chars
+    // that would break the `or=(...)` group syntax.
+    const safe = q.replace(/[,()*]/g, " ");
+    query = query.or(
+      [`title.ilike.*${safe}*`, `slug.ilike.*${safe}*`].join(","),
+    );
+  }
+
+  const { data } = await query;
   const rows = (data ?? []) as Row[];
+
+  const filtered = !!q || status !== "all";
 
   return (
     <>
@@ -46,9 +80,11 @@ export default async function NewsAdminPage() {
         }
       />
 
+      <NewsFilters q={q} status={status} />
+
       {rows.length === 0 ? (
         <Card className="p-8 text-center text-muted-foreground">
-          No posts yet.
+          {filtered ? "No posts match these filters." : "No posts yet."}
         </Card>
       ) : (
         <Card className="overflow-x-auto">
@@ -68,12 +104,27 @@ export default async function NewsAdminPage() {
                   className="border-b border-foreground/5 last:border-0"
                 >
                   <td className="px-4 py-4">
-                    <p className="font-medium">{p.title}</p>
-                    {p.slug && (
-                      <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                        {p.slug}
-                      </p>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-16 shrink-0 overflow-hidden rounded border border-foreground/10 bg-secondary/40">
+                        {p.cover_image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- Supabase Storage URL
+                          <img
+                            src={p.cover_image_url}
+                            alt=""
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium">{p.title}</p>
+                        {p.slug && (
+                          <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
+                            {p.slug}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-4 text-muted-foreground">
                     {formatDate(p.posted_at)}

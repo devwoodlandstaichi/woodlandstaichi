@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
 const FOOTER_LINKS = [
   { href: "/about", label: "About" },
@@ -11,7 +12,13 @@ const FOOTER_LINKS = [
   { href: "/links", label: "Links" },
 ];
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const signedIn = !!user;
+
   return (
     <footer className="mt-20 border-t border-foreground/10 bg-ink-950 text-ink-100">
       <div className="mx-auto max-w-7xl px-6 py-16 md:px-10">
@@ -85,6 +92,14 @@ export function SiteFooter() {
                   className="hover:text-vermillion-300 transition-colors"
                 >
                   Facebook group →
+                </Link>
+              </li>
+              <li className="pt-2 border-t border-ink-800">
+                <Link
+                  href={signedIn ? "/members/me" : "/login?next=/members/me"}
+                  className="hover:text-vermillion-300 transition-colors"
+                >
+                  {signedIn ? "My profile →" : "Member sign-in →"}
                 </Link>
               </li>
             </ul>
