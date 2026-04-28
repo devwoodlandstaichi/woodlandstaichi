@@ -52,13 +52,11 @@ export default async function AttendanceLanding() {
         description="Pick a session to start scanning."
       />
 
-      <div className="mt-4">
-        <SessionList
-          title="Today"
-          rows={today}
-          emptyHint="No sessions today."
-        />
-      </div>
+      <SessionList
+        title="Today"
+        rows={today}
+        emptyHint="No sessions today."
+      />
 
       <div className="mt-8">
         <SessionList
