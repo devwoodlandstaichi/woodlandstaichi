@@ -1,15 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import {
-  Badge,
-  Card,
-  PageHeader,
-} from "@/components/admin/ui";
-import {
-  formatDate,
-  formatTimeRange,
-  levelLabel,
-} from "@/lib/format";
+import { Badge, Card, PageHeader } from "@/components/admin/ui";
+import { formatDate, formatTimeRange, levelLabel } from "@/lib/format";
 import { GenerateTermForm } from "./generate-term-form";
+import { BulkDeleteForm } from "./bulk-delete-form";
+import { DeleteSessionButton } from "./delete-session-button";
+import { getSessionUser } from "@/lib/auth/dal";
 
 export const metadata = { title: "Sessions" };
 export const dynamic = "force-dynamic";
@@ -24,9 +19,11 @@ type SessionRow = {
     level: string;
     location: string;
   } | null;
+  attendance: { count: number }[] | null;
 };
 
 export default async function SessionsPage() {
+  const me = await getSessionUser();
   const supabase = await createClient();
   const todayIso = new Date().toISOString().slice(0, 10);
 
@@ -34,16 +31,16 @@ export default async function SessionsPage() {
     supabase
       .from("class_sessions")
       .select(
-        "id,session_date,start_time,end_time,classes(name,level,location)",
+        "id,session_date,start_time,end_time,classes(name,level,location),attendance(count)",
       )
       .gte("session_date", todayIso)
       .order("session_date", { ascending: true })
       .order("start_time", { ascending: true })
-      .limit(50),
+      .limit(100),
     supabase
       .from("class_sessions")
       .select(
-        "id,session_date,start_time,end_time,classes(name,level,location)",
+        "id,session_date,start_time,end_time,classes(name,level,location),attendance(count)",
       )
       .lt("session_date", todayIso)
       .order("session_date", { ascending: false })
@@ -58,7 +55,7 @@ export default async function SessionsPage() {
     <>
       <PageHeader
         title="Sessions"
-        description="Specific class occurrences on a date. Phase 3 attendance writes against these rows."
+        description="Specific class occurrences on a date. Attendance writes against these rows."
       />
 
       <div className="grid gap-6">
@@ -78,6 +75,8 @@ export default async function SessionsPage() {
             muted
           />
         )}
+
+        {me?.role === "admin" && <BulkDeleteForm />}
       </div>
     </>
   );
@@ -117,31 +116,49 @@ function SessionTable({
                 <th className="px-5 py-3 font-medium">Time</th>
                 <th className="px-5 py-3 font-medium">Where</th>
                 <th className="px-5 py-3 font-medium">Level</th>
+                <th className="px-5 py-3 font-medium">Scans</th>
+                <th className="px-5 py-3" />
               </tr>
             </thead>
             <tbody>
-              {rows.map((s) => (
-                <tr
-                  key={s.id}
-                  className="border-b border-foreground/5 last:border-0"
-                >
-                  <td className="px-5 py-3 font-medium">
-                    {formatDate(s.session_date)}
-                  </td>
-                  <td className="px-5 py-3">{s.classes?.name ?? "—"}</td>
-                  <td className="px-5 py-3 text-muted-foreground">
-                    {formatTimeRange(s.start_time, s.end_time)}
-                  </td>
-                  <td className="px-5 py-3 text-muted-foreground">
-                    {s.classes?.location ?? "—"}
-                  </td>
-                  <td className="px-5 py-3">
-                    {s.classes?.level && (
-                      <Badge tone="cobalt">{levelLabel(s.classes.level)}</Badge>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {rows.map((s) => {
+                const scans = s.attendance?.[0]?.count ?? 0;
+                const className = `${s.classes?.name ?? "—"} · ${formatDate(
+                  s.session_date,
+                )} · ${formatTimeRange(s.start_time, s.end_time)}`;
+                return (
+                  <tr
+                    key={s.id}
+                    className="border-b border-foreground/5 last:border-0"
+                  >
+                    <td className="px-5 py-3 font-medium">
+                      {formatDate(s.session_date)}
+                    </td>
+                    <td className="px-5 py-3">{s.classes?.name ?? "—"}</td>
+                    <td className="px-5 py-3 text-muted-foreground">
+                      {formatTimeRange(s.start_time, s.end_time)}
+                    </td>
+                    <td className="px-5 py-3 text-muted-foreground">
+                      {s.classes?.location ?? "—"}
+                    </td>
+                    <td className="px-5 py-3">
+                      {s.classes?.level && (
+                        <Badge tone="cobalt">{levelLabel(s.classes.level)}</Badge>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 font-mono text-sm tabular-nums text-muted-foreground">
+                      {scans}
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <DeleteSessionButton
+                        sessionId={s.id}
+                        className={className}
+                        attendanceCount={scans}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

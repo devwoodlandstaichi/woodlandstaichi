@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { requireStaff } from "@/lib/auth/dal";
+import { requireAdmin, requireStaff } from "@/lib/auth/dal";
 import { type DayOfWeek } from "@/lib/format";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -118,5 +118,104 @@ export async function generateTerm(
     ok: true,
     inserted: count ?? 0,
     spanned: dates.length,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Delete actions
+// ---------------------------------------------------------------------------
+
+export type DeleteResult =
+  | { ok: true; deleted: number; attendanceWiped: number }
+  | { ok: false; message: string };
+
+/** Delete a single session by id. Cascades any attendance rows on it
+ * via the FK declared in the initial schema. */
+export async function deleteSession(sessionId: string): Promise<DeleteResult> {
+  await requireStaff();
+  if (!sessionId) return { ok: false, message: "Missing session id." };
+
+  const supabase = await createClient();
+
+  const { count: attendanceCount } = await supabase
+    .from("attendance")
+    .select("*", { count: "exact", head: true })
+    .eq("class_session_id", sessionId);
+
+  const { error } = await supabase
+    .from("class_sessions")
+    .delete()
+    .eq("id", sessionId);
+
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath("/admin/sessions");
+  revalidatePath("/admin/attendance");
+  return {
+    ok: true,
+    deleted: 1,
+    attendanceWiped: attendanceCount ?? 0,
+  };
+}
+
+/** Bulk delete sessions inside an inclusive date range. Admin-only —
+ * destructive enough that we don't want instructors firing it. */
+export async function deleteSessionsInRange(
+  startDate: string,
+  endDate: string,
+  options: { onlyEmpty?: boolean } = {},
+): Promise<DeleteResult> {
+  await requireAdmin();
+
+  if (!DATE_RE.test(startDate) || !DATE_RE.test(endDate)) {
+    return { ok: false, message: "Use YYYY-MM-DD for both dates." };
+  }
+  if (endDate < startDate) {
+    return { ok: false, message: "End date must be on or after start date." };
+  }
+
+  const supabase = await createClient();
+
+  // Find candidate session ids first so we can report counts and
+  // optionally skip ones with attendance.
+  const { data: candidates, error: candErr } = await supabase
+    .from("class_sessions")
+    .select("id, attendance(count)")
+    .gte("session_date", startDate)
+    .lte("session_date", endDate);
+
+  if (candErr) return { ok: false, message: candErr.message };
+
+  type Cand = { id: string; attendance: { count: number }[] | null };
+  const all = (candidates ?? []) as Cand[];
+
+  const deletable = options.onlyEmpty
+    ? all.filter((c) => (c.attendance?.[0]?.count ?? 0) === 0)
+    : all;
+
+  if (deletable.length === 0) {
+    return { ok: true, deleted: 0, attendanceWiped: 0 };
+  }
+
+  const ids = deletable.map((c) => c.id);
+  const attendanceWiped = deletable.reduce(
+    (n, c) => n + (c.attendance?.[0]?.count ?? 0),
+    0,
+  );
+
+  const admin = createAdminClient();
+  const { error: delErr } = await admin
+    .from("class_sessions")
+    .delete()
+    .in("id", ids);
+
+  if (delErr) return { ok: false, message: delErr.message };
+
+  revalidatePath("/admin/sessions");
+  revalidatePath("/admin/attendance");
+  return {
+    ok: true,
+    deleted: ids.length,
+    attendanceWiped,
   };
 }
