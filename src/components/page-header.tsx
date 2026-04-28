@@ -16,14 +16,15 @@ export function PageHeader({
       aria-labelledby="page-header-title"
       className="relative overflow-hidden"
     >
-      {/* CJK glyph as a background element — sits inline with the
-          page-header's content band (vertically centred), bleeding
-          slightly off the right edge. Visible enough to read as a
-          deliberate accent, faint enough to stay 'background'. */}
+      {/* CJK glyph as a background element — bleeds off the right
+          edge, vertically centred with the content band. Sized so
+          part of the character extends past the viewport, treating
+          it as a watermark that the title can crop into. Content
+          sits at z-10 so the title remains readable when it overlaps. */}
       {glyph && (
         <span
           aria-hidden
-          className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 hidden md:block font-display leading-none select-none text-foreground/[0.12] text-[clamp(12rem,20vw,22rem)] tracking-tighter"
+          className="pointer-events-none absolute -right-16 top-1/2 -translate-y-1/2 hidden md:block font-display leading-none select-none text-foreground/[0.12] text-[clamp(18rem,30vw,33rem)] tracking-tighter"
         >
           {glyph}
         </span>
