@@ -37,7 +37,7 @@ export default async function AdminLayout({
             </p>
           </div>
 
-          <AdminNav />
+          <AdminNav role={user.role} />
 
           <form action={signOut} className="mt-8">
             <Button type="submit" variant="ghost" size="sm" className="w-full">
