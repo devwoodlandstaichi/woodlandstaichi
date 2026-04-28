@@ -239,6 +239,18 @@ export default function AboutPage() {
                 →
               </span>
             </Link>
+            <Link
+              href="/about/instructors"
+              className="group inline-flex items-center gap-2 rounded-full border border-foreground/20 px-5 py-3 text-sm font-medium hover:bg-foreground/5 transition-colors"
+            >
+              Meet the instructors
+              <span
+                aria-hidden
+                className="text-vermillion transition-transform group-hover:translate-x-1"
+              >
+                →
+              </span>
+            </Link>
           </div>
         </section>
 
