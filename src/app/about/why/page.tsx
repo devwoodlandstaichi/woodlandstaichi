@@ -126,12 +126,12 @@ export default function WhyTaiChiPage() {
           glyph="益"
         />
 
-        <section className="mx-auto max-w-5xl px-6 py-10 md:py-14">
+        <section className="mx-auto max-w-5xl px-6 py-3 md:py-5">
           {/* Opening — bookend treatment */}
           <Bookend label="Opening" movement={OPENING} index={1} />
 
           {/* The form proper, numbered 02–21 */}
-          <div className="mt-10">
+          <div className="mt-3">
             <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
               <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
               The form
@@ -146,16 +146,16 @@ export default function WhyTaiChiPage() {
           </div>
 
           {/* Closing — bookend treatment */}
-          <div className="mt-12">
+          <div className="mt-4">
             <Bookend label="Closing" movement={CLOSING} index={22} />
           </div>
 
-          <p className="mt-12 text-sm text-foreground/55 italic max-w-prose">
+          <p className="mt-4 text-sm text-foreground/55 italic max-w-prose">
             — Based on the teaching and writings of Master George Ling Hu.
           </p>
 
           {/* CTA */}
-          <div className="mt-12 rounded-2xl border border-foreground/10 bg-gradient-to-br from-card to-secondary p-8 md:p-10 text-center">
+          <div className="mt-4 rounded-2xl border border-foreground/10 bg-gradient-to-br from-card to-secondary p-8 md:p-10 text-center">
             <h2 className="font-display text-3xl md:text-4xl leading-[1.1] tracking-tight max-w-2xl mx-auto">
               Show up.
               <span className="italic text-vermillion"> Breathe. </span>
@@ -223,7 +223,7 @@ function Bookend({
   // which made OPENING / CLOSING feel like the same shape as a
   // regular form-movement card.
   return (
-    <article className="relative mx-auto max-w-2xl text-center py-10 md:py-14">
+    <article className="relative mx-auto max-w-2xl text-center py-3 md:py-5">
       <DecorativeRule />
       <p className="mt-7 text-[10px] uppercase tracking-[0.5em] text-foreground/50">
         <span className="font-mono text-vermillion mr-2 tabular-nums">
