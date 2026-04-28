@@ -91,15 +91,15 @@ export function AdminNav({ role }: { role?: "admin" | "instructor" | null } = {}
   const isAdmin = role === "admin";
 
   return (
-    <nav aria-label="Admin" className="flex flex-col gap-5">
+    <nav aria-label="Admin" className="flex flex-col gap-3">
       {NAV.map((group, gIdx) => {
         const visible = group.items.filter((i) => !i.adminOnly || isAdmin);
         if (visible.length === 0) return null;
 
         return (
-          <div key={group.label ?? `g-${gIdx}`} className="flex flex-col gap-1">
+          <div key={group.label ?? `g-${gIdx}`} className="flex flex-col gap-0.5">
             {group.label && (
-              <p className="px-3 mb-1 text-[10px] uppercase tracking-[0.22em] text-muted-foreground/80">
+              <p className="px-2.5 mb-0.5 text-[9px] uppercase tracking-[0.22em] text-muted-foreground/70">
                 {group.label}
               </p>
             )}
@@ -115,14 +115,13 @@ export function AdminNav({ role }: { role?: "admin" | "instructor" | null } = {}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex h-12 items-center gap-3 rounded-md px-3 text-sm tracking-wide transition-colors",
-                    "min-h-12", // 48px tap target
+                    "flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[13px] tracking-wide transition-colors",
                     active
                       ? "bg-foreground text-background"
                       : "text-foreground/75 hover:bg-foreground/5 hover:text-foreground",
                   )}
                 >
-                  <Icon size={18} aria-hidden />
+                  <Icon size={15} aria-hidden />
                   {item.label}
                 </Link>
               );
