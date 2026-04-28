@@ -17,29 +17,34 @@ export default async function AdminLayout({
   return (
     <ToastProvider>
       <div className="mx-auto flex min-h-svh w-full max-w-7xl flex-col gap-0 px-4 py-6 md:flex-row md:gap-10 md:px-6 md:py-10">
-        <aside className="md:sticky md:top-10 md:h-[calc(100svh-5rem)] md:w-64 md:shrink-0">
+        {/* Sidebar — sticky on desktop, scrollable when items overflow.
+            Inner flex-col makes the Sign-out button stick to the bottom
+            while the nav scrolls in the middle. */}
+        <aside className="md:sticky md:top-6 md:h-[calc(100svh-3rem)] md:w-56 md:shrink-0 md:flex md:flex-col">
           <Link
             href="/"
-            className="mb-6 inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
+            className="mb-4 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground"
           >
             ← Public site
           </Link>
 
-          <div className="mb-6">
-            <p className="font-display text-xl font-medium tracking-tight">
+          <div className="mb-4">
+            <p className="font-display text-lg font-medium tracking-tight leading-none">
               Admin
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1.5 text-[11px] text-muted-foreground truncate">
               {user.email}{" "}
-              <span className="ml-1 inline-block rounded-full border border-foreground/15 px-1.5 py-px text-[10px] uppercase tracking-wider">
+              <span className="ml-1 inline-block rounded-full border border-foreground/15 px-1.5 py-px text-[9px] uppercase tracking-wider">
                 {user.role}
               </span>
             </p>
           </div>
 
-          <AdminNav role={user.role} />
+          <div className="md:flex-1 md:min-h-0 md:overflow-y-auto md:-mr-2 md:pr-2">
+            <AdminNav role={user.role} />
+          </div>
 
-          <form action={signOut} className="mt-8">
+          <form action={signOut} className="mt-4 md:mt-3 md:pt-3 md:border-t md:border-foreground/8">
             <Button type="submit" variant="ghost" size="sm" className="w-full">
               Sign out
             </Button>
