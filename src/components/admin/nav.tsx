@@ -10,6 +10,7 @@ import {
   MessageSquareQuote,
   Newspaper,
   ScanLine,
+  Settings,
   ShieldCheck,
   Users,
 } from "lucide-react";
@@ -39,6 +40,7 @@ const BASE_ITEMS: NavItem[] = [
 
 const ADMIN_ONLY_ITEMS: NavItem[] = [
   { href: "/admin/users", label: "Users", icon: ShieldCheck },
+  { href: "/admin/settings/kiosk", label: "Kiosk PIN", icon: Settings },
 ];
 
 export function AdminNav({ role }: { role?: "admin" | "instructor" | null } = {}) {

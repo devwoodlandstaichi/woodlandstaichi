@@ -7,6 +7,7 @@ import { formatDate, formatTimeRange, levelLabel } from "@/lib/format";
 import { Scanner } from "@/app/admin/attendance/scan/[id]/scanner";
 import { ExitKiosk } from "./exit-kiosk";
 import { Clock } from "./clock";
+import { isKioskPinSet } from "@/lib/settings/kiosk-pin";
 
 export const metadata = {
   title: "Scan attendance",
@@ -57,6 +58,8 @@ export default async function KioskScanPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+
+  const pinRequired = await isKioskPinSet();
 
   const [sessionRes, attRes] = await Promise.all([
     supabase
@@ -147,7 +150,7 @@ export default async function KioskScanPage({
 
           <div className="flex items-start gap-6">
             <Clock />
-            <ExitKiosk />
+            <ExitKiosk pinRequired={pinRequired} />
           </div>
         </header>
 
