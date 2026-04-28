@@ -26,6 +26,16 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
   const [state, formAction, pending] = useActionState(submitRegistration, INITIAL);
   const errors = state.status === "error" ? state.fieldErrors ?? {} : {};
 
+  // React 19's form actions reset uncontrolled forms once the action
+  // returns, so we round-trip the user's typed values through state
+  // and replay them as defaultValue/defaultChecked.
+  const submitted = state.status === "error" ? state.values ?? {} : {};
+  const v = (key: string) => submitted[key] ?? "";
+  const checked = (key: string) => {
+    const val = submitted[key];
+    return val === "on" || val === "true" || val === "1";
+  };
+
   return (
     <form action={formAction} className="space-y-12" noValidate>
       {state.status === "error" && (
@@ -48,6 +58,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
             label="First name"
             required
             autoComplete="given-name"
+            defaultValue={v("first_name")}
             error={errors.first_name}
           />
           <Field
@@ -55,6 +66,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
             label="Last name"
             required
             autoComplete="family-name"
+            defaultValue={v("last_name")}
             error={errors.last_name}
           />
         </div>
@@ -63,6 +75,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           label="Nickname"
           hint="What you'd like us to call you in class."
           autoComplete="nickname"
+          defaultValue={v("nickname")}
           error={errors.nickname}
         />
         <div className="grid gap-5 sm:grid-cols-2">
@@ -73,6 +86,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
             required
             inputMode="email"
             autoComplete="email"
+            defaultValue={v("email")}
             error={errors.email}
           />
           <Field
@@ -83,6 +97,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
             inputMode="tel"
             autoComplete="tel"
             placeholder="(000) 000-0000"
+            defaultValue={v("phone")}
             error={errors.phone}
           />
         </div>
@@ -91,6 +106,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           label="Street address"
           required
           autoComplete="address-line1"
+          defaultValue={v("street")}
           error={errors.street}
         />
         <div className="grid gap-5 sm:grid-cols-3">
@@ -99,6 +115,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
             label="City"
             required
             autoComplete="address-level2"
+            defaultValue={v("city")}
             error={errors.city}
           />
           <Field
@@ -106,6 +123,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
             label="State"
             required
             autoComplete="address-level1"
+            defaultValue={v("state")}
             error={errors.state}
           />
           <Field
@@ -114,6 +132,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
             required
             inputMode="numeric"
             autoComplete="postal-code"
+            defaultValue={v("postal_code")}
             error={errors.postal_code}
           />
         </div>
@@ -124,6 +143,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           required
           hint="Your real birthday — kept private."
           autoComplete="bday"
+          defaultValue={v("birthday")}
           error={errors.birthday}
         />
       </FormSection>
@@ -138,6 +158,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           label="Beginner cohort"
           required
           options={COHORT_OPTIONS}
+          defaultValue={v("cohort")}
           error={errors.cohort}
         />
         <RadioGroup
@@ -145,6 +166,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           label="Preferred session"
           required
           options={sessions}
+          defaultValue={v("class_id")}
           error={errors.class_id}
         />
       </FormSection>
@@ -159,6 +181,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           label="Any physical limitations?"
           hint="Optional. Anything we should know — knee, back, balance, recent injuries, surgeries, etc."
           rows={3}
+          defaultValue={v("physical_limitations")}
           error={errors.physical_limitations}
         />
         <Textarea
@@ -166,6 +189,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           label="Any prior Tai Chi experience?"
           hint="Optional. Style, school, instructor, how long."
           rows={3}
+          defaultValue={v("prior_experience")}
           error={errors.prior_experience}
         />
       </FormSection>
@@ -181,6 +205,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           required
           options={SHIRT_OPTIONS}
           hint="See the size chart on the Store page."
+          defaultValue={v("shirt_size")}
           error={errors.shirt_size}
         />
         <RadioGroup
@@ -188,6 +213,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           label="Payment method"
           required
           options={PAYMENT_METHODS}
+          defaultValue={v("payment_method")}
           error={errors.payment_method}
         />
       </FormSection>
@@ -202,6 +228,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           label="How did you find Woodlands Tai Chi?"
           required
           rows={2}
+          defaultValue={v("found_us_via")}
           error={errors.found_us_via}
         />
         <Textarea
@@ -209,6 +236,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           label="What do you hope to gain from Tai Chi?"
           required
           rows={3}
+          defaultValue={v("expectations")}
           error={errors.expectations}
         />
         <div className="grid gap-5 sm:grid-cols-2">
@@ -217,6 +245,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
             label="Emergency contact name"
             required
             autoComplete="off"
+            defaultValue={v("emergency_name")}
             error={errors.emergency_name}
           />
           <Field
@@ -224,6 +253,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
             label="Relationship"
             required
             placeholder="Spouse, child, friend…"
+            defaultValue={v("emergency_relationship")}
             error={errors.emergency_relationship}
           />
         </div>
@@ -234,6 +264,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           required
           inputMode="tel"
           placeholder="(000) 000-0000"
+          defaultValue={v("emergency_phone")}
           error={errors.emergency_phone}
         />
       </FormSection>
@@ -292,6 +323,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           name="waiver_accepted"
           label="I have read and agree to the Waiver and Release."
           required
+          defaultChecked={checked("waiver_accepted")}
           error={errors.waiver_accepted}
         />
         <Field
@@ -299,6 +331,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           label="Type your full name as your signature"
           required
           hint="By typing your name, you electronically sign the waiver above."
+          defaultValue={v("waiver_signature")}
           error={errors.waiver_signature}
         />
       </FormSection>

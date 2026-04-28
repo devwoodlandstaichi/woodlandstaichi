@@ -248,9 +248,13 @@ export function Checkbox({
   hint,
   required,
   error,
+  defaultChecked,
   className,
   children,
-}: BaseProps & { children?: React.ReactNode }) {
+}: BaseProps & {
+  defaultChecked?: boolean;
+  children?: React.ReactNode;
+}) {
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <label className="flex items-start gap-3 cursor-pointer">
@@ -259,6 +263,7 @@ export function Checkbox({
           id={name}
           name={name}
           required={required}
+          defaultChecked={defaultChecked}
           aria-invalid={!!error}
           aria-describedby={error ? `${name}-error` : undefined}
           className="mt-1 h-5 w-5 accent-vermillion"

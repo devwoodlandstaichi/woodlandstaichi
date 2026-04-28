@@ -7,8 +7,25 @@ import { COHORT_OPTIONS, registrationSchema } from "./schema";
 
 export type RegistrationState =
   | { status: "idle" }
-  | { status: "error"; message: string; fieldErrors?: Record<string, string> }
+  | {
+      status: "error";
+      message: string;
+      fieldErrors?: Record<string, string>;
+      values?: Record<string, string>;
+    }
   | { status: "success"; memberId: string };
+
+/** Snapshot the form's posted values as plain strings so we can replay
+ * them into defaultValue / defaultChecked when the form re-renders after
+ * a validation error. (React 19 resets uncontrolled forms by default
+ * once an action returns.) */
+function snapshotValues(formData: FormData): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of formData.entries()) {
+    if (typeof value === "string") out[key] = value;
+  }
+  return out;
+}
 
 export async function submitRegistration(
   _prev: RegistrationState,
@@ -27,6 +44,7 @@ export async function submitRegistration(
       status: "error",
       message: "Please fix the highlighted fields.",
       fieldErrors,
+      values: snapshotValues(formData),
     };
   }
 
@@ -53,6 +71,7 @@ export async function submitRegistration(
       message:
         "That session isn't available anymore — please reload this page and pick a current one. If you keep seeing this, email info@woodlandstaichi.com.",
       fieldErrors: { class_id: "Pick a current session." },
+      values: snapshotValues(formData),
     };
   }
 
@@ -109,6 +128,7 @@ export async function submitRegistration(
         status: "error",
         message:
           "We couldn't save your registration. Please try again or email info@woodlandstaichi.com.",
+        values: snapshotValues(formData),
       };
     }
     memberId = existingMember.id;
@@ -123,6 +143,7 @@ export async function submitRegistration(
         status: "error",
         message:
           "We couldn't save your registration. Please try again or email info@woodlandstaichi.com.",
+        values: snapshotValues(formData),
       };
     }
     memberId = newMember.id;
@@ -153,6 +174,7 @@ export async function submitRegistration(
       status: "error",
       message:
         "We saved your details but couldn't finish enrolling you. Please email info@woodlandstaichi.com so we can complete it.",
+      values: snapshotValues(formData),
     };
   }
 
