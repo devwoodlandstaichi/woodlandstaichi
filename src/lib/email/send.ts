@@ -6,6 +6,10 @@ export type EmailAttachment = {
   filename: string;
   /** Raw bytes, will be base64-encoded by the SDK. */
   content: Buffer;
+  /** Optional Content-ID for inline embedding. Reference in HTML via
+   * `<img src="cid:<contentId>">`. Required when the image must
+   * render inline in clients that strip data: URLs (notably Gmail). */
+  contentId?: string;
 };
 
 export type SendResult =
@@ -46,6 +50,7 @@ export async function sendEmail(opts: {
       attachments: opts.attachments?.map((a) => ({
         filename: a.filename,
         content: a.content.toString("base64"),
+        ...(a.contentId ? { content_id: a.contentId } : {}),
       })),
     });
     if (error) return { ok: false, message: error.message };
