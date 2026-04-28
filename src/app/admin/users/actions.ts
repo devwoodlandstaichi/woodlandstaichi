@@ -87,17 +87,54 @@ export async function createUserAndRole(
   redirect("/admin/users");
 }
 
-export async function changeUserRole(formData: FormData) {
+export type RoleChangeResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+export async function changeUserRole(
+  formData: FormData,
+): Promise<RoleChangeResult> {
   await requireAdmin();
   const userId = String(formData.get("user_id") ?? "");
   const role = String(formData.get("role") ?? "");
-  if (!userId || !isRole(role)) return;
+  if (!userId) return { ok: false, message: "Missing user id." };
+  if (!isRole(role)) return { ok: false, message: "Invalid role." };
 
   const supabase = await createClient();
-  await supabase
+
+  // Last-admin guard: if we're about to demote a current admin, refuse
+  // unless at least one other admin exists. Same intent as the
+  // removeUser guard — never let the school end up with no admins.
+  if (role !== "admin") {
+    const { data: thisRole } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (thisRole?.role === "admin") {
+      const { count: adminCount } = await supabase
+        .from("user_roles")
+        .select("*", { count: "exact", head: true })
+        .eq("role", "admin");
+      if ((adminCount ?? 0) <= 1) {
+        return {
+          ok: false,
+          message:
+            "Can't demote the only admin. Promote another user to admin first.",
+        };
+      }
+    }
+  }
+
+  const { error } = await supabase
     .from("user_roles")
     .upsert({ user_id: userId, role });
+
+  if (error) return { ok: false, message: error.message };
+
   revalidatePath("/admin/users");
+  return { ok: true };
 }
 
 export type DeleteUserResult =

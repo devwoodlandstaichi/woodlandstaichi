@@ -31,12 +31,21 @@ export function UserRowActions({
     fd.set("user_id", userId);
     fd.set("role", next);
     startTransition(async () => {
-      await changeUserRole(fd);
-      toast({
-        tone: "ok",
-        title: "Role updated",
-        description: `${email} is now ${next}.`,
-      });
+      const r = await changeUserRole(fd);
+      if (r.ok) {
+        toast({
+          tone: "ok",
+          title: "Role updated",
+          description: `${email} is now ${next}.`,
+        });
+      } else {
+        toast({
+          tone: "err",
+          title: "Couldn't change role",
+          description: r.message,
+          duration: 8000,
+        });
+      }
     });
   }
 
