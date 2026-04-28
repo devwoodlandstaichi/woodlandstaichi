@@ -1,12 +1,16 @@
+/** Stable Content-ID used in the HTML <img src="cid:..."> below.
+ * Must match the contentId on the attachment when the email is sent. */
+export const QR_EMAIL_CID = "wtc-attendance-qr";
+
 /** HTML email body for delivering a member's attendance QR. The labeled
- * PNG is sent as an attachment AND embedded inline via cid (Resend
- * generates the CID from the attachment's filename when content_id is
- * provided). Save-to-Photos / Wallet hints sit below the image. */
+ * PNG is sent as an inline attachment with a Content-ID and referenced
+ * via `cid:` so it renders in Gmail, Apple Mail, and Outlook. Earlier
+ * versions used a data: URL but Gmail strips long data URLs.
+ * Save-to-Photos / Wallet hints sit below the image. */
 export function qrEmailHtml(opts: {
   firstName: string;
-  pngDataUrl: string;
 }): string {
-  const { firstName, pngDataUrl } = opts;
+  const { firstName } = opts;
   return `<!doctype html>
 <html lang="en">
   <body style="margin:0;padding:32px;background:#f8f5f0;font-family:Georgia,serif;color:#15110d">
@@ -27,7 +31,7 @@ export function qrEmailHtml(opts: {
 
       <tr>
         <td align="center" style="padding:0 36px 8px">
-          <img src="${pngDataUrl}" alt="Woodlands Tai Chi attendance QR for ${escape(firstName)}"
+          <img src="cid:${QR_EMAIL_CID}" alt="Woodlands Tai Chi attendance QR for ${escape(firstName)}"
             width="320" style="display:block;width:100%;max-width:320px;height:auto;border:1px solid #e6e0d4;border-radius:12px">
         </td>
       </tr>

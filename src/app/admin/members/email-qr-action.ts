@@ -6,7 +6,11 @@ import { requireStaff } from "@/lib/auth/dal";
 import { issueQrToken } from "@/lib/qr/token";
 import { qrLabeledPngBuffer } from "@/lib/qr/image";
 import { sendEmail } from "@/lib/email/send";
-import { qrEmailHtml, qrEmailText } from "@/lib/email/qr-template";
+import {
+  qrEmailHtml,
+  qrEmailText,
+  QR_EMAIL_CID,
+} from "@/lib/email/qr-template";
 import { revalidatePath } from "next/cache";
 
 export type EmailQrResult =
@@ -67,20 +71,20 @@ export async function emailQrToMember(
   // the readable label the instructor can verify at a glance during scan.
   const memberName = `${member.first_name} ${member.last_name}`;
   const pngBuffer = await qrLabeledPngBuffer(encoded, memberName);
-  const pngDataUrl = `data:image/png;base64,${pngBuffer.toString("base64")}`;
 
+  // Send the PNG as an inline attachment and reference it via cid:
+  // in the HTML. Gmail (and Outlook) strip long data: URLs, so a
+  // proper Content-ID is the only reliable way to render inline.
   const result = await sendEmail({
     to: member.email,
     subject: "Your Woodlands Tai Chi attendance QR",
-    html: qrEmailHtml({
-      firstName: member.first_name,
-      pngDataUrl,
-    }),
+    html: qrEmailHtml({ firstName: member.first_name }),
     text: qrEmailText(member.first_name),
     attachments: [
       {
         filename: `wtc-qr-${member.last_name}-${member.first_name}.png`,
         content: pngBuffer,
+        contentId: QR_EMAIL_CID,
       },
     ],
   });
