@@ -81,13 +81,15 @@ export default async function UsersPage() {
         </Card>
       ) : (
         <table className="w-full text-left text-sm">
-          <thead className="sticky top-[65px] z-[5] bg-background text-xs uppercase tracking-[0.14em] text-muted-foreground shadow-[inset_0_-1px_0_var(--border)]">
+          {/* Sticky lives on each <th>, not <thead>, because <thead>+z-index
+              doesn't reliably stack above <tbody> rows in tables. */}
+          <thead className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
             <tr>
-              <th className="px-4 py-3 font-medium">Email</th>
-              <th className="px-4 py-3 font-medium">Role</th>
-              <th className="px-4 py-3 font-medium">Created</th>
-              <th className="px-4 py-3 font-medium">Last sign-in</th>
-              <th className="px-4 py-3" />
+              <th className="sticky top-[65px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Email</th>
+              <th className="sticky top-[65px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Role</th>
+              <th className="sticky top-[65px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Created</th>
+              <th className="sticky top-[65px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Last sign-in</th>
+              <th className="sticky top-[65px] z-[5] bg-background px-4 py-3 shadow-[inset_0_-1px_0_var(--border)]" />
             </tr>
           </thead>
           <tbody>

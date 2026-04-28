@@ -160,7 +160,9 @@ export default async function MembersPage({
         </Card>
       ) : (
         <table className="w-full text-left text-sm">
-          <thead className="sticky top-[129px] z-[5] bg-background text-xs uppercase tracking-[0.14em] text-muted-foreground shadow-[inset_0_-1px_0_var(--border)]">
+          {/* Sticky lives on each <th>, not <thead>, because <thead>+z-index
+              doesn't reliably stack above <tbody> rows in tables. */}
+          <thead className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
             <tr>
               {SORT_COLUMNS.map((col) => {
                 const active = col === sort;
@@ -175,7 +177,7 @@ export default async function MembersPage({
                           : "descending"
                         : "none"
                     }
-                    className="px-4 py-3 font-medium"
+                    className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]"
                   >
                     <a
                       href={sortHref(col)}

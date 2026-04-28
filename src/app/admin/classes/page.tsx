@@ -123,14 +123,18 @@ export default async function ClassesPage({
         </Card>
       ) : (
         <table className="w-full text-left text-sm">
-          <thead className="sticky top-[129px] z-[5] bg-background text-xs uppercase tracking-[0.14em] text-muted-foreground shadow-[inset_0_-1px_0_var(--border)]">
+          {/* Sticky lives on each <th>, not <thead>, because <thead>+z-index
+              doesn't reliably stack above <tbody> rows in tables — row text
+              would bleed through. Each cell carries its own bg + shadow so
+              the row reads as a single sticky strip. */}
+          <thead className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
             <tr>
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">When</th>
-              <th className="px-4 py-3 font-medium">Where</th>
-              <th className="px-4 py-3 font-medium">Level</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3" />
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Name</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">When</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Where</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Level</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Status</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 shadow-[inset_0_-1px_0_var(--border)]" />
             </tr>
           </thead>
           <tbody>

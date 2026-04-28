@@ -90,15 +90,17 @@ export default async function AdminOrdersPage({
         </Card>
       ) : (
         <table className="w-full text-left text-sm">
-          <thead className="sticky top-[129px] z-[5] bg-background text-xs uppercase tracking-[0.14em] text-muted-foreground shadow-[inset_0_-1px_0_var(--border)]">
+          {/* Sticky lives on each <th>, not <thead>, because <thead>+z-index
+              doesn't reliably stack above <tbody> rows in tables. */}
+          <thead className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
             <tr>
-              <th className="px-4 py-3 font-medium">Customer</th>
-              <th className="px-4 py-3 font-medium">Items</th>
-              <th className="px-4 py-3 font-medium">Method</th>
-              <th className="px-4 py-3 font-medium">Total</th>
-              <th className="px-4 py-3 font-medium">Submitted</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3" />
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Customer</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Items</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Method</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Total</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Submitted</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Status</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 shadow-[inset_0_-1px_0_var(--border)]" />
             </tr>
           </thead>
           <tbody>

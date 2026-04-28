@@ -82,15 +82,17 @@ export default async function RegistrationsPage({
         </Card>
       ) : (
         <table className="w-full text-left text-sm">
-          <thead className="sticky top-[129px] z-[5] bg-background text-xs uppercase tracking-[0.14em] text-muted-foreground shadow-[inset_0_-1px_0_var(--border)]">
+          {/* Sticky lives on each <th>, not <thead>, because <thead>+z-index
+              doesn't reliably stack above <tbody> rows in tables. */}
+          <thead className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
             <tr>
-              <th className="px-4 py-3 font-medium">Member</th>
-              <th className="px-4 py-3 font-medium">Class</th>
-              <th className="px-4 py-3 font-medium">Shirt</th>
-              <th className="px-4 py-3 font-medium">Method</th>
-              <th className="px-4 py-3 font-medium">Registered</th>
-              <th className="px-4 py-3 font-medium">Payment</th>
-              <th className="px-4 py-3" />
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Member</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Class</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Shirt</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Method</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Registered</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Payment</th>
+              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 shadow-[inset_0_-1px_0_var(--border)]" />
             </tr>
           </thead>
           <tbody>
