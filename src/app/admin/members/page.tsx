@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { QrCode } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, PageHeader } from "@/components/admin/ui";
+import { EmailQrButton } from "./email-qr-button";
 import {
   MEMBER_LEVEL_LABELS,
   MEMBER_LEVEL_VALUES,
@@ -125,19 +125,20 @@ export default async function MembersPage({
                   className="border-b border-foreground/5 last:border-0"
                 >
                   <td className="px-4 py-3 font-medium">
-                    <Link
-                      href={`/admin/members/${m.id}`}
-                      className="inline-flex items-center gap-2 hover:text-vermillion"
-                    >
-                      {m.last_name}, {m.first_name}
-                      {m.qr_token && (
-                        <QrCode
-                          size={14}
-                          aria-label="QR issued"
-                          className="text-vermillion/70"
-                        />
-                      )}
-                    </Link>
+                    <div className="inline-flex items-center gap-1">
+                      <Link
+                        href={`/admin/members/${m.id}`}
+                        className="hover:text-vermillion"
+                      >
+                        {m.last_name}, {m.first_name}
+                      </Link>
+                      <EmailQrButton
+                        memberId={m.id}
+                        memberName={`${m.first_name} ${m.last_name}`}
+                        email={m.email}
+                        hasQr={!!m.qr_token}
+                      />
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <a
