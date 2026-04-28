@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { QrCode } from "lucide-react";
 import {
   ConfirmDialog,
   useConfirmDialog,
 } from "@/components/admin/confirm-dialog";
+import { useToast } from "@/components/admin/toast";
 import { emailQrToMember } from "./email-qr-action";
 import { cn } from "@/lib/utils";
 
-/** A QR icon that, when clicked, asks the staff to confirm and emails the
- * code to the member. */
+/** A QR icon that opens a confirm dialog and emails the QR PNG to the
+ * member when accepted. Result surfaces via the global toast — no
+ * inline state, so the table layout stays put. */
 export function EmailQrButton({
   memberId,
   memberName,
@@ -23,8 +25,8 @@ export function EmailQrButton({
   hasQr: boolean;
 }) {
   const dialog = useConfirmDialog();
+  const { toast } = useToast();
   const [pending, startTransition] = useTransition();
-  const [toast, setToast] = useState<{ tone: "ok" | "err"; msg: string } | null>(null);
 
   function onClick(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
@@ -35,12 +37,21 @@ export function EmailQrButton({
   function onConfirm() {
     startTransition(async () => {
       const result = await emailQrToMember(memberId);
-      setToast({
-        tone: result.ok ? "ok" : "err",
-        msg: result.message,
-      });
       dialog.close();
-      setTimeout(() => setToast(null), 5000);
+      if (result.ok) {
+        toast({
+          tone: "ok",
+          title: `QR sent to ${memberName}`,
+          description: result.message,
+        });
+      } else {
+        toast({
+          tone: "err",
+          title: "Couldn't send QR",
+          description: result.message,
+          duration: 8000,
+        });
+      }
     });
   }
 
@@ -48,36 +59,21 @@ export function EmailQrButton({
 
   return (
     <>
-      <span className="relative inline-flex items-center">
-        <button
-          type="button"
-          onClick={onClick}
-          disabled={pending}
-          aria-label={`Email QR to ${memberName}`}
-          title={`Email QR to ${memberName}`}
-          className={cn(
-            "inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors",
-            "hover:bg-vermillion/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            hasQr ? "text-vermillion/70" : "text-muted-foreground/50",
-            pending && "opacity-60 cursor-not-allowed",
-          )}
-        >
-          <QrCode size={14} aria-hidden />
-        </button>
-        {toast && (
-          <span
-            role="status"
-            className={cn(
-              "absolute left-9 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border px-2 py-1 text-xs shadow-sm z-10",
-              toast.tone === "ok"
-                ? "bg-jade/10 border-jade/30 text-jade"
-                : "bg-destructive/10 border-destructive/30 text-destructive",
-            )}
-          >
-            {toast.msg}
-          </span>
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={pending}
+        aria-label={`Email QR to ${memberName}`}
+        title={`Email QR to ${memberName}`}
+        className={cn(
+          "inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors",
+          "hover:bg-vermillion/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          hasQr ? "text-vermillion/70" : "text-muted-foreground/50",
+          pending && "opacity-60 cursor-not-allowed",
         )}
-      </span>
+      >
+        <QrCode size={14} aria-hidden />
+      </button>
 
       <ConfirmDialog
         open={dialog.open}
