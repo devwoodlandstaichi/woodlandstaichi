@@ -14,7 +14,7 @@ export function Hero() {
         靜
       </span>
 
-      <div className="mx-auto grid max-w-7xl grid-cols-12 gap-x-6 gap-y-6 px-6 py-12 md:px-10 md:py-20">
+      <div className="mx-auto grid max-w-7xl grid-cols-12 gap-x-6 gap-y-6 px-6 pt-20 pb-12 md:px-10 md:pt-28 md:pb-20">
         {/* Headline column */}
         <div className="col-span-12 lg:col-span-8 relative">
           <p className="rise text-xs uppercase tracking-[0.45em] text-foreground/55 mb-8">
