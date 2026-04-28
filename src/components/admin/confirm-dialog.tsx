@@ -4,9 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/admin/ui";
 import { cn } from "@/lib/utils";
 
-// Native <dialog> + Tailwind. Browser handles focus trap, ESC, and
-// the backdrop layer for free; we paint everything else to match the
-// site's editorial-quiet style.
+// Tailwind-UI-style modal:
+//   <div role="dialog">                                fixed z-50
+//     <div backdrop>                                   fixed inset-0
+//     <div container that centers panel>               fixed inset-0 + flex
+//       <div panel>                                    rounded-2xl card
+//
+// Mobile: panel slides up from bottom (items-end + p-4).
+// >= sm:  panel centers (items-center, max-w-md).
+//
+// Plus: ESC to close, focus first action on open, body scroll lock,
+// click-outside dismisses (when not pending).
 
 export function ConfirmDialog({
   open,
@@ -25,86 +33,133 @@ export function ConfirmDialog({
   description?: React.ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
-  /** "default" uses the brand foreground button; "destructive" makes the
-   * primary action vermillion to flag irreversibility. */
   tone?: "default" | "destructive";
   pending?: boolean;
   onConfirm: () => void | Promise<void>;
 }) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const confirmRef = useRef<HTMLButtonElement>(null);
 
+  // ESC + scroll lock + initial focus.
   useEffect(() => {
-    const dlg = dialogRef.current;
-    if (!dlg) return;
-    if (open && !dlg.open) dlg.showModal();
-    else if (!open && dlg.open) dlg.close();
-  }, [open]);
+    if (!open) return;
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !pending) {
+        e.preventDefault();
+        onOpenChange(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    // Defer focus until after the panel is in the DOM.
+    const t = setTimeout(() => confirmRef.current?.focus(), 30);
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+      clearTimeout(t);
+    };
+  }, [open, pending, onOpenChange]);
+
+  if (!open) return null;
 
   function close() {
     if (pending) return;
     onOpenChange(false);
   }
 
+  const eyebrow = tone === "destructive" ? "Irreversible" : "Confirm";
+
   return (
-    <dialog
-      ref={dialogRef}
-      onClose={close}
-      onCancel={(e) => {
-        if (pending) e.preventDefault();
-        else close();
-      }}
-      onClick={(e) => {
-        // Native <dialog> sends click events for backdrop clicks with
-        // target === dialog itself; the inner card swallows them.
-        if (e.target === dialogRef.current) close();
-      }}
-      className={cn(
-        "rounded-2xl border border-foreground/10 bg-card text-card-foreground shadow-2xl",
-        "p-0 max-w-md w-[calc(100vw-2rem)]",
-        "backdrop:bg-foreground/40 backdrop:backdrop-blur-sm",
-        // Subtle pop when opening.
-        "open:animate-[rise_240ms_cubic-bezier(0.2,0.6,0.2,1)]",
-      )}
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-title"
+      className="relative z-50"
     >
-      <div className="p-7">
-        <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-4">
-          <span className="inline-block h-px w-6 align-middle bg-vermillion mr-2" />
-          {tone === "destructive" ? "Irreversible" : "Confirm"}
-        </p>
-        <h2 className="font-display text-2xl leading-[1.15] tracking-tight">
-          {title}
-        </h2>
-        {description && (
-          <div className="mt-3 text-sm leading-relaxed text-foreground/75">
-            {description}
-          </div>
+      {/* Backdrop */}
+      <div
+        aria-hidden
+        className={cn(
+          "fixed inset-0 bg-foreground/40 backdrop-blur-sm",
+          "data-[state=open]:animate-in data-[state=open]:fade-in-0",
         )}
-        <div className="mt-7 flex justify-end gap-3">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={close}
-            disabled={pending}
-          >
-            {cancelLabel}
-          </Button>
-          <Button
-            type="button"
-            variant={tone === "destructive" ? "destructive" : "default"}
-            onClick={() => {
-              void onConfirm();
-            }}
-            disabled={pending}
+        data-state="open"
+        onClick={close}
+      />
+
+      {/* Centering container */}
+      <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+          {/* Panel */}
+          <div
             className={cn(
-              tone === "default" &&
-                "bg-vermillion text-background hover:bg-vermillion/90",
+              "relative w-full transform overflow-hidden rounded-2xl",
+              "bg-card text-left shadow-2xl border border-foreground/10",
+              "sm:my-8 sm:max-w-md",
+              "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-bottom-2",
             )}
+            data-state="open"
+            // stop click from bubbling to backdrop
+            onClick={(e) => e.stopPropagation()}
           >
-            {pending ? "Working…" : confirmLabel}
-          </Button>
+            <div className="px-6 pt-6 pb-5 sm:px-7 sm:pt-7">
+              <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-4">
+                <span className="inline-block h-px w-6 align-middle bg-vermillion mr-2" />
+                {eyebrow}
+              </p>
+              <h2
+                id="confirm-title"
+                className="font-display text-2xl leading-[1.15] tracking-tight"
+              >
+                {title}
+              </h2>
+              {description && (
+                <div className="mt-3 text-sm leading-relaxed text-foreground/75">
+                  {description}
+                </div>
+              )}
+            </div>
+
+            <div
+              className={cn(
+                "bg-secondary/40 px-6 py-4 sm:px-7",
+                "flex flex-col-reverse gap-3 sm:flex-row sm:justify-end",
+              )}
+            >
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={close}
+                disabled={pending}
+                className="w-full sm:w-auto"
+              >
+                {cancelLabel}
+              </Button>
+              <Button
+                ref={confirmRef}
+                type="button"
+                variant={tone === "destructive" ? "destructive" : "default"}
+                onClick={() => {
+                  void onConfirm();
+                }}
+                disabled={pending}
+                className={cn(
+                  "w-full sm:w-auto",
+                  tone === "default" &&
+                    "bg-vermillion text-background hover:bg-vermillion/90",
+                )}
+              >
+                {pending ? "Working…" : confirmLabel}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
-    </dialog>
+    </div>
   );
 }
 
