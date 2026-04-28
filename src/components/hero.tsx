@@ -6,10 +6,11 @@ export function Hero() {
       className="relative overflow-hidden"
       aria-labelledby="hero-title"
     >
-      {/* Decorative vertical mark — sits behind the type */}
+      {/* CJK background watermark — same treatment as PageHeader.
+          Stillness (靜) for the home hero. */}
       <span
         aria-hidden
-        className="vertical-mark absolute right-6 top-24 hidden lg:block text-[11rem] leading-none select-none"
+        className="pointer-events-none absolute right-0 md:right-6 top-1/2 -translate-y-1/2 hidden md:block font-display leading-none select-none text-foreground/[0.12] text-[clamp(18rem,30vw,33rem)] tracking-tighter"
       >
         靜
       </span>

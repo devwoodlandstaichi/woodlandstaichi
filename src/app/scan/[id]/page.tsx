@@ -115,10 +115,13 @@ export default async function KioskScanPage({
         />
       </div>
 
-      {/* Decorative vertical CJK accent — stillness */}
+      {/* CJK watermark — Stillness (靜). Same treatment as
+          PageHeader / Hero. The kiosk has its own atmosphere
+          photo behind everything, so this opacity is a touch
+          softer to keep the photo readable. */}
       <span
         aria-hidden
-        className="vertical-mark pointer-events-none absolute right-6 top-32 hidden xl:block text-[10rem] leading-none select-none opacity-30"
+        className="pointer-events-none absolute right-0 md:right-6 top-1/2 -translate-y-1/2 hidden md:block font-display leading-none select-none text-foreground/[0.10] text-[clamp(18rem,30vw,33rem)] tracking-tighter"
       >
         靜
       </span>

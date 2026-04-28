@@ -8,9 +8,11 @@ export function ContactSection() {
       className="relative mx-auto max-w-7xl px-6 pb-14 md:px-10 md:pb-20"
     >
       <div className="relative overflow-hidden rounded-2xl border border-foreground/10 bg-gradient-to-br from-card to-secondary p-8 md:p-12">
+        {/* CJK watermark — Welcome (歡). Sized down vs PageHeader
+            since this glyph lives inside a card, not full-bleed. */}
         <span
           aria-hidden
-          className="vertical-mark absolute right-8 top-8 hidden md:block text-7xl select-none"
+          className="pointer-events-none absolute right-0 md:right-4 top-1/2 -translate-y-1/2 hidden md:block font-display leading-none select-none text-foreground/[0.12] text-[clamp(10rem,16vw,18rem)] tracking-tighter"
         >
           歡
         </span>
