@@ -70,6 +70,33 @@ max_frequency = "1s"
 otp_length = 6
 otp_expiry = 3600
 
+# Override Supabase's default "Reset Password" template so it shows the
+# 6-digit OTP — the verifyAndReset action expects an OTP, not a magic
+# link. The default template only includes {{ .ConfirmationURL }}.
+[auth.email.template.recovery]
+subject = "Reset your Woodlands Tai Chi password"
+content_path = "./supabase/templates/recovery.html"
+
+# Send all auth emails (password recovery, magic links, signup
+# confirmations) through Resend SMTP. When this block is enabled, local
+# Inbucket no longer catches these messages — Resend delivers real mail.
+#
+# Requirements:
+#   1. RESEND_API_KEY must be present in the shell environment when
+#      `supabase start` runs. The `npm run db:start` / `npm run dev:db`
+#      scripts source .env.local so this happens automatically.
+#   2. The sender domain (woodlandstaichi.com) must be verified in
+#      Resend. Until then, swap `admin_email` to "onboarding@resend.dev"
+#      to use Resend's shared sandbox sender.
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 587
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "info@woodlandstaichi.com"
+sender_name = "Woodlands Tai Chi"
+
 [auth.sms]
 enable_signup = false
 enable_confirmations = false
