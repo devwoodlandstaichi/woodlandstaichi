@@ -4,7 +4,7 @@ import { createHmac } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { requireStaff } from "@/lib/auth/dal";
 import { issueQrToken } from "@/lib/qr/token";
-import { qrPngBuffer, qrPngDataUrl } from "@/lib/qr/image";
+import { qrLabeledPngBuffer } from "@/lib/qr/image";
 import { sendEmail } from "@/lib/email/send";
 import { qrEmailHtml, qrEmailText } from "@/lib/email/qr-template";
 import { revalidatePath } from "next/cache";
@@ -62,10 +62,12 @@ export async function emailQrToMember(
     .digest("base64url");
   const encoded = `${tokenId}.${sig}`;
 
-  const [pngDataUrl, pngBuffer] = await Promise.all([
-    qrPngDataUrl(encoded),
-    qrPngBuffer(encoded),
-  ]);
+  // Composite: QR + "Woodlands Tai Chi" + member name into a single PNG so
+  // that whatever the member saves (Photos / Wallet / printed) carries
+  // the readable label the instructor can verify at a glance during scan.
+  const memberName = `${member.first_name} ${member.last_name}`;
+  const pngBuffer = await qrLabeledPngBuffer(encoded, memberName);
+  const pngDataUrl = `data:image/png;base64,${pngBuffer.toString("base64")}`;
 
   const result = await sendEmail({
     to: member.email,

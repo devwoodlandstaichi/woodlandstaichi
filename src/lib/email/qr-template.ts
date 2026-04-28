@@ -1,6 +1,7 @@
-/** HTML email body for delivering a member's attendance QR. The PNG is
- * sent as an attachment AND embedded inline via cid-style data URL (fall-
- * back). Most modern clients render the data URL fine. */
+/** HTML email body for delivering a member's attendance QR. The labeled
+ * PNG is sent as an attachment AND embedded inline via cid (Resend
+ * generates the CID from the attachment's filename when content_id is
+ * provided). Save-to-Photos / Wallet hints sit below the image. */
 export function qrEmailHtml(opts: {
   firstName: string;
   pngDataUrl: string;
@@ -9,9 +10,9 @@ export function qrEmailHtml(opts: {
   return `<!doctype html>
 <html lang="en">
   <body style="margin:0;padding:32px;background:#f8f5f0;font-family:Georgia,serif;color:#15110d">
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:14px;border:1px solid #e6e0d4">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:14px;border:1px solid #e6e0d4">
       <tr>
-        <td style="padding:40px 36px 28px;text-align:center">
+        <td style="padding:40px 36px 24px;text-align:center">
           <p style="margin:0 0 10px;font-size:11px;letter-spacing:0.45em;text-transform:uppercase;color:#7a6e5e">
             Woodlands Tai Chi
           </p>
@@ -19,18 +20,44 @@ export function qrEmailHtml(opts: {
             Hello, ${escape(firstName)}.
           </h1>
           <p style="margin:18px 0 0;font-size:15px;line-height:1.6;color:#3a342c">
-            Here is your attendance QR code. Bring it to class on your phone — show it to an instructor at the start of each session and you&apos;ll be marked present.
+            Here is your attendance QR. Bring it to class on your phone — show it to an instructor at the start of each session and you&apos;ll be marked present.
           </p>
         </td>
       </tr>
+
       <tr>
-        <td align="center" style="padding:0 36px 24px">
-          <img src="${pngDataUrl}" alt="Attendance QR" width="240" height="240" style="display:block;border:1px solid #e6e0d4;border-radius:12px;background:#f8f5f0;padding:8px">
-          <p style="margin:14px 0 0;font-size:12px;color:#7a6e5e">
-            Save this image, screenshot it, or just keep this email handy.
-          </p>
+        <td align="center" style="padding:0 36px 8px">
+          <img src="${pngDataUrl}" alt="Woodlands Tai Chi attendance QR for ${escape(firstName)}"
+            width="320" style="display:block;width:100%;max-width:320px;height:auto;border:1px solid #e6e0d4;border-radius:12px">
         </td>
       </tr>
+
+      <tr>
+        <td style="padding:24px 36px 8px">
+          <p style="margin:0 0 10px;font-size:11px;letter-spacing:0.4em;text-transform:uppercase;color:#7a6e5e">
+            <span style="display:inline-block;height:1px;width:20px;background:#a91d1d;vertical-align:middle;margin-right:8px"></span>
+            Save it on your phone
+          </p>
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td style="padding:6px 0;font-size:13px;line-height:1.6;color:#3a342c">
+                <strong style="color:#15110d">iPhone</strong> &middot; Long-press the QR image above &rarr; <em>Save to Photos</em>. Then in <strong>Wallet</strong> tap <strong>+</strong> &rarr; <em>Code</em> &rarr; <em>Take Photo of Code</em> and pick the QR from your photos.
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;line-height:1.6;color:#3a342c">
+                <strong style="color:#15110d">Android</strong> &middot; Long-press the image &rarr; <em>Save image</em>. <strong>Google Wallet</strong> users: tap and hold and pick <em>Add to Google Wallet</em> if your phone supports it; otherwise the image in Photos works fine.
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;line-height:1.6;color:#3a342c">
+                <strong style="color:#15110d">Or just keep this email.</strong> Pull it up at the start of class — that works too.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
       <tr>
         <td style="padding:18px 36px 36px;font-size:13px;line-height:1.6;color:#3a342c;border-top:1px solid #efe9df">
           <p style="margin:0">
@@ -49,8 +76,14 @@ export function qrEmailHtml(opts: {
 export function qrEmailText(firstName: string): string {
   return `Hello, ${firstName}.
 
-Here is your Woodlands Tai Chi attendance QR code (attached as a PNG).
-Bring it to class on your phone and show it to an instructor at the start of each session — you'll be marked present.
+Here is your Woodlands Tai Chi attendance QR (attached as a PNG).
+
+Bring it to class on your phone and show it to an instructor at the start of each session. You'll be marked present automatically.
+
+How to save it on your phone:
+- iPhone: long-press the QR image and Save to Photos. Then in Wallet, tap + → Code → Take Photo of Code and pick the saved image.
+- Android: long-press → Save image. Some phones can Add to Google Wallet directly.
+- Or just keep this email — pull it up at the start of class.
 
 If you lose your phone, reply to this email and we'll regenerate a fresh QR. Your old one will stop working immediately for safety.
 
