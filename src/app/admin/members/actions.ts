@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { requireStaff } from "@/lib/auth/dal";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin, requireStaff } from "@/lib/auth/dal";
 import {
   MEMBER_LEVEL_VALUES,
   MEMBER_STATUS_VALUES,
@@ -196,4 +197,42 @@ export async function markWaitlist(formData: FormData) {
 }
 export async function markInactive(formData: FormData) {
   return setMemberStatus(String(formData.get("id") ?? ""), "inactive");
+}
+
+// DESTRUCTIVE — deletes every row in public.members and cascades to
+// public.attendance + public.registrations. Admin-only (instructors cannot
+// invoke). The UI requires the user to type "DELETE" to enable the button,
+// and we re-verify here. Uses the service-role client so RLS doesn't even
+// enter the picture for the bulk delete.
+export type ClearState =
+  | { ok: false; message: string }
+  | { ok: true; deleted: number }
+  | undefined;
+
+export async function clearAllMembers(
+  _prev: ClearState,
+  formData: FormData,
+): Promise<ClearState> {
+  await requireAdmin();
+
+  const confirm = String(formData.get("confirm") ?? "").trim();
+  if (confirm !== "DELETE") {
+    return { ok: false, message: "Type DELETE to confirm." };
+  }
+
+  const admin = createAdminClient();
+  const { count, error } = await admin
+    .from("members")
+    .delete({ count: "exact" })
+    .gte("created_at", "1970-01-01"); // PostgREST requires a filter; this matches all rows.
+
+  if (error) {
+    return { ok: false, message: error.message };
+  }
+
+  revalidatePath("/admin/members");
+  revalidatePath("/admin/registrations");
+  revalidatePath("/admin");
+
+  return { ok: true, deleted: count ?? 0 };
 }

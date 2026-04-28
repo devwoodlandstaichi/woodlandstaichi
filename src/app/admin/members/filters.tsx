@@ -59,11 +59,11 @@ export function MemberFilters({
 
   return (
     <div
-      className="mb-4 flex flex-col gap-3"
+      className="mb-4 flex flex-wrap items-center gap-3"
       role="search"
       aria-label="Filter members"
     >
-      <div className="relative">
+      <div className="relative h-10 min-w-[16rem] flex-1">
         <Search
           size={16}
           aria-hidden
@@ -83,12 +83,11 @@ export function MemberFilters({
           }}
           placeholder="Search by name, nickname, email, or phone"
           aria-label="Search members"
-          className="h-12 w-full rounded-md border border-input bg-background pl-10 pr-4 text-base shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="h-10 w-full rounded-full border border-input bg-background pl-9 pr-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         />
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <Pill label="Level">
+      <Pill label="Level">
           <select
             name="level"
             value={level ?? ""}
@@ -121,18 +120,17 @@ export function MemberFilters({
           </select>
         </Pill>
 
-        {hasFilter && (
-          <button
-            type="button"
-            onClick={() => {
-              window.location.href = "/admin/members";
-            }}
-            className="inline-flex h-10 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <X size={14} aria-hidden /> Reset
-          </button>
-        )}
-      </div>
+      {hasFilter && (
+        <button
+          type="button"
+          onClick={() => {
+            window.location.href = "/admin/members";
+          }}
+          className="inline-flex h-10 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <X size={14} aria-hidden /> Reset
+        </button>
+      )}
     </div>
   );
 }

@@ -6,11 +6,12 @@ export const COHORT_OPTIONS = [
   { value: "2027-02", label: "February 2027" },
 ] as const;
 
-export const SESSION_OPTIONS = [
-  { value: "wed-am", label: "Wednesday morning · 8:00–9:00 AM · TWMC" },
-  { value: "wed-pm", label: "Wednesday evening · 5:15–6:15 PM · TWMC" },
-  { value: "thu-am", label: "Thursday morning · 8:30–9:30 AM · KBCC" },
-] as const;
+// Session options used to live here as hardcoded (day_of_week, start_time)
+// tuples, mapped back to a class row via `SESSION_TO_CLASS_KEY`. That
+// silently broke whenever an admin edited a beginner class's day or time
+// in /admin/classes. The form now receives the live list of active
+// beginner classes from the page (see page.tsx) and posts the selected
+// `class_id` directly.
 
 export const SHIRT_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"] as const;
 
@@ -61,9 +62,10 @@ export const registrationSchema = z.object({
   cohort: z.enum(COHORT_OPTIONS.map((o) => o.value) as [string, ...string[]], {
     message: "Please pick a cohort.",
   }),
-  session: z.enum(SESSION_OPTIONS.map((o) => o.value) as [string, ...string[]], {
-    message: "Please pick a session.",
-  }),
+  // Live class id chosen from the rendered list of active beginner
+  // classes. The action verifies the row still exists + is active, so a
+  // stale form pointing at an archived class fails clearly.
+  class_id: z.uuid({ message: "Please pick a session." }),
 
   // Health & experience
   physical_limitations: optionalString(2000),
@@ -97,14 +99,3 @@ export const registrationSchema = z.object({
 });
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;
-
-// Map our session option → existing `classes` row by day_of_week + start_time.
-// (Beginners only — Wednesday/Thursday at the seeded times.)
-export const SESSION_TO_CLASS_KEY: Record<
-  string,
-  { day_of_week: string; start_time: string }
-> = {
-  "wed-am": { day_of_week: "wed", start_time: "08:00:00" },
-  "wed-pm": { day_of_week: "wed", start_time: "17:15:00" },
-  "thu-am": { day_of_week: "thu", start_time: "08:30:00" },
-};

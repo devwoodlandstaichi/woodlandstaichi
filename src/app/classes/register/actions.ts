@@ -3,12 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  COHORT_OPTIONS,
-  SESSION_OPTIONS,
-  SESSION_TO_CLASS_KEY,
-  registrationSchema,
-} from "./schema";
+import { COHORT_OPTIONS, registrationSchema } from "./schema";
 
 export type RegistrationState =
   | { status: "idle" }
@@ -38,29 +33,30 @@ export async function submitRegistration(
   const data = parsed.data;
   const supabase = createAdminClient();
 
-  // Resolve cohort label + session → class_id
+  // Resolve cohort label, then verify the chosen class is still an
+  // active beginner class (the user may have submitted a stale form
+  // after an admin archived or moved it).
   const cohortLabel =
     COHORT_OPTIONS.find((o) => o.value === data.cohort)?.label ?? data.cohort;
-  const sessionLabel =
-    SESSION_OPTIONS.find((o) => o.value === data.session)?.label ?? data.session;
-  const classKey = SESSION_TO_CLASS_KEY[data.session];
 
   const { data: classRow, error: classError } = await supabase
     .from("classes")
-    .select("id")
+    .select("id,name,location,day_of_week,start_time,end_time")
+    .eq("id", data.class_id)
     .eq("level", "beginners")
     .eq("active", true)
-    .eq("day_of_week", classKey.day_of_week)
-    .eq("start_time", classKey.start_time)
     .maybeSingle();
 
   if (classError || !classRow) {
     return {
       status: "error",
       message:
-        "We couldn't match your selected session to a class. Please email us at info@woodlandstaichi.com and we'll get you registered.",
+        "That session isn't available anymore — please reload this page and pick a current one. If you keep seeing this, email info@woodlandstaichi.com.",
+      fieldErrors: { class_id: "Pick a current session." },
     };
   }
+
+  const sessionLabel = classRow.name;
 
   // Capture waiver metadata
   const headerStore = await headers();

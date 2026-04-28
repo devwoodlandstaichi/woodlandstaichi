@@ -77,10 +77,11 @@ export default async function ClassesPage({
   if (level) query = query.eq("level", level);
   if (day) query = query.eq("day_of_week", day);
   if (q) {
-    // PostgREST `or` filter — quote commas/parens in values would need
-    // escaping, but our search input is plain text.
-    const escaped = q.replace(/[,)]/g, " ");
-    query = query.or(`name.ilike.%${escaped}%,location.ilike.%${escaped}%`);
+    // PostgREST URL syntax for ilike uses `*` as the wildcard, not `%`,
+    // when the filter string is passed via `.or()`. Strip commas, parens,
+    // and asterisks so they don't break the `or=(...)` group.
+    const safe = q.replace(/[,()*]/g, " ");
+    query = query.or(`name.ilike.*${safe}*,location.ilike.*${safe}*`);
   }
 
   const { data } = await query.order("display_order", { ascending: true });

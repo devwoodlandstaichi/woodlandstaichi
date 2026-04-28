@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, PageHeader } from "@/components/admin/ui";
 import { EmailQrButton } from "./email-qr-button";
@@ -30,13 +31,37 @@ type MemberRow = {
   created_at: string;
 };
 
-type SearchParams = Promise<{ q?: string; level?: string; status?: string }>;
+const SORT_COLUMNS = ["last_name", "email", "phone", "level", "status"] as const;
+type SortColumn = (typeof SORT_COLUMNS)[number];
+type SortDir = "asc" | "desc";
+
+const SORT_LABEL: Record<SortColumn, string> = {
+  last_name: "Name",
+  email: "Email",
+  phone: "Phone",
+  level: "Level",
+  status: "Status",
+};
+
+type SearchParams = Promise<{
+  q?: string;
+  level?: string;
+  status?: string;
+  sort?: string;
+  dir?: string;
+}>;
 
 function isLevel(v: string | undefined): v is MemberLevel {
   return !!v && (MEMBER_LEVEL_VALUES as readonly string[]).includes(v);
 }
 function isStatus(v: string | undefined): v is MemberStatus {
   return !!v && (MEMBER_STATUS_VALUES as readonly string[]).includes(v);
+}
+function isSortColumn(v: string | undefined): v is SortColumn {
+  return !!v && (SORT_COLUMNS as readonly string[]).includes(v);
+}
+function isSortDir(v: string | undefined): v is SortDir {
+  return v === "asc" || v === "desc";
 }
 
 const LEVEL_TONE: Record<MemberLevel, "vermillion" | "cobalt" | "jade" | "neutral"> = {
@@ -61,6 +86,8 @@ export default async function MembersPage({
   const q = (params.q ?? "").trim();
   const level = isLevel(params.level) ? params.level : null;
   const status = isStatus(params.status) ? params.status : "active";
+  const sort: SortColumn = isSortColumn(params.sort) ? params.sort : "last_name";
+  const dir: SortDir = isSortDir(params.dir) ? params.dir : "asc";
 
   const user = await getSessionUser();
   const supabase = await createClient();
@@ -68,9 +95,23 @@ export default async function MembersPage({
     .from("members")
     .select(
       "id,first_name,last_name,nickname,email,phone,level,status,qr_token,created_at",
-    )
-    .order("last_name", { ascending: true })
-    .order("first_name", { ascending: true });
+    );
+
+  // Primary sort by the chosen column. For Name (last_name) we add a
+  // first_name tiebreaker so families group cleanly. For everything
+  // else, add last_name as a tiebreaker so equal categories still come
+  // out alphabetical-by-name.
+  const ascending = dir === "asc";
+  if (sort === "last_name") {
+    query = query
+      .order("last_name", { ascending })
+      .order("first_name", { ascending });
+  } else {
+    query = query
+      .order(sort, { ascending })
+      .order("last_name", { ascending: true })
+      .order("first_name", { ascending: true });
+  }
 
   if (level) query = query.eq("level", level);
   if (status) query = query.eq("status", status);
@@ -92,6 +133,17 @@ export default async function MembersPage({
   const { data } = await query;
   const rows = (data ?? []) as MemberRow[];
 
+  function sortHref(column: SortColumn): string {
+    const next = new URLSearchParams();
+    if (q) next.set("q", q);
+    if (level) next.set("level", level);
+    if (status !== "active") next.set("status", status);
+    next.set("sort", column);
+    // Click the active column to flip direction; click any other to start ascending.
+    next.set("dir", column === sort ? (dir === "asc" ? "desc" : "asc") : "asc");
+    return `/admin/members?${next.toString()}`;
+  }
+
   return (
     <>
       <PageHeader
@@ -111,11 +163,40 @@ export default async function MembersPage({
           <table className="w-full text-left text-sm">
             <thead className="border-b border-foreground/10 text-xs uppercase tracking-[0.14em] text-muted-foreground">
               <tr>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Phone</th>
-                <th className="px-4 py-3 font-medium">Level</th>
-                <th className="px-4 py-3 font-medium">Status</th>
+                {SORT_COLUMNS.map((col) => {
+                  const active = col === sort;
+                  return (
+                    <th
+                      key={col}
+                      scope="col"
+                      aria-sort={
+                        active
+                          ? dir === "asc"
+                            ? "ascending"
+                            : "descending"
+                          : "none"
+                      }
+                      className="px-4 py-3 font-medium"
+                    >
+                      <a
+                        href={sortHref(col)}
+                        className={
+                          active
+                            ? "inline-flex items-center gap-1 text-foreground hover:text-vermillion"
+                            : "inline-flex items-center gap-1 hover:text-foreground"
+                        }
+                      >
+                        {SORT_LABEL[col]}
+                        {active &&
+                          (dir === "asc" ? (
+                            <ChevronUp size={12} aria-hidden />
+                          ) : (
+                            <ChevronDown size={12} aria-hidden />
+                          ))}
+                      </a>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>

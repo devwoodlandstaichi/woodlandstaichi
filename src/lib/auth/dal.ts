@@ -44,3 +44,14 @@ export async function requireStaff(): Promise<
   }
   return user as SessionUser & { role: StaffRole };
 }
+
+export async function requireAdmin(): Promise<
+  SessionUser & { role: "admin" }
+> {
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+  if (user.role !== "admin") {
+    redirect("/login?error=unauthorized");
+  }
+  return user as SessionUser & { role: "admin" };
+}

@@ -13,15 +13,16 @@ import { submitRegistration, type RegistrationState } from "./actions";
 import {
   COHORT_OPTIONS,
   PAYMENT_METHODS,
-  SESSION_OPTIONS,
   SHIRT_SIZES,
 } from "./schema";
+
+export type SessionOption = { value: string; label: string };
 
 const SHIRT_OPTIONS = SHIRT_SIZES.map((s) => ({ value: s, label: s }));
 
 const INITIAL: RegistrationState = { status: "idle" };
 
-export function RegistrationForm() {
+export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
   const [state, formAction, pending] = useActionState(submitRegistration, INITIAL);
   const errors = state.status === "error" ? state.fieldErrors ?? {} : {};
 
@@ -140,11 +141,11 @@ export function RegistrationForm() {
           error={errors.cohort}
         />
         <RadioGroup
-          name="session"
+          name="class_id"
           label="Preferred session"
           required
-          options={SESSION_OPTIONS}
-          error={errors.session}
+          options={sessions}
+          error={errors.class_id}
         />
       </FormSection>
 
