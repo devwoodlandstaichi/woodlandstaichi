@@ -3,12 +3,26 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { FontScaler } from "@/components/font-scaler";
 import { cn } from "@/lib/utils";
 
-const NAV = [
-  { href: "/about", label: "About" },
+type NavItem = {
+  href: string;
+  label: string;
+  children?: { href: string; label: string }[];
+};
+
+const NAV: NavItem[] = [
+  {
+    href: "/about",
+    label: "About",
+    children: [
+      { href: "/about", label: "Our community" },
+      { href: "/about/why", label: "Why Tai Chi" },
+      { href: "/about/instructors", label: "Instructors" },
+    ],
+  },
   { href: "/classes", label: "Classes" },
   { href: "/world-tai-chi-day", label: "WTCD" },
   { href: "/gallery", label: "Gallery" },
@@ -50,15 +64,51 @@ export function SiteHeader() {
           aria-label="Primary"
           className="hidden md:flex items-center gap-8"
         >
-          {NAV.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="text-sm tracking-wide text-foreground/75 hover:text-foreground transition-colors relative after:absolute after:left-0 after:-bottom-1 after:h-px after:w-0 after:bg-vermillion after:transition-all hover:after:w-full"
-            >
-              {item.label}
-            </a>
-          ))}
+          {NAV.map((item) =>
+            item.children ? (
+              <div key={item.href} className="group relative">
+                <a
+                  href={item.href}
+                  className="inline-flex items-center gap-1 text-sm tracking-wide text-foreground/75 hover:text-foreground transition-colors relative after:absolute after:left-0 after:-bottom-1 after:h-px after:w-0 after:bg-vermillion after:transition-all hover:after:w-full"
+                >
+                  {item.label}
+                  <ChevronDown
+                    size={14}
+                    aria-hidden
+                    className="opacity-50 transition-transform group-hover:rotate-180"
+                  />
+                </a>
+                <div
+                  className={cn(
+                    "invisible opacity-0 absolute left-1/2 top-full -translate-x-1/2 pt-3",
+                    "group-hover:visible group-hover:opacity-100",
+                    "focus-within:visible focus-within:opacity-100",
+                    "transition-opacity duration-150",
+                  )}
+                >
+                  <div className="min-w-[14rem] rounded-lg border border-foreground/10 bg-background/95 backdrop-blur-md shadow-xl py-2">
+                    {item.children.map((child) => (
+                      <a
+                        key={child.href}
+                        href={child.href}
+                        className="block px-4 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-foreground/5 transition-colors"
+                      >
+                        {child.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <a
+                key={item.href}
+                href={item.href}
+                className="text-sm tracking-wide text-foreground/75 hover:text-foreground transition-colors relative after:absolute after:left-0 after:-bottom-1 after:h-px after:w-0 after:bg-vermillion after:transition-all hover:after:w-full"
+              >
+                {item.label}
+              </a>
+            ),
+          )}
         </nav>
 
         <div className="flex items-center gap-3">
@@ -89,19 +139,35 @@ export function SiteHeader() {
         id="mobile-nav"
         className={cn(
           "md:hidden overflow-hidden transition-[max-height,opacity] duration-300 bg-background/95 backdrop-blur-md border-b border-foreground/8",
-          open ? "max-h-96 opacity-100" : "max-h-0 opacity-0",
+          open ? "max-h-[36rem] opacity-100" : "max-h-0 opacity-0",
         )}
       >
         <nav aria-label="Mobile" className="flex flex-col px-6 py-3">
           {NAV.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              className="py-3 text-base text-foreground/85 hover:text-foreground border-b border-foreground/5"
-            >
-              {item.label}
-            </a>
+            <div key={item.href} className="border-b border-foreground/5">
+              <a
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="py-3 block text-base text-foreground/85 hover:text-foreground"
+              >
+                {item.label}
+              </a>
+              {item.children && (
+                <ul className="pb-2 -mt-1">
+                  {item.children.slice(1).map((child) => (
+                    <li key={child.href}>
+                      <a
+                        href={child.href}
+                        onClick={() => setOpen(false)}
+                        className="block pl-4 py-2 text-sm text-foreground/65 hover:text-foreground"
+                      >
+                        ↳ {child.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           ))}
           <Link
             href="/classes/register"

@@ -47,6 +47,10 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "woodlandstaichi.com" },
+      // Local Supabase Storage
+      { protocol: "http", hostname: "127.0.0.1", port: "54321" },
+      // Cloud Supabase Storage (any project ref under supabase.co)
+      { protocol: "https", hostname: "*.supabase.co" },
     ],
   },
 };

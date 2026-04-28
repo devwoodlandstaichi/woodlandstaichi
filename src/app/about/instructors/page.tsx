@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Volunteer instructors — who teaches",
@@ -10,66 +12,38 @@ export const metadata: Metadata = {
     "Sifu Sesco Saegusa and the team of volunteer instructors who teach Tai Chi at Woodlands Tai Chi.",
 };
 
-// Bios transcribed verbatim from /tai-chi-players/ on the legacy site.
-// Apostrophes, em-dashes, capitalisation, and any typos preserved on
-// purpose — the language is the founder's. Worth a Sifu pass before
-// production cutover (flagged in CLAUDE.md).
+export const dynamic = "force-dynamic";
+
+type Tier = "founder" | "senior" | "instructor" | "assistant";
 
 type Instructor = {
+  id: string;
   name: string;
-  initials: string;
-  bio?: string;
+  tier: Tier;
+  title: string | null;
+  bio: string | null;
+  photo_url: string | null;
 };
 
-const FOUNDER: Instructor = {
-  name: "Sesco Saegusa",
-  initials: "SS",
-  bio: "I started Tai Chi when I retired, my physician informed me of a choice of continuing down the destructive lifestyle or to exercise and live. Due to a back injury , invasive exercise was out. A nurse friend recommended tai chi, which I reluctantly signed up for, after the first session I was hooked, to facilitate playing Tai Chi out of the Texas sun, arrangements were made with the Friendship Center (SCCC), the use of their facility in exchange for teaching seniors citizens Tai Chi. My interest grew as I studied with several Sifu and Masters, I felt that Tai Chi was a life saver, and I wanted others who maybe in a similar situation to benefit from it. I have been instructing since 2009 and have taught many hundreds of students. Many have started their own classes.",
-};
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? "") + (parts.at(-1)?.[0] ?? "")).toUpperCase();
+}
 
-const SENIOR: Instructor[] = [
-  {
-    name: "Jim Edgar",
-    initials: "JE",
-    bio: "A few years ago I tried to learn Tai Chi from a Great Course video without much success. The reason for my interest was that i wanted a whole body and mind workout that I could practice for the rest of my life. I found Woodlands TaiChi mid 2020 and must say that the group and the and the art itself has exceeded all expectations. I have improved my balance, my focus, my strength, my ability to concentrate and when you find yourself in a meditative state it makes it even more worthwhile. A great tool for accomplishing a comfortable and active lifestyle for the remainder of my journey.",
-  },
-  {
-    name: "Tom Glascock",
-    initials: "TG",
-    bio: "Learning, and regularly playing, Tai chi has helped improve my balance, flexibility and focus. As important as the physical benefits I have enjoyed are the mental and social aspects. Learning the steps/movements is challenging, but I find that, as I learn those, the physical benefits are more pronounced as I become more relaxed as I play. With help from all of the instructors, I really enjoy the time I am able to spend with the diverse group of individuals that comprise Woodlands Tai Chi.",
-  },
-];
+export default async function InstructorsPage() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("instructors")
+    .select("id,name,tier,title,bio,photo_url")
+    .eq("active", true)
+    .order("display_order", { ascending: true });
+  const all = (data ?? []) as Instructor[];
 
-const INSTRUCTORS: Instructor[] = [
-  {
-    name: "Linda Skogsberg",
-    initials: "LS",
-    bio: "Little did I know when I registered for tai chi through the local college that it would become such an important part of my life. I was already getting more than enough exercise from running, racing and weight training, but I wanted to find a complementary activity that was somewhat less strenuous yet still a whole body workout and also self-directed. That turned out to be tai chi, which has the added benefit of supporting a strong mind-body connection. Tai chi is said to be Harmony. As students of this discipline at Woodlands Tai Chi, we seek to achieve balance in all things and, eventually, to find inner peace. Mayo Clinic promotes tai chi as a gentle way to fight stress by letting go; this takes willpower and perseverance. Thus tai chi is character building as well as an excellent way to increase flexibility, muscle tone and endurance. The forms we learn will stay with us for life and, if we are lucky, the friends we make will do the same.",
-  },
-  {
-    name: "Chuck Walsko",
-    initials: "CW",
-  },
-  {
-    name: "Sharon Holzscherer",
-    initials: "SH",
-    bio: "I first learned with tai chi in Ottawa, Canada over a decade ago. Then I had to stop due to changes in my life. After moving to Texas, I was so delighted to find the Woodlands Tai Chi group. Tai chi is often referred to as a moving meditation. The concentration and focus needed are great for my mind. I also enjoy the physical benefits of balance, coordination and movement. Coming from a background of dance, I find tai chi to be a lovely way to move without tension. I also enjoy the social aspect of the great group that I have found here.",
-  },
-];
+  const founders = all.filter((i) => i.tier === "founder");
+  const seniors = all.filter((i) => i.tier === "senior");
+  const instructors = all.filter((i) => i.tier === "instructor");
+  const assistants = all.filter((i) => i.tier === "assistant");
 
-const ASSISTANTS: string[] = [
-  "Denise Gavino",
-  "Jenette Champagne",
-  "Chanthy Gutierre",
-  "Jerry Jackson",
-  "Julie Devine",
-  "Sanjiv Dhanjal",
-  "Vincent Bui",
-  "Kimberly Fuller",
-  "Cesar Gracia",
-];
-
-export default function InstructorsPage() {
   return (
     <>
       <SiteHeader />
@@ -82,96 +56,91 @@ export default function InstructorsPage() {
           glyph="師"
         />
 
-        {/* === Founder ====================================================== */}
-        <section className="mx-auto max-w-5xl px-6 py-10 md:py-14">
-          <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
-            <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
-            Founder &amp; group director
-          </p>
-          <article className="grid grid-cols-12 gap-6 md:gap-8 rounded-2xl border border-foreground/10 bg-card p-7 md:p-10">
-            <div className="col-span-12 md:col-span-3 flex md:flex-col items-center md:items-start gap-4">
-              <span
-                aria-hidden
-                className="inline-flex h-20 w-20 md:h-28 md:w-28 items-center justify-center rounded-full bg-vermillion/10 text-vermillion font-display text-3xl md:text-4xl"
-              >
-                {FOUNDER.initials}
-              </span>
-              <div>
-                <h2 className="font-display text-3xl md:text-4xl leading-[1.1] tracking-tight">
-                  Sifu {FOUNDER.name.split(" ")[0]}{" "}
-                  <span className="block italic text-vermillion text-2xl md:text-3xl">
-                    {FOUNDER.name.split(" ").slice(1).join(" ")}
-                  </span>
-                </h2>
-                <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/55">
-                  Senior Instructor &middot; Teaching since 2009
-                </p>
+        <section className="mx-auto max-w-5xl px-6 py-3 md:py-5">
+          {/* Founder */}
+          {founders.length > 0 && (
+            <div>
+              <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
+                <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
+                Founder &amp; group director
+              </p>
+              {founders.map((f) => (
+                <FounderCard key={f.id} instructor={f} />
+              ))}
+            </div>
+          )}
+
+          {/* Senior */}
+          {seniors.length > 0 && (
+            <div className="mt-10">
+              <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
+                <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
+                Senior instructors
+              </p>
+              <div className="grid gap-6 md:grid-cols-2">
+                {seniors.map((i) => (
+                  <InstructorCard key={i.id} instructor={i} />
+                ))}
               </div>
             </div>
-            <div className="col-span-12 md:col-span-9">
-              <p className="text-lg text-foreground/85 leading-relaxed">
-                {FOUNDER.bio}
+          )}
+
+          {/* Instructor */}
+          {instructors.length > 0 && (
+            <div className="mt-10">
+              <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
+                <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
+                Instructors
+              </p>
+              <div className="grid gap-6 md:grid-cols-3">
+                {instructors.map((i) => (
+                  <InstructorCard key={i.id} instructor={i} compact />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Assistant */}
+          {assistants.length > 0 && (
+            <div className="mt-10">
+              <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
+                <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
+                Assistant instructors
+              </p>
+              <ul className="flex flex-wrap gap-3">
+                {assistants.map((a) => (
+                  <li
+                    key={a.id}
+                    className="inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-card px-4 py-2 text-sm"
+                  >
+                    {a.photo_url ? (
+                      <Image
+                        src={a.photo_url}
+                        alt=""
+                        width={28}
+                        height={28}
+                        className="h-7 w-7 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span
+                        aria-hidden
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-foreground/5 text-foreground/70 text-xs font-medium"
+                      >
+                        {initials(a.name)}
+                      </span>
+                    )}
+                    {a.name}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-6 text-sm text-foreground/55 italic">
+                Plus countless hands across every cohort.
               </p>
             </div>
-          </article>
-        </section>
+          )}
 
-        {/* === Senior instructors =========================================== */}
-        <section className="mx-auto max-w-5xl px-6 py-6 md:py-10">
-          <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
-            <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
-            Senior instructors
-          </p>
-          <div className="grid gap-6 md:grid-cols-2">
-            {SENIOR.map((i) => (
-              <InstructorCard key={i.name} instructor={i} />
-            ))}
-          </div>
-        </section>
-
-        {/* === Instructors ================================================= */}
-        <section className="mx-auto max-w-5xl px-6 py-6 md:py-10">
-          <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
-            <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
-            Instructors
-          </p>
-          <div className="grid gap-6 md:grid-cols-3">
-            {INSTRUCTORS.map((i) => (
-              <InstructorCard key={i.name} instructor={i} compact />
-            ))}
-          </div>
-        </section>
-
-        {/* === Assistant instructors ======================================== */}
-        <section className="mx-auto max-w-5xl px-6 py-6 md:py-10">
-          <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
-            <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
-            Assistant instructors
-          </p>
-          <ul className="flex flex-wrap gap-3">
-            {ASSISTANTS.map((name) => (
-              <li
-                key={name}
-                className="inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-card px-4 py-2 text-sm"
-              >
-                <span
-                  aria-hidden
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-foreground/5 text-foreground/70 text-xs font-medium"
-                >
-                  {initials(name)}
-                </span>
-                {name}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-6 text-sm text-foreground/55 italic">
-            Plus countless hands across every cohort.
-          </p>
-        </section>
-
-        {/* === Closing CTA ================================================= */}
-        <section className="mx-auto max-w-5xl px-6 py-12">
-          <div className="rounded-2xl border border-foreground/10 bg-gradient-to-br from-card to-secondary p-8 md:p-10 text-center">
+          {/* Closing CTA */}
+          <div className="mt-10 rounded-2xl border border-foreground/10 bg-gradient-to-br from-card to-secondary p-8 md:p-10 text-center">
             <h2 className="font-display text-3xl md:text-4xl leading-[1.1] tracking-tight max-w-2xl mx-auto">
               Want to learn from them?
               <span className="block italic text-vermillion mt-1">
@@ -204,9 +173,57 @@ export default function InstructorsPage() {
   );
 }
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? "") + (parts.at(-1)?.[0] ?? "")).toUpperCase();
+function FounderCard({ instructor }: { instructor: Instructor }) {
+  const firstName = instructor.name.split(" ")[0];
+  const rest = instructor.name.split(" ").slice(1).join(" ");
+  return (
+    <article className="grid grid-cols-12 gap-6 md:gap-8 rounded-2xl border border-foreground/10 bg-card p-7 md:p-10">
+      <div className="col-span-12 md:col-span-3 flex md:flex-col items-center md:items-start gap-4">
+        {instructor.photo_url ? (
+          <Image
+            src={instructor.photo_url}
+            alt={instructor.name}
+            width={160}
+            height={160}
+            className="h-20 w-20 md:h-32 md:w-32 rounded-full object-cover"
+          />
+        ) : (
+          <span
+            aria-hidden
+            className="inline-flex h-20 w-20 md:h-28 md:w-28 items-center justify-center rounded-full bg-vermillion/10 text-vermillion font-display text-3xl md:text-4xl"
+          >
+            {initials(instructor.name)}
+          </span>
+        )}
+        <div>
+          <h2 className="font-display text-3xl md:text-4xl leading-[1.1] tracking-tight">
+            Sifu {firstName}
+            {rest && (
+              <span className="block italic text-vermillion text-2xl md:text-3xl">
+                {rest}
+              </span>
+            )}
+          </h2>
+          {instructor.title && (
+            <p className="mt-2 text-xs uppercase tracking-[0.25em] text-foreground/55">
+              {instructor.title}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="col-span-12 md:col-span-9">
+        {instructor.bio ? (
+          <p className="text-lg text-foreground/85 leading-relaxed">
+            {instructor.bio}
+          </p>
+        ) : (
+          <p className="text-base text-foreground/55 italic">
+            Bio coming soon.
+          </p>
+        )}
+      </div>
+    </article>
+  );
 }
 
 function InstructorCard({
@@ -219,12 +236,22 @@ function InstructorCard({
   return (
     <article className="rounded-xl border border-foreground/10 bg-card p-6 h-full flex flex-col">
       <div className="flex items-center gap-3 mb-4">
-        <span
-          aria-hidden
-          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-vermillion/10 text-vermillion font-display text-lg"
-        >
-          {instructor.initials}
-        </span>
+        {instructor.photo_url ? (
+          <Image
+            src={instructor.photo_url}
+            alt={instructor.name}
+            width={48}
+            height={48}
+            className="h-12 w-12 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <span
+            aria-hidden
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-vermillion/10 text-vermillion font-display text-lg"
+          >
+            {initials(instructor.name)}
+          </span>
+        )}
         <h3 className="font-display text-xl tracking-tight leading-tight">
           {instructor.name}
         </h3>

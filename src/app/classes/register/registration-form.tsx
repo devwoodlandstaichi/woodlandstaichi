@@ -16,6 +16,20 @@ import {
   SHIRT_SIZES,
 } from "./schema";
 
+// Inputs whose value should be normalized to "(xxx) xxx-xxxx" when the
+// user tabs/clicks away. Whatever digits they typed get reformatted; if
+// it's not a US-shaped 10-digit number we leave the input alone so the
+// zod regex can flag it as invalid.
+const PHONE_FIELD_NAMES = new Set(["phone", "emergency_phone"]);
+
+function formatUsPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  const d =
+    digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+  if (d.length !== 10) return raw;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
 export type SessionOption = { value: string; label: string };
 
 const SHIRT_OPTIONS = SHIRT_SIZES.map((s) => ({ value: s, label: s }));
@@ -36,8 +50,24 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
     return val === "on" || val === "true" || val === "1";
   };
 
+  // React's onBlur synthesizes bubbling, so a single handler at the form
+  // catches focus-out from any descendant input. We match on `name` to
+  // avoid coupling Field to a phone-specific prop.
+  const handleBlur = (e: React.FocusEvent<HTMLFormElement>) => {
+    const t = e.target;
+    if (!(t instanceof HTMLInputElement)) return;
+    if (!PHONE_FIELD_NAMES.has(t.name)) return;
+    const next = formatUsPhone(t.value);
+    if (next !== t.value) t.value = next;
+  };
+
   return (
-    <form action={formAction} className="space-y-12" noValidate>
+    <form
+      action={formAction}
+      onBlur={handleBlur}
+      className="space-y-12"
+      noValidate
+    >
       {state.status === "error" && (
         <div
           role="alert"

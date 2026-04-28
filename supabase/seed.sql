@@ -137,3 +137,39 @@ insert into public.news_posts (title, slug, body, posted_at, display_order) valu
    'fuego-shoes-discount',
    'Effective immediately, Fuego Shoes will give Woodlands Tai Chi members a **10% discount**. Use code **WOODLANDSTAICHI10** at checkout, or [follow the affiliate link](https://fuegodance.com/discount/WOODLANDSTAICHI10).',
    '2026-02-10', 50);
+
+-- Volunteer instructor roster, transcribed from /tai-chi-players/.
+-- Bios preserved verbatim including legacy typos ('i wanted',
+-- 'the and the', 'back injury ,', 'Chanthy Gutierre').
+insert into public.instructors (name, tier, title, bio, display_order) values
+  ('Sesco Saegusa', 'founder', 'Founder · Group Director · Senior Instructor',
+   'I started Tai Chi when I retired, my physician informed me of a choice of continuing down the destructive lifestyle or to exercise and live. Due to a back injury , invasive exercise was out. A nurse friend recommended tai chi, which I reluctantly signed up for, after the first session I was hooked, to facilitate playing Tai Chi out of the Texas sun, arrangements were made with the Friendship Center (SCCC), the use of their facility in exchange for teaching seniors citizens Tai Chi. My interest grew as I studied with several Sifu and Masters, I felt that Tai Chi was a life saver, and I wanted others who maybe in a similar situation to benefit from it. I have been instructing since 2009 and have taught many hundreds of students. Many have started their own classes.',
+   10),
+
+  ('Jim Edgar', 'senior', 'Senior Instructor',
+   'A few years ago I tried to learn Tai Chi from a Great Course video without much success. The reason for my interest was that i wanted a whole body and mind workout that I could practice for the rest of my life. I found Woodlands TaiChi mid 2020 and must say that the group and the and the art itself has exceeded all expectations. I have improved my balance, my focus, my strength, my ability to concentrate and when you find yourself in a meditative state it makes it even more worthwhile. A great tool for accomplishing a comfortable and active lifestyle for the remainder of my journey.',
+   20),
+
+  ('Tom Glascock', 'senior', 'Senior Instructor',
+   'Learning, and regularly playing, Tai chi has helped improve my balance, flexibility and focus. As important as the physical benefits I have enjoyed are the mental and social aspects. Learning the steps/movements is challenging, but I find that, as I learn those, the physical benefits are more pronounced as I become more relaxed as I play. With help from all of the instructors, I really enjoy the time I am able to spend with the diverse group of individuals that comprise Woodlands Tai Chi.',
+   30),
+
+  ('Linda Skogsberg', 'instructor', 'Instructor',
+   'Little did I know when I registered for tai chi through the local college that it would become such an important part of my life. I was already getting more than enough exercise from running, racing and weight training, but I wanted to find a complementary activity that was somewhat less strenuous yet still a whole body workout and also self-directed. That turned out to be tai chi, which has the added benefit of supporting a strong mind-body connection. Tai chi is said to be Harmony. As students of this discipline at Woodlands Tai Chi, we seek to achieve balance in all things and, eventually, to find inner peace. Mayo Clinic promotes tai chi as a gentle way to fight stress by letting go; this takes willpower and perseverance. Thus tai chi is character building as well as an excellent way to increase flexibility, muscle tone and endurance. The forms we learn will stay with us for life and, if we are lucky, the friends we make will do the same.',
+   40),
+
+  ('Chuck Walsko', 'instructor', 'Instructor', null, 50),
+
+  ('Sharon Holzscherer', 'instructor', 'Instructor',
+   'I first learned with tai chi in Ottawa, Canada over a decade ago. Then I had to stop due to changes in my life. After moving to Texas, I was so delighted to find the Woodlands Tai Chi group. Tai chi is often referred to as a moving meditation. The concentration and focus needed are great for my mind. I also enjoy the physical benefits of balance, coordination and movement. Coming from a background of dance, I find tai chi to be a lovely way to move without tension. I also enjoy the social aspect of the great group that I have found here.',
+   60),
+
+  ('Denise Gavino',     'assistant', 'Assistant Instructor', null, 70),
+  ('Jenette Champagne', 'assistant', 'Assistant Instructor', null, 80),
+  ('Chanthy Gutierre',  'assistant', 'Assistant Instructor', null, 90),
+  ('Jerry Jackson',     'assistant', 'Assistant Instructor', null, 100),
+  ('Julie Devine',      'assistant', 'Assistant Instructor', null, 110),
+  ('Sanjiv Dhanjal',    'assistant', 'Assistant Instructor', null, 120),
+  ('Vincent Bui',       'assistant', 'Assistant Instructor', null, 130),
+  ('Kimberly Fuller',   'assistant', 'Assistant Instructor', null, 140),
+  ('Cesar Gracia',      'assistant', 'Assistant Instructor', null, 150);

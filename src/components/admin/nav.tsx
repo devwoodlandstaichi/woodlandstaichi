@@ -9,6 +9,7 @@ import {
   Home,
   MessageSquareQuote,
   Newspaper,
+  GraduationCap,
   ScanLine,
   Settings,
   ShieldCheck,
@@ -30,6 +31,7 @@ const BASE_ITEMS: NavItem[] = [
   { href: "/admin/sessions", label: "Sessions", icon: CalendarRange },
   { href: "/admin/members", label: "Members", icon: Users },
   { href: "/admin/registrations", label: "Registrations", icon: CreditCard },
+  { href: "/admin/instructors", label: "Instructors", icon: GraduationCap },
   {
     href: "/admin/testimonials",
     label: "Testimonials",
