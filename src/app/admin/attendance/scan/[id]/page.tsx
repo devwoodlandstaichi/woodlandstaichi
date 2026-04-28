@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
 import { formatDate, formatTimeRange, levelLabel } from "@/lib/format";
 import { Scanner } from "./scanner";
+import { KioskLaunchers } from "./kiosk-launchers";
 
 export const metadata = { title: "Scan attendance" };
 export const dynamic = "force-dynamic";
@@ -62,9 +63,12 @@ export default async function ScanSessionPage({
         title="Scan attendance"
         description={`${session.classes?.name ?? "—"} · ${formatDate(session.session_date)} · ${formatTimeRange(session.start_time, session.end_time)}`}
         action={
-          <Link href="/admin/attendance">
-            <Button variant="outline" size="sm">All sessions</Button>
-          </Link>
+          <div className="flex shrink-0 gap-2">
+            <KioskLaunchers sessionId={session.id} />
+            <Link href="/admin/attendance">
+              <Button variant="outline" size="sm">All sessions</Button>
+            </Link>
+          </div>
         }
       />
 
