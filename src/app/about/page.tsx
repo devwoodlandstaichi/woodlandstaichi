@@ -225,6 +225,21 @@ export default function AboutPage() {
           <p className="mt-6 text-sm text-foreground/55 italic max-w-2xl">
             — Based on the teaching and writings of Master George Ling Hu.
           </p>
+
+          <div className="mt-10 flex flex-wrap items-center gap-4 max-w-2xl">
+            <Link
+              href="/about/why"
+              className="group inline-flex items-center gap-2 rounded-full border border-foreground/20 px-5 py-3 text-sm font-medium hover:bg-foreground/5 transition-colors"
+            >
+              Read more — the form, movement by movement
+              <span
+                aria-hidden
+                className="text-vermillion transition-transform group-hover:translate-x-1"
+              >
+                →
+              </span>
+            </Link>
+          </div>
         </section>
 
         <TestimonialsSection />
