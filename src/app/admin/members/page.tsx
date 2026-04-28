@@ -12,6 +12,7 @@ import {
 } from "@/lib/format";
 import { MemberFilters } from "./filters";
 import { DangerZone } from "./danger-zone";
+import { BulkIssueQrsButton } from "./bulk-issue-button";
 import { getSessionUser } from "@/lib/auth/dal";
 
 export const metadata = { title: "Members" };
@@ -96,6 +97,7 @@ export default async function MembersPage({
       <PageHeader
         title="Members"
         description="Roster. Click a name to view details, edit, or change status."
+        action={<BulkIssueQrsButton />}
       />
 
       <MemberFilters q={q} level={level} status={status} />
