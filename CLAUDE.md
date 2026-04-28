@@ -252,6 +252,7 @@ These need decisions before respective sections can be finalized:
 7. **Domain repointing date:** When does the founder want to cut over `woodlandstaichi.com` to the new site? Drives Phase 1 completion deadline.
 8. **Email sender domain:** `info@woodlandstaichi.com` exists. For Resend, we'll need DNS access to add SPF/DKIM/DMARC records before sending mail in Phase 3.
 9. **Store: stays informational forever, or eventually transactional?** Drives whether to wire Stripe/Shopify later.
+10. **`/about/why` typos** — preserved verbatim from legacy site, three lurking issues need Sifu's call before prod cutover: *"felling if joyfulness"* (Wave Hands Like the Clouds), *"spin supple"* (Strike Both Ears), *"alertness if the cerebrum"* (White Crane Spreads Its Wings). Fix in `src/app/about/why/page.tsx` if he says go.
 
 ---
 
