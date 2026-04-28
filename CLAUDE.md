@@ -38,6 +38,7 @@ This repo is a ground-up rebuild of <https://woodlandstaichi.com> (currently Wor
 | **3.0 — QR attendance** | Per-member HMAC-signed QR tokens emailed via Resend; webcam scanner at `/admin/attendance/scan`; manual name-search backup; idempotent attendance writes | ⏳ Designed (DB + crypto deps installed); UI/API not built |
 | **3.1 — Reminders** | `pg_cron` scheduled jobs (dues, class reminders) → Supabase Edge Function → Resend | ⏳ Designed |
 | **4.0 — Admin dashboard** | Polish admin into a dedicated section under `/admin/*` with full role-based UI | ⏳ Future |
+| **5.0 — Member portal** | Member auth + `/members/me`: own attendance, own QR regen, update contact, submit testimonials w/ admin approval. See §13. | ⏳ Designed |
 
 **Critical principle:** the schema is already designed for phases 2–4. **Don't hardcode class schedules** into pages — render from Supabase. The home page's `ScheduleSection` and `/about` `TestimonialsSection` are templates for this pattern.
 
@@ -297,7 +298,33 @@ These need decisions before respective sections can be finalized:
 
 ---
 
-## 12. Working principles for future Claude
+## 13. Phase 5 design notes — member portal & self-submitted testimonials
+
+The schema already supports member auth via `members.user_id` (nullable FK to `auth.users`) and the initial RLS policies grant `members read self` + `members read own attendance`. Phase 5 builds on that.
+
+**Bundle, don't piecemeal.** Member-facing features only justify the auth investment if a few ship together. Don't build "submit testimonial" alone — pair with: view own attendance history, regenerate own QR (rate-limited), update contact info, and (eventually) see own dues. Members won't create accounts for one feature.
+
+**Adoption reality:** Audience skews older (60+). Realistic adoption is 10–20% of active members. That's still a win — half a dozen authentic testimonials a year — but don't over-engineer assuming high uptake.
+
+**Testimonials schema additions (when phase lands):**
+```sql
+alter table public.testimonials
+  add column member_id uuid references public.members(id) on delete set null,
+  add column status text check (status in ('pending','approved','rejected')) default 'approved',
+  add column submitted_at timestamptz,
+  add column reviewed_at timestamptz,
+  add column reviewed_by_user_id uuid references auth.users(id) on delete set null,
+  add column reviewer_note text;
+```
+Existing 15 admin-written testimonials default to `status='approved'`, `member_id=null` — backwards compatible. Public `/about` query becomes `where active = true and status = 'approved'`.
+
+**Linking auth → member row** on signup: match by email. If `auth.users.email` matches a `members.email` row, set `members.user_id` to the new auth id. New auth users with no matching member row are members-in-waiting; either auto-create a stub member or block with a "your email isn't on our roster — please use the registration form first" message.
+
+**Approval flow:** member submits → status='pending' → admin gets a tile on `/admin` overview ("N testimonials awaiting review") → `/admin/testimonials?status=pending` → approve/reject inline → on approve, optionally Resend an email to the member ("Your testimonial is now live"). Existing CRUD already at `/admin/testimonials` — extend it.
+
+---
+
+## 14. Working principles for future Claude
 
 - **Don't add features beyond what was asked.** Phase 1.1 is content migration. Don't sneak in Phase 2 UI under the guise of "while I was there." Bug fixes don't need surrounding cleanup.
 - **Don't hardcode what should be DB-driven.** Classes, sessions, testimonials, news posts → all Supabase. The founder will eventually edit these via Studio (then admin UI).
