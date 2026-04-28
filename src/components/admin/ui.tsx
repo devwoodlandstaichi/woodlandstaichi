@@ -164,14 +164,14 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   // Sticky strip is fixed-height so it bottom-aligns with the sidebar's
-  // brand strip across columns. The `:after` pseudo extends `bg-background`
-  // into a 16px gap below the header so every page gets uniform breathing
-  // room and content scrolling underneath is visually clipped (no
-  // peek-through of body gradient or rising row content). Pages with a
-  // sticky filter bar at `top-16` cover the same band with their own
-  // `bg-background`, so the after-strip is harmless there.
+  // brand strip across columns. The `mb-4` gives every page a uniform
+  // breathing gap below the header. On pages with a sticky filter bar at
+  // `top-16`, the filter pins flush with the header's bottom border once
+  // the user scrolls past 16px, so the gap exists only at the top of the
+  // page. Body gradient briefly peeking through the gap during scroll is
+  // intentional and visually subtle.
   return (
-    <header className="sticky top-0 z-20 -mx-4 mb-4 flex h-16 items-center justify-between gap-3 border-b border-foreground/10 bg-background px-4 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-background after:content-[''] md:-mx-6 md:px-6">
+    <header className="sticky top-0 z-20 -mx-4 mb-4 flex h-16 items-center justify-between gap-3 border-b border-foreground/10 bg-background px-4 md:-mx-6 md:px-6">
       <div className="min-w-0">
         <h1 className="truncate font-display text-xl font-medium leading-tight tracking-tight">
           {title}
