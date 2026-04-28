@@ -218,21 +218,43 @@ function Bookend({
   movement: Movement;
   index: number;
 }) {
+  // Ceremonial centred treatment — like a chapter divider in a
+  // printed book. Replaces the previous card-with-eyebrow style
+  // which made OPENING / CLOSING feel like the same shape as a
+  // regular form-movement card.
   return (
-    <article className="rounded-2xl border border-foreground/10 bg-card p-7 md:p-9">
-      <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-3">
-        <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
-        {label}
-        <span className="ml-3 font-mono text-foreground/40 tracking-normal">
+    <article className="relative mx-auto max-w-2xl text-center py-10 md:py-14">
+      <DecorativeRule />
+      <p className="mt-7 text-[10px] uppercase tracking-[0.5em] text-foreground/50">
+        <span className="font-mono text-vermillion mr-2 tabular-nums">
           {String(index).padStart(2, "0")}
         </span>
+        {label}
       </p>
-      <h2 className="font-display text-3xl md:text-4xl leading-[1.1] tracking-tight">
+      <h2 className="mt-5 font-display text-5xl md:text-6xl italic leading-[1] tracking-tight">
         {movement.name}
       </h2>
-      <p className="mt-4 text-lg text-foreground/85 leading-relaxed max-w-3xl">
+      <p className="mt-6 text-lg text-foreground/75 leading-relaxed font-display italic">
         {movement.body}
       </p>
+      <div className="mt-9">
+        <DecorativeRule />
+      </div>
     </article>
+  );
+}
+
+/** A short centred horizontal rule with a small vermillion diamond in
+ * the middle — classical book-divider treatment. */
+function DecorativeRule() {
+  return (
+    <div
+      aria-hidden
+      className="mx-auto flex w-32 items-center gap-3 text-vermillion/70"
+    >
+      <span className="h-px flex-1 bg-foreground/20" />
+      <span className="text-[10px] tracking-tighter">◆</span>
+      <span className="h-px flex-1 bg-foreground/20" />
+    </div>
   );
 }
