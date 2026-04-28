@@ -8,11 +8,28 @@ import {
   deactivateInstructor,
   deleteInstructor,
 } from "./actions";
+import { InstructorFilters } from "./filters";
 
 export const metadata = { title: "Instructors" };
 export const dynamic = "force-dynamic";
 
 type Tier = "founder" | "senior" | "instructor" | "assistant";
+const TIER_VALUES: Tier[] = ["founder", "senior", "instructor", "assistant"];
+
+type Status = "active" | "hidden" | "all";
+
+function isTier(v: string | undefined): v is Tier {
+  return !!v && (TIER_VALUES as readonly string[]).includes(v);
+}
+function asStatus(v: string | undefined): Status {
+  return v === "hidden" || v === "all" ? v : "active";
+}
+
+type SearchParams = Promise<{
+  q?: string;
+  tier?: string;
+  status?: string;
+}>;
 
 type Row = {
   id: string;
@@ -56,14 +73,42 @@ function initials(name: string): string {
   return ((parts[0]?.[0] ?? "") + (parts.at(-1)?.[0] ?? "")).toUpperCase();
 }
 
-export default async function InstructorsAdminPage() {
+export default async function InstructorsAdminPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const params = await searchParams;
+  const q = (params.q ?? "").trim();
+  const tier = isTier(params.tier) ? params.tier : "";
+  const status = asStatus(params.status);
+
   const supabase = await createClient();
-  const { data } = await supabase
+  let query = supabase
     .from("instructors")
     .select("id,name,tier,title,bio,display_order,active,photo_url")
     .order("active", { ascending: false })
     .order("display_order", { ascending: true });
+
+  if (status === "active") query = query.eq("active", true);
+  else if (status === "hidden") query = query.eq("active", false);
+  if (tier) query = query.eq("tier", tier);
+  if (q) {
+    // PostgREST ilike inside .or() needs `*` as the wildcard
+    const safe = q.replace(/[,()*]/g, " ");
+    query = query.or(
+      [
+        `name.ilike.*${safe}*`,
+        `title.ilike.*${safe}*`,
+        `bio.ilike.*${safe}*`,
+      ].join(","),
+    );
+  }
+
+  const { data } = await query;
   const rows = (data ?? []) as Row[];
+
+  const filtered = !!q || !!tier || status !== "active";
 
   return (
     <>
@@ -80,9 +125,13 @@ export default async function InstructorsAdminPage() {
         }
       />
 
+      <InstructorFilters q={q} tier={tier as Tier | ""} status={status} />
+
       {rows.length === 0 ? (
         <Card className="p-8 text-center text-muted-foreground">
-          No instructors yet.
+          {filtered
+            ? "No instructors match these filters."
+            : "No instructors yet."}
         </Card>
       ) : (
         <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -93,6 +142,10 @@ export default async function InstructorsAdminPage() {
           ))}
         </ul>
       )}
+
+      <p className="mt-4 text-xs text-muted-foreground">
+        {rows.length} {rows.length === 1 ? "instructor" : "instructors"}.
+      </p>
     </>
   );
 }
