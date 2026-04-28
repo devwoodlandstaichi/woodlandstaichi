@@ -92,10 +92,10 @@ export default async function NewsAdminPage({
               doesn't reliably stack above <tbody> rows in tables. */}
           <thead className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
             <tr>
-              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Title</th>
-              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Posted</th>
-              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Status</th>
-              <th className="sticky top-[129px] z-[5] bg-background px-4 py-3 shadow-[inset_0_-1px_0_var(--border)]" />
+              <th className="sticky top-[145px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Title</th>
+              <th className="sticky top-[145px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Posted</th>
+              <th className="sticky top-[145px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Status</th>
+              <th className="sticky top-[145px] z-[5] bg-background px-4 py-3 shadow-[inset_0_-1px_0_var(--border)]" />
             </tr>
           </thead>
           <tbody>

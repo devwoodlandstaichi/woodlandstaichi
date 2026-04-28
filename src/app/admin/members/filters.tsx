@@ -59,7 +59,7 @@ export function MemberFilters({
 
   return (
     <div
-      className="sticky top-16 z-10 -mx-4 flex flex-wrap items-center gap-3 border-b border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6"
+      className="sticky top-16 z-10 -mx-4 flex flex-wrap items-center gap-3 border-b border-foreground/10 bg-background px-4 pb-3 pt-7 md:-mx-6 md:px-6"
       role="search"
       aria-label="Filter members"
     >

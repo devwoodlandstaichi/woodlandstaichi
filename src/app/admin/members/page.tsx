@@ -177,7 +177,7 @@ export default async function MembersPage({
                           : "descending"
                         : "none"
                     }
-                    className="sticky top-[129px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]"
+                    className="sticky top-[145px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]"
                   >
                     <a
                       href={sortHref(col)}
