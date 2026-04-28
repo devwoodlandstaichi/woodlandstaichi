@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { QrCode } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, PageHeader } from "@/components/admin/ui";
 import {
@@ -10,6 +11,8 @@ import {
   type MemberStatus,
 } from "@/lib/format";
 import { MemberFilters } from "./filters";
+import { DangerZone } from "./danger-zone";
+import { getSessionUser } from "@/lib/auth/dal";
 
 export const metadata = { title: "Members" };
 export const dynamic = "force-dynamic";
@@ -22,10 +25,11 @@ type MemberRow = {
   phone: string | null;
   level: MemberLevel;
   status: MemberStatus;
+  qr_token: string | null;
   created_at: string;
 };
 
-type SearchParams = Promise<{ level?: string; status?: string }>;
+type SearchParams = Promise<{ q?: string; level?: string; status?: string }>;
 
 function isLevel(v: string | undefined): v is MemberLevel {
   return !!v && (MEMBER_LEVEL_VALUES as readonly string[]).includes(v);
@@ -53,20 +57,36 @@ export default async function MembersPage({
   searchParams: SearchParams;
 }) {
   const params = await searchParams;
+  const q = (params.q ?? "").trim();
   const level = isLevel(params.level) ? params.level : null;
   const status = isStatus(params.status) ? params.status : "active";
 
+  const user = await getSessionUser();
   const supabase = await createClient();
   let query = supabase
     .from("members")
     .select(
-      "id,first_name,last_name,email,phone,level,status,created_at",
+      "id,first_name,last_name,nickname,email,phone,level,status,qr_token,created_at",
     )
     .order("last_name", { ascending: true })
     .order("first_name", { ascending: true });
 
   if (level) query = query.eq("level", level);
   if (status) query = query.eq("status", status);
+  if (q) {
+    // PostgREST ilike inside .or() needs `*` as the wildcard, not `%`.
+    // Strip chars that would break the `or=(...)` group.
+    const safe = q.replace(/[,()*]/g, " ");
+    query = query.or(
+      [
+        `first_name.ilike.*${safe}*`,
+        `last_name.ilike.*${safe}*`,
+        `nickname.ilike.*${safe}*`,
+        `email.ilike.*${safe}*`,
+        `phone.ilike.*${safe}*`,
+      ].join(","),
+    );
+  }
 
   const { data } = await query;
   const rows = (data ?? []) as MemberRow[];
@@ -78,7 +98,7 @@ export default async function MembersPage({
         description="Roster. Click a name to view details, edit, or change status."
       />
 
-      <MemberFilters level={level} status={status} />
+      <MemberFilters q={q} level={level} status={status} />
 
       {rows.length === 0 ? (
         <Card className="p-8 text-center text-muted-foreground">
@@ -105,9 +125,16 @@ export default async function MembersPage({
                   <td className="px-4 py-3 font-medium">
                     <Link
                       href={`/admin/members/${m.id}`}
-                      className="hover:text-vermillion"
+                      className="inline-flex items-center gap-2 hover:text-vermillion"
                     >
                       {m.last_name}, {m.first_name}
+                      {m.qr_token && (
+                        <QrCode
+                          size={14}
+                          aria-label="QR issued"
+                          className="text-vermillion/70"
+                        />
+                      )}
                     </Link>
                   </td>
                   <td className="px-4 py-3">
@@ -141,6 +168,8 @@ export default async function MembersPage({
       <p className="mt-4 text-xs text-muted-foreground">
         {rows.length} {rows.length === 1 ? "member" : "members"}.
       </p>
+
+      {user?.role === "admin" && <DangerZone />}
     </>
   );
 }
