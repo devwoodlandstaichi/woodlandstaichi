@@ -81,91 +81,91 @@ export default async function RegistrationsPage({
           No {status} registrations.
         </Card>
       ) : (
-        <Card className="mt-4 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-foreground/10 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-medium">Member</th>
-                <th className="px-4 py-3 font-medium">Class</th>
-                <th className="px-4 py-3 font-medium">Shirt</th>
-                <th className="px-4 py-3 font-medium">Method</th>
-                <th className="px-4 py-3 font-medium">Registered</th>
-                <th className="px-4 py-3 font-medium">Payment</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr
-                  key={r.id}
-                  className="border-b border-foreground/5 last:border-0 align-top"
-                >
-                  <td className="px-4 py-3">
-                    {r.members ? (
-                      <Link
-                        href={`/admin/members/${r.members.id}`}
-                        className="font-medium hover:text-vermillion"
-                      >
-                        {r.members.last_name}, {r.members.first_name}
-                      </Link>
-                    ) : (
-                      "—"
-                    )}
-                    {r.members?.email && (
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {r.members.email}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="font-medium">{r.classes?.name ?? "—"}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {r.classes?.day_of_week
-                        ? dayLabel(r.classes.day_of_week)
-                        : "—"}
-                      {r.classes?.start_time && r.classes?.end_time
-                        ? ` · ${formatTimeRange(
-                            r.classes.start_time,
-                            r.classes.end_time,
-                          )}`
-                        : ""}
+        <table className="w-full text-left text-sm">
+          <thead className="sticky top-[129px] z-[5] bg-background text-xs uppercase tracking-[0.14em] text-muted-foreground shadow-[inset_0_-1px_0_var(--border)]">
+            <tr>
+              <th className="px-4 py-3 font-medium">Member</th>
+              <th className="px-4 py-3 font-medium">Class</th>
+              <th className="px-4 py-3 font-medium">Shirt</th>
+              <th className="px-4 py-3 font-medium">Method</th>
+              <th className="px-4 py-3 font-medium">Registered</th>
+              <th className="px-4 py-3 font-medium">Payment</th>
+              <th className="px-4 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr
+                key={r.id}
+                className="border-b border-foreground/5 last:border-0 align-top"
+              >
+                <td className="px-4 py-3">
+                  {r.members ? (
+                    <Link
+                      href={`/admin/members/${r.members.id}`}
+                      className="font-medium hover:text-vermillion"
+                    >
+                      {r.members.last_name}, {r.members.first_name}
+                    </Link>
+                  ) : (
+                    "—"
+                  )}
+                  {r.members?.email && (
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {r.members.email}
                     </p>
-                    {r.classes?.level && (
-                      <p className="mt-1">
-                        <Badge tone="cobalt">{levelLabel(r.classes.level)}</Badge>
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">{r.shirt_size ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {r.payment_method ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {formatDate(r.registered_at.slice(0, 10))}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge tone={PAYMENT_TONE[r.payment_status]}>
-                      {r.payment_status}
-                    </Badge>
-                    {r.payment_received_at && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {formatDate(r.payment_received_at.slice(0, 10))}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <ActionButtons id={r.id} status={r.payment_status} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <p className="font-medium">{r.classes?.name ?? "—"}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {r.classes?.day_of_week
+                      ? dayLabel(r.classes.day_of_week)
+                      : "—"}
+                    {r.classes?.start_time && r.classes?.end_time
+                      ? ` · ${formatTimeRange(
+                          r.classes.start_time,
+                          r.classes.end_time,
+                        )}`
+                      : ""}
+                  </p>
+                  {r.classes?.level && (
+                    <p className="mt-1">
+                      <Badge tone="cobalt">{levelLabel(r.classes.level)}</Badge>
+                    </p>
+                  )}
+                </td>
+                <td className="px-4 py-3">{r.shirt_size ?? "—"}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {r.payment_method ?? "—"}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {formatDate(r.registered_at.slice(0, 10))}
+                </td>
+                <td className="px-4 py-3">
+                  <Badge tone={PAYMENT_TONE[r.payment_status]}>
+                    {r.payment_status}
+                  </Badge>
+                  {r.payment_received_at && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {formatDate(r.payment_received_at.slice(0, 10))}
+                    </p>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <ActionButtons id={r.id} status={r.payment_status} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
 
-      <p className="mt-4 text-xs text-muted-foreground">
-        {rows.length} {rows.length === 1 ? "registration" : "registrations"}.
-      </p>
+      <div className="sticky bottom-0 -mx-4 mt-4 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">
+        <p className="text-xs text-muted-foreground">
+          {rows.length} {rows.length === 1 ? "registration" : "registrations"}.
+        </p>
+      </div>
     </>
   );
 }

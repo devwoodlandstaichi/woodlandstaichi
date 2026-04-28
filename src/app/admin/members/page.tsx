@@ -159,99 +159,99 @@ export default async function MembersPage({
           No members match these filters.
         </Card>
       ) : (
-        <Card className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-foreground/10 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-              <tr>
-                {SORT_COLUMNS.map((col) => {
-                  const active = col === sort;
-                  return (
-                    <th
-                      key={col}
-                      scope="col"
-                      aria-sort={
-                        active
-                          ? dir === "asc"
-                            ? "ascending"
-                            : "descending"
-                          : "none"
-                      }
-                      className="px-4 py-3 font-medium"
-                    >
-                      <a
-                        href={sortHref(col)}
-                        className={
-                          active
-                            ? "inline-flex items-center gap-1 text-foreground hover:text-vermillion"
-                            : "inline-flex items-center gap-1 hover:text-foreground"
-                        }
-                      >
-                        {SORT_LABEL[col]}
-                        {active &&
-                          (dir === "asc" ? (
-                            <ChevronUp size={12} aria-hidden />
-                          ) : (
-                            <ChevronDown size={12} aria-hidden />
-                          ))}
-                      </a>
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((m) => (
-                <tr
-                  key={m.id}
-                  className="border-b border-foreground/5 last:border-0"
-                >
-                  <td className="px-4 py-3 font-medium">
-                    <div className="inline-flex items-center gap-1">
-                      <Link
-                        href={`/admin/members/${m.id}`}
-                        className="hover:text-vermillion"
-                      >
-                        {m.last_name}, {m.first_name}
-                      </Link>
-                      <EmailQrButton
-                        memberId={m.id}
-                        memberName={`${m.first_name} ${m.last_name}`}
-                        email={m.email}
-                        hasQr={!!m.qr_token}
-                      />
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
+        <table className="w-full text-left text-sm">
+          <thead className="sticky top-[129px] z-[5] bg-background text-xs uppercase tracking-[0.14em] text-muted-foreground shadow-[inset_0_-1px_0_var(--border)]">
+            <tr>
+              {SORT_COLUMNS.map((col) => {
+                const active = col === sort;
+                return (
+                  <th
+                    key={col}
+                    scope="col"
+                    aria-sort={
+                      active
+                        ? dir === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "none"
+                    }
+                    className="px-4 py-3 font-medium"
+                  >
                     <a
-                      href={`mailto:${m.email}`}
-                      className="text-muted-foreground hover:text-foreground"
+                      href={sortHref(col)}
+                      className={
+                        active
+                          ? "inline-flex items-center gap-1 text-foreground hover:text-vermillion"
+                          : "inline-flex items-center gap-1 hover:text-foreground"
+                      }
                     >
-                      {m.email}
+                      {SORT_LABEL[col]}
+                      {active &&
+                        (dir === "asc" ? (
+                          <ChevronUp size={12} aria-hidden />
+                        ) : (
+                          <ChevronDown size={12} aria-hidden />
+                        ))}
                     </a>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {m.phone ?? "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge tone={LEVEL_TONE[m.level]}>
-                      {MEMBER_LEVEL_LABELS[m.level]}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge tone={STATUS_TONE[m.status]}>
-                      {memberStatusLabel(m.status)}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((m) => (
+              <tr
+                key={m.id}
+                className="border-b border-foreground/5 last:border-0"
+              >
+                <td className="px-4 py-3 font-medium">
+                  <div className="inline-flex items-center gap-1">
+                    <Link
+                      href={`/admin/members/${m.id}`}
+                      className="hover:text-vermillion"
+                    >
+                      {m.last_name}, {m.first_name}
+                    </Link>
+                    <EmailQrButton
+                      memberId={m.id}
+                      memberName={`${m.first_name} ${m.last_name}`}
+                      email={m.email}
+                      hasQr={!!m.qr_token}
+                    />
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <a
+                    href={`mailto:${m.email}`}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    {m.email}
+                  </a>
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {m.phone ?? "—"}
+                </td>
+                <td className="px-4 py-3">
+                  <Badge tone={LEVEL_TONE[m.level]}>
+                    {MEMBER_LEVEL_LABELS[m.level]}
+                  </Badge>
+                </td>
+                <td className="px-4 py-3">
+                  <Badge tone={STATUS_TONE[m.status]}>
+                    {memberStatusLabel(m.status)}
+                  </Badge>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
 
-      <p className="mt-4 text-xs text-muted-foreground">
-        {rows.length} {rows.length === 1 ? "member" : "members"}.
-      </p>
+      <div className="sticky bottom-0 -mx-4 mt-4 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">
+        <p className="text-xs text-muted-foreground">
+          {rows.length} {rows.length === 1 ? "member" : "members"}.
+        </p>
+      </div>
 
       {user?.role === "admin" && <DangerZone />}
     </>

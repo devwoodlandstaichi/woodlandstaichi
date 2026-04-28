@@ -116,7 +116,7 @@ export function AdminNav({
   const isAdmin = role === "admin";
 
   return (
-    <nav aria-label="Admin" className="flex flex-col gap-3">
+    <nav aria-label="Admin" className="flex flex-col gap-2">
       {NAV.map((group, gIdx) => {
         const visible = group.items.filter((i) => !i.adminOnly || isAdmin);
         if (visible.length === 0) return null;
@@ -151,7 +151,7 @@ export function AdminNav({
                   target={item.newTab ? "_blank" : undefined}
                   rel={item.newTab ? "noopener noreferrer" : undefined}
                   className={cn(
-                    "flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[13px] tracking-wide transition-colors",
+                    "flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[13px] tracking-wide transition-colors",
                     active
                       ? "bg-foreground text-background"
                       : "text-foreground/75 hover:bg-foreground/5 hover:text-foreground",

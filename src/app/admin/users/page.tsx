@@ -80,69 +80,69 @@ export default async function UsersPage() {
           No users yet.
         </Card>
       ) : (
-        <Card className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-foreground/10 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-medium">Email</th>
-                <th className="px-4 py-3 font-medium">Role</th>
-                <th className="px-4 py-3 font-medium">Created</th>
-                <th className="px-4 py-3 font-medium">Last sign-in</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((u) => {
-                const isMe = u.id === me.id;
-                return (
-                  <tr
-                    key={u.id}
-                    className="border-b border-foreground/5 last:border-0 align-top"
-                  >
-                    <td className="px-4 py-3 font-medium">
-                      {u.email}
-                      {isMe && (
-                        <span className="ml-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                          (you)
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {u.role === "admin" ? (
-                        <Badge tone="vermillion">Admin</Badge>
-                      ) : u.role === "instructor" ? (
-                        <Badge tone="cobalt">Instructor</Badge>
-                      ) : (
-                        <Badge tone="muted">No role</Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {formatDate(u.created_at.slice(0, 10))}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {u.last_sign_in_at
-                        ? formatDate(u.last_sign_in_at.slice(0, 10))
-                        : "Never"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <UserRowActions
-                        userId={u.id}
-                        email={u.email}
-                        role={u.role}
-                        isSelf={isMe}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </Card>
+        <table className="w-full text-left text-sm">
+          <thead className="sticky top-[65px] z-[5] bg-background text-xs uppercase tracking-[0.14em] text-muted-foreground shadow-[inset_0_-1px_0_var(--border)]">
+            <tr>
+              <th className="px-4 py-3 font-medium">Email</th>
+              <th className="px-4 py-3 font-medium">Role</th>
+              <th className="px-4 py-3 font-medium">Created</th>
+              <th className="px-4 py-3 font-medium">Last sign-in</th>
+              <th className="px-4 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((u) => {
+              const isMe = u.id === me.id;
+              return (
+                <tr
+                  key={u.id}
+                  className="border-b border-foreground/5 last:border-0 align-top"
+                >
+                  <td className="px-4 py-3 font-medium">
+                    {u.email}
+                    {isMe && (
+                      <span className="ml-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                        (you)
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {u.role === "admin" ? (
+                      <Badge tone="vermillion">Admin</Badge>
+                    ) : u.role === "instructor" ? (
+                      <Badge tone="cobalt">Instructor</Badge>
+                    ) : (
+                      <Badge tone="muted">No role</Badge>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {formatDate(u.created_at.slice(0, 10))}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {u.last_sign_in_at
+                      ? formatDate(u.last_sign_in_at.slice(0, 10))
+                      : "Never"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <UserRowActions
+                      userId={u.id}
+                      email={u.email}
+                      role={u.role}
+                      isSelf={isMe}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       )}
 
-      <p className="mt-4 text-xs text-muted-foreground">
-        {rows.length} {rows.length === 1 ? "user" : "users"}.
-      </p>
+      <div className="sticky bottom-0 -mx-4 mt-4 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">
+        <p className="text-xs text-muted-foreground">
+          {rows.length} {rows.length === 1 ? "user" : "users"}.
+        </p>
+      </div>
     </>
   );
 }

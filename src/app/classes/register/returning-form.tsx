@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   Field,
   Textarea,
@@ -43,6 +43,38 @@ export function ReturningRegistrationForm({
     return val === "on" || val === "true" || val === "1";
   };
 
+  // Re-key the form on each failed submit so React remounts the inputs
+  // and re-applies the snapshot via `defaultValue`. Otherwise React 19's
+  // post-action reset wipes the user's typed values.
+  const [submitCount, setSubmitCount] = useState(0);
+  const [lastState, setLastState] = useState(state);
+  if (state !== lastState) {
+    setLastState(state);
+    if (state.status === "error") setSubmitCount((c) => c + 1);
+  }
+  const formKey = `s-${submitCount}`;
+
+  // Jump to the first invalid field after a failed submit.
+  useEffect(() => {
+    if (state.status !== "error" || !state.fieldErrors) return;
+    const firstKey = Object.keys(state.fieldErrors)[0];
+    if (!firstKey) return;
+    const el =
+      document.getElementById(firstKey) ??
+      document.querySelector<HTMLElement>(`[name="${firstKey}"]`);
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        el instanceof HTMLSelectElement
+      ) {
+        el.focus({ preventScroll: true });
+      }
+    });
+  }, [state]);
+
   const handleBlur = (e: React.FocusEvent<HTMLFormElement>) => {
     const t = e.target;
     if (!(t instanceof HTMLInputElement)) return;
@@ -53,6 +85,7 @@ export function ReturningRegistrationForm({
 
   return (
     <form
+      key={formKey}
       action={formAction}
       onBlur={handleBlur}
       className="space-y-12"

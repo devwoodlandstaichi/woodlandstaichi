@@ -184,7 +184,7 @@ function InstructorCard({
         ) : (
           <span
             aria-hidden
-            className={`inline-flex ${avatar} items-center justify-center rounded-full bg-vermillion/10 text-vermillion font-display text-3xl border-4 border-card shadow-sm`}
+            className={`inline-flex ${avatar} items-center justify-center rounded-full bg-ink-950 text-ink-50 font-display text-3xl border-4 border-card shadow-sm`}
           >
             {initials(instructor.name)}
           </span>

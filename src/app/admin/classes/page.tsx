@@ -122,83 +122,81 @@ export default async function ClassesPage({
             : "No classes yet. Create one to populate the public schedule."}
         </Card>
       ) : (
-        <Card className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-foreground/10 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">When</th>
-                <th className="px-4 py-3 font-medium">Where</th>
-                <th className="px-4 py-3 font-medium">Level</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3" />
+        <table className="w-full text-left text-sm">
+          <thead className="sticky top-[129px] z-[5] bg-background text-xs uppercase tracking-[0.14em] text-muted-foreground shadow-[inset_0_-1px_0_var(--border)]">
+            <tr>
+              <th className="px-4 py-3 font-medium">Name</th>
+              <th className="px-4 py-3 font-medium">When</th>
+              <th className="px-4 py-3 font-medium">Where</th>
+              <th className="px-4 py-3 font-medium">Level</th>
+              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((c) => (
+              <tr
+                key={c.id}
+                className="border-b border-foreground/5 last:border-0"
+              >
+                <td className="px-4 py-4 font-medium">{c.name}</td>
+                <td className="px-4 py-4 text-muted-foreground">
+                  {dayLabel(c.day_of_week)}
+                  <br />
+                  <span className="text-foreground">
+                    {formatTimeRange(c.start_time, c.end_time)}
+                  </span>
+                </td>
+                <td className="px-4 py-4 text-muted-foreground">
+                  {c.location}
+                </td>
+                <td className="px-4 py-4">
+                  <Badge tone="cobalt">{levelLabel(c.level)}</Badge>
+                </td>
+                <td className="px-4 py-4">
+                  {c.active ? (
+                    <Badge tone="jade">Active</Badge>
+                  ) : (
+                    <Badge tone="muted">Archived</Badge>
+                  )}
+                </td>
+                <td className="px-4 py-4">
+                  <div className="flex items-center justify-end gap-1">
+                    <Link
+                      href={`/admin/classes/${c.id}/edit`}
+                      className="inline-flex h-10 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm hover:bg-accent/10 hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    >
+                      <Pencil size={14} aria-hidden /> Edit
+                    </Link>
+                    <form action={c.active ? archiveClass : unarchiveClass}>
+                      <input type="hidden" name="id" value={c.id} />
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={
+                          c.active
+                            ? `Archive ${c.name}`
+                            : `Unarchive ${c.name}`
+                        }
+                      >
+                        {c.active ? "Archive" : "Unarchive"}
+                      </Button>
+                    </form>
+                    <DeleteClassButton id={c.id} name={c.name} />
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {sorted.map((c) => (
-                <tr
-                  key={c.id}
-                  className="border-b border-foreground/5 last:border-0"
-                >
-                  <td className="px-4 py-4 font-medium">{c.name}</td>
-                  <td className="px-4 py-4 text-muted-foreground">
-                    {dayLabel(c.day_of_week)}
-                    <br />
-                    <span className="text-foreground">
-                      {formatTimeRange(c.start_time, c.end_time)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-muted-foreground">
-                    {c.location}
-                  </td>
-                  <td className="px-4 py-4">
-                    <Badge tone="cobalt">{levelLabel(c.level)}</Badge>
-                  </td>
-                  <td className="px-4 py-4">
-                    {c.active ? (
-                      <Badge tone="jade">Active</Badge>
-                    ) : (
-                      <Badge tone="muted">Archived</Badge>
-                    )}
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center justify-end gap-1">
-                      <Link
-                        href={`/admin/classes/${c.id}/edit`}
-                        className="inline-flex h-10 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm hover:bg-accent/10 hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                      >
-                        <Pencil size={14} aria-hidden /> Edit
-                      </Link>
-                      <form
-                        action={c.active ? archiveClass : unarchiveClass}
-                      >
-                        <input type="hidden" name="id" value={c.id} />
-                        <Button
-                          type="submit"
-                          variant="ghost"
-                          size="sm"
-                          aria-label={
-                            c.active
-                              ? `Archive ${c.name}`
-                              : `Unarchive ${c.name}`
-                          }
-                        >
-                          {c.active ? "Archive" : "Unarchive"}
-                        </Button>
-                      </form>
-                      <DeleteClassButton id={c.id} name={c.name} />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+            ))}
+          </tbody>
+        </table>
       )}
 
-      <p className="mt-4 text-xs text-muted-foreground">
-        {sorted.length} {sorted.length === 1 ? "class" : "classes"}.
-      </p>
+      <div className="sticky bottom-0 -mx-4 mt-4 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">
+        <p className="text-xs text-muted-foreground">
+          {sorted.length} {sorted.length === 1 ? "class" : "classes"}.
+        </p>
+      </div>
     </>
   );
 }

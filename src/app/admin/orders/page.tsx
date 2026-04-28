@@ -83,83 +83,80 @@ export default async function AdminOrdersPage({
       <OrderFilters q={q} status={status as OrderStatusFilter} />
 
       {rows.length === 0 ? (
-        <Card className="mt-4 p-8 text-center text-muted-foreground">
+        <Card className="p-8 text-center text-muted-foreground">
           {q || status !== "unpaid"
             ? "No orders match these filters."
             : "No orders yet."}
         </Card>
       ) : (
-        <Card className="mt-4 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-foreground/10 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 font-medium">Customer</th>
-                <th className="px-4 py-3 font-medium">Items</th>
-                <th className="px-4 py-3 font-medium">Method</th>
-                <th className="px-4 py-3 font-medium">Total</th>
-                <th className="px-4 py-3 font-medium">Submitted</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => {
-                const itemCount = r.order_items?.length ?? 0;
-                return (
-                  <tr
-                    key={r.id}
-                    className="border-b border-foreground/5 last:border-0 align-top"
-                  >
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/admin/orders/${r.id}`}
-                        className="font-medium hover:text-vermillion"
-                      >
-                        {r.customer_last_name}, {r.customer_first_name}
-                      </Link>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {r.customer_email}
+        <table className="w-full text-left text-sm">
+          <thead className="sticky top-[129px] z-[5] bg-background text-xs uppercase tracking-[0.14em] text-muted-foreground shadow-[inset_0_-1px_0_var(--border)]">
+            <tr>
+              <th className="px-4 py-3 font-medium">Customer</th>
+              <th className="px-4 py-3 font-medium">Items</th>
+              <th className="px-4 py-3 font-medium">Method</th>
+              <th className="px-4 py-3 font-medium">Total</th>
+              <th className="px-4 py-3 font-medium">Submitted</th>
+              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const itemCount = r.order_items?.length ?? 0;
+              return (
+                <tr
+                  key={r.id}
+                  className="border-b border-foreground/5 last:border-0 align-top"
+                >
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/admin/orders/${r.id}`}
+                      className="font-medium hover:text-vermillion"
+                    >
+                      {r.customer_last_name}, {r.customer_first_name}
+                    </Link>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {r.customer_email}
+                    </p>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {itemCount} {itemCount === 1 ? "item" : "items"}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {r.payment_method.replace("_", " ")}
+                  </td>
+                  <td className="px-4 py-3 font-mono tabular-nums">
+                    {formatUsd(r.total_cents)}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {formatDate(r.created_at.slice(0, 10))}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge tone={STATUS_TONE[r.payment_status]}>
+                      {r.payment_status}
+                    </Badge>
+                    {r.paid_at && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formatDate(r.paid_at.slice(0, 10))}
                       </p>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {itemCount} {itemCount === 1 ? "item" : "items"}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {r.payment_method.replace("_", " ")}
-                    </td>
-                    <td className="px-4 py-3 font-mono tabular-nums">
-                      {formatUsd(r.total_cents)}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {formatDate(r.created_at.slice(0, 10))}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge tone={STATUS_TONE[r.payment_status]}>
-                        {r.payment_status}
-                      </Badge>
-                      {r.paid_at && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {formatDate(r.paid_at.slice(0, 10))}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <ActionButtons
-                        id={r.id}
-                        status={r.payment_status}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </Card>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <ActionButtons id={r.id} status={r.payment_status} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       )}
 
-      <p className="mt-4 text-xs text-muted-foreground">
-        {rows.length} {rows.length === 1 ? "order" : "orders"}.
-      </p>
+      <div className="sticky bottom-0 -mx-4 mt-4 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">
+        <p className="text-xs text-muted-foreground">
+          {rows.length} {rows.length === 1 ? "order" : "orders"}.
+        </p>
+      </div>
     </>
   );
 }

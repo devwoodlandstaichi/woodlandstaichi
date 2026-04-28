@@ -163,22 +163,27 @@ export function PageHeader({
   description?: string;
   action?: React.ReactNode;
 }) {
+  // Sticky strip is fixed-height so it bottom-aligns with the sidebar's
+  // brand strip across columns. The `:after` pseudo extends `bg-background`
+  // into a 16px gap below the header so every page gets uniform breathing
+  // room and content scrolling underneath is visually clipped (no
+  // peek-through of body gradient or rising row content). Pages with a
+  // sticky filter bar at `top-16` cover the same band with their own
+  // `bg-background`, so the after-strip is harmless there.
   return (
-    <header className="sticky top-0 z-20 -mx-4 mb-4 flex flex-col gap-1 border-b border-foreground/10 bg-background/85 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+    <header className="sticky top-0 z-20 -mx-4 mb-4 flex h-16 items-center justify-between gap-3 border-b border-foreground/10 bg-background px-4 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-background after:content-[''] md:-mx-6 md:px-6">
       <div className="min-w-0">
-        <h1 className="font-display text-xl font-medium tracking-tight leading-tight truncate">
+        <h1 className="truncate font-display text-xl font-medium leading-tight tracking-tight">
           {title}
         </h1>
         {description && (
-          <p className="text-xs text-muted-foreground leading-snug truncate">
+          <p className="truncate text-xs leading-snug text-muted-foreground">
             {description}
           </p>
         )}
       </div>
       {action && (
-        <div className="flex shrink-0 gap-2 self-start sm:self-auto">
-          {action}
-        </div>
+        <div className="flex shrink-0 gap-2">{action}</div>
       )}
     </header>
   );

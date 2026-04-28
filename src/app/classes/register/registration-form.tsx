@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   Field,
   Textarea,
@@ -40,6 +40,43 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
   const [state, formAction, pending] = useActionState(submitRegistration, INITIAL);
   const errors = state.status === "error" ? state.fieldErrors ?? {} : {};
 
+  // React 19's form actions reset uncontrolled fields once the action
+  // returns. `defaultValue` only re-applies on mount, so we re-key the
+  // form on every failed-submit transition. That forces React to remount
+  // all inputs, and the replayed `defaultValue`s from `state.values` take
+  // effect — keeping everything the user already typed.
+  const [submitCount, setSubmitCount] = useState(0);
+  const [lastState, setLastState] = useState(state);
+  if (state !== lastState) {
+    setLastState(state);
+    if (state.status === "error") setSubmitCount((c) => c + 1);
+  }
+  const formKey = `s-${submitCount}`;
+
+  // After the server action returns errors, jump the user to the first
+  // invalid field. Scroll into view + focus so the next keystroke goes
+  // straight there. Each new error state is a new object reference, so
+  // this fires once per failed submit.
+  useEffect(() => {
+    if (state.status !== "error" || !state.fieldErrors) return;
+    const firstKey = Object.keys(state.fieldErrors)[0];
+    if (!firstKey) return;
+    const el =
+      document.getElementById(firstKey) ??
+      document.querySelector<HTMLElement>(`[name="${firstKey}"]`);
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        el instanceof HTMLSelectElement
+      ) {
+        el.focus({ preventScroll: true });
+      }
+    });
+  }, [state]);
+
   // React 19's form actions reset uncontrolled forms once the action
   // returns, so we round-trip the user's typed values through state
   // and replay them as defaultValue/defaultChecked.
@@ -63,6 +100,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
 
   return (
     <form
+      key={formKey}
       action={formAction}
       onBlur={handleBlur}
       className="space-y-12"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import {
   ChevronsLeft,
   ChevronsRight,
@@ -52,47 +53,62 @@ export function AdminSidebar({
   return (
     <aside
       data-collapsed={collapsed || undefined}
+      // Pinned to viewport top so the brand strip aligns with the sticky
+      // PageHeader on the right column. The layout's outer top padding
+      // gives the initial offset; once you scroll past it, both columns
+      // stick flush to the top together.
+      // `max-h-svh` (not `h-svh`) is the key to sticky working: the aside
+      // is content-sized but capped at viewport height. Because the parent
+      // flex container has `min-h-svh`, parent ≥ aside, leaving sticky
+      // travel room. Using fixed `h-svh` here makes aside == parent on
+      // short pages, which kills sticky.
+      //
+      // Overflow stays on the inner nav region (not the aside) so the
+      // brand strip and sign-out remain visible while the nav scrolls.
       className={cn(
-        "md:sticky md:top-6 md:h-[calc(100svh-3rem)] md:shrink-0 md:flex md:flex-col",
+        "md:sticky md:top-0 md:self-start md:max-h-svh md:shrink-0 md:flex md:flex-col",
         "transition-[width] duration-200 ease-out",
         collapsed ? "md:w-16" : "md:w-56",
       )}
     >
-      {/* Brand + collapse toggle inline. When collapsed (md+ only), the
-          brand collapses to a square "W" pip and the toggle stacks
-          underneath it. Mobile always shows the full brand. */}
+      {/* Brand + collapse toggle inline. Crane logo on the left, the
+          two-line "Woodlands / Tai Chi" lockup beside it (hidden when
+          collapsed on desktop), and the toggle on the right. Mobile
+          always shows the full lockup. The min-height + border match the
+          sticky PageHeader on the right column so both read as one
+          continuous top strip. */}
       <div
         className={cn(
-          "mb-4 flex items-center gap-2",
-          collapsed && "md:flex-col md:items-center md:gap-2",
+          "mb-4 flex h-16 items-center gap-2 border-b border-foreground/10",
+          collapsed && "md:h-auto md:flex-col md:items-center md:gap-2 md:border-b-0",
         )}
       >
+        <span
+          aria-hidden
+          className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-foreground/10"
+        >
+          <Image
+            src="/logo.jpg"
+            alt=""
+            fill
+            sizes="36px"
+            className="object-cover"
+            priority
+          />
+        </span>
+
         <p
           aria-label="Woodlands Tai Chi"
           className={cn(
             "flex flex-col font-display text-base font-medium leading-[1.05] tracking-tight",
-            // When collapsed on desktop, swap the two-line brand for a
-            // single square pip (kept consistent with the public site's
-            // header lockup styling).
-            collapsed &&
-              "md:hidden",
+            // When collapsed on desktop, hide the wordmark — the logo
+            // alone reads as the brand.
+            collapsed && "md:hidden",
           )}
         >
           <span>Woodlands</span>
           <span className="italic text-vermillion">Tai Chi</span>
         </p>
-
-        {/* Collapsed-state brand pip — only visible on md+ when collapsed. */}
-        <span
-          aria-hidden
-          className={cn(
-            "hidden",
-            collapsed &&
-              "md:inline-flex md:h-9 md:w-9 md:items-center md:justify-center md:rounded-md md:bg-foreground md:text-background md:font-display md:text-sm",
-          )}
-        >
-          W
-        </span>
 
         <button
           type="button"
@@ -114,7 +130,7 @@ export function AdminSidebar({
       </div>
 
       {/* Email + role chip — hidden on desktop when collapsed. */}
-      <div className={cn("mb-4", collapsed && "md:hidden")}>
+      <div className={cn("mb-3", collapsed && "md:hidden")}>
         <p className="text-[11px] text-muted-foreground truncate">
           {user.email}{" "}
           <span className="ml-1 inline-block rounded-full border border-foreground/15 px-1.5 py-px text-[9px] uppercase tracking-wider">

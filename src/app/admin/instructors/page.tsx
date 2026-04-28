@@ -143,9 +143,11 @@ export default async function InstructorsAdminPage({
         </ul>
       )}
 
-      <p className="mt-4 text-xs text-muted-foreground">
-        {rows.length} {rows.length === 1 ? "instructor" : "instructors"}.
-      </p>
+      <div className="sticky bottom-0 -mx-4 mt-4 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">
+        <p className="text-xs text-muted-foreground">
+          {rows.length} {rows.length === 1 ? "instructor" : "instructors"}.
+        </p>
+      </div>
     </>
   );
 }
