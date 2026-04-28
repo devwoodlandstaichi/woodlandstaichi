@@ -10,11 +10,19 @@ import {
   MessageSquareQuote,
   Newspaper,
   ScanLine,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const ITEMS = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof Home;
+  exact?: boolean;
+};
+
+const BASE_ITEMS: NavItem[] = [
   { href: "/admin", label: "Overview", icon: Home, exact: true },
   { href: "/admin/attendance", label: "Attendance", icon: ScanLine },
   { href: "/admin/classes", label: "Classes", icon: ClipboardList },
@@ -29,12 +37,18 @@ const ITEMS = [
   { href: "/admin/news", label: "News", icon: Newspaper },
 ];
 
-export function AdminNav() {
+const ADMIN_ONLY_ITEMS: NavItem[] = [
+  { href: "/admin/users", label: "Users", icon: ShieldCheck },
+];
+
+export function AdminNav({ role }: { role?: "admin" | "instructor" | null } = {}) {
   const pathname = usePathname();
+  const items =
+    role === "admin" ? [...BASE_ITEMS, ...ADMIN_ONLY_ITEMS] : BASE_ITEMS;
 
   return (
     <nav aria-label="Admin" className="flex flex-col gap-1">
-      {ITEMS.map((item) => {
+      {items.map((item) => {
         const Icon = item.icon;
         const active = item.exact
           ? pathname === item.href
