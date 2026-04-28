@@ -27,7 +27,7 @@ export function PageHeader({
         </span>
       )}
 
-      <div className="mx-auto grid max-w-7xl grid-cols-12 gap-x-6 gap-y-6 px-6 pt-20 pb-8 md:px-10 md:pt-28 md:pb-12">
+      <div className="mx-auto grid max-w-7xl grid-cols-12 gap-x-6 gap-y-6 px-6 pt-7 pb-8 md:px-10 md:pt-10 md:pb-12">
         <div className="col-span-12 lg:col-span-9">
           <p className="rise text-xs uppercase tracking-[0.45em] text-foreground/55 mb-8">
             <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
