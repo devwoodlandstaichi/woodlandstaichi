@@ -83,19 +83,20 @@ export default async function NewsAdminPage({
       <NewsFilters q={q} status={status} />
 
       {rows.length === 0 ? (
-        <Card className="p-8 text-center text-muted-foreground">
+        <Card className="mt-4 p-8 text-center text-muted-foreground">
           {filtered ? "No posts match these filters." : "No posts yet."}
         </Card>
       ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto">
         <table className="w-full text-left text-sm">
           {/* Sticky lives on each <th>, not <thead>, because <thead>+z-index
               doesn't reliably stack above <tbody> rows in tables. */}
           <thead className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
             <tr>
-              <th className="sticky top-[161px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Title</th>
-              <th className="sticky top-[161px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Posted</th>
-              <th className="sticky top-[161px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Status</th>
-              <th className="sticky top-[161px] z-[5] bg-background px-4 py-3 shadow-[inset_0_-1px_0_var(--border)]" />
+              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Title</th>
+              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Posted</th>
+              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Status</th>
+              <th className="sticky top-0 z-[5] bg-background px-4 py-3 shadow-[inset_0_-1px_0_var(--border)]" />
             </tr>
           </thead>
           <tbody>
@@ -163,9 +164,10 @@ export default async function NewsAdminPage({
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
-      <div className="sticky bottom-0 -mx-4 mt-4 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">
+      <div className="-mx-4 shrink-0 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">
         <p className="text-xs text-muted-foreground">
           {rows.length} {rows.length === 1 ? "post" : "posts"}.
         </p>

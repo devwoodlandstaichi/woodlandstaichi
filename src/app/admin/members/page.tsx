@@ -155,10 +155,11 @@ export default async function MembersPage({
       <MemberFilters q={q} level={level} status={status} />
 
       {rows.length === 0 ? (
-        <Card className="p-8 text-center text-muted-foreground">
+        <Card className="mt-4 p-8 text-center text-muted-foreground">
           No members match these filters.
         </Card>
       ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto">
         <table className="w-full text-left text-sm">
           {/* Sticky lives on each <th>, not <thead>, because <thead>+z-index
               doesn't reliably stack above <tbody> rows in tables. */}
@@ -177,7 +178,7 @@ export default async function MembersPage({
                           : "descending"
                         : "none"
                     }
-                    className="sticky top-[161px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]"
+                    className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]"
                   >
                     <a
                       href={sortHref(col)}
@@ -247,15 +248,19 @@ export default async function MembersPage({
             ))}
           </tbody>
         </table>
+        {user?.role === "admin" && (
+          <div className="mt-6">
+            <DangerZone />
+          </div>
+        )}
+        </div>
       )}
 
-      <div className="sticky bottom-0 -mx-4 mt-4 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">
+      <div className="-mx-4 shrink-0 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">
         <p className="text-xs text-muted-foreground">
           {rows.length} {rows.length === 1 ? "member" : "members"}.
         </p>
       </div>
-
-      {user?.role === "admin" && <DangerZone />}
     </>
   );
 }

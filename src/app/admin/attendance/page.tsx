@@ -52,18 +52,20 @@ export default async function AttendanceLanding() {
         description="Pick a session to start scanning."
       />
 
-      <SessionList
-        title="Today"
-        rows={today}
-        emptyHint="No sessions today."
-      />
-
-      <div className="mt-8">
+      <div className="min-h-0 flex-1 overflow-y-auto pt-4">
         <SessionList
-          title="Upcoming (next 14 days)"
-          rows={upcoming}
-          emptyHint="No upcoming sessions in the next two weeks. Generate a term in /admin/sessions."
+          title="Today"
+          rows={today}
+          emptyHint="No sessions today."
         />
+
+        <div className="mt-8">
+          <SessionList
+            title="Upcoming (next 14 days)"
+            rows={upcoming}
+            emptyHint="No upcoming sessions in the next two weeks. Generate a term in /admin/sessions."
+          />
+        </div>
       </div>
     </>
   );

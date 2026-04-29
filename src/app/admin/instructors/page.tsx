@@ -128,22 +128,24 @@ export default async function InstructorsAdminPage({
       <InstructorFilters q={q} tier={tier as Tier | ""} status={status} />
 
       {rows.length === 0 ? (
-        <Card className="p-8 text-center text-muted-foreground">
+        <Card className="mt-4 p-8 text-center text-muted-foreground">
           {filtered
             ? "No instructors match these filters."
             : "No instructors yet."}
         </Card>
       ) : (
-        <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {rows.map((r) => (
-            <li key={r.id}>
-              <InstructorCard instructor={r} />
-            </li>
-          ))}
-        </ul>
+        <div className="min-h-0 flex-1 overflow-y-auto pt-4">
+          <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {rows.map((r) => (
+              <li key={r.id}>
+                <InstructorCard instructor={r} />
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
-      <div className="sticky bottom-0 -mx-4 mt-4 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">
+      <div className="-mx-4 shrink-0 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">
         <p className="text-xs text-muted-foreground">
           {rows.length} {rows.length === 1 ? "instructor" : "instructors"}.
         </p>

@@ -58,7 +58,7 @@ export function InstructorFilters({
 
   return (
     <div
-      className="sticky top-16 z-10 -mx-4 flex flex-wrap items-center gap-3 border-b border-foreground/10 bg-background px-4 py-7 md:-mx-6 md:px-6"
+      className="-mx-4 flex shrink-0 flex-wrap items-center gap-3 border-b border-foreground/10 bg-background px-4 py-4 md:-mx-6 md:px-6"
       role="search"
       aria-label="Filter instructors"
     >

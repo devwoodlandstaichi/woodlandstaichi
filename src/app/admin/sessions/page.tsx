@@ -58,25 +58,27 @@ export default async function SessionsPage() {
         description="Specific class occurrences on a date. Attendance writes against these rows."
       />
 
-      <div className="grid gap-6">
-        <GenerateTermForm />
+      <div className="min-h-0 flex-1 overflow-y-auto pt-4">
+        <div className="grid gap-6">
+          <GenerateTermForm />
 
-        <SessionTable
-          title="Upcoming"
-          rows={upcoming}
-          emptyHint="No upcoming sessions yet — generate a term above."
-        />
-
-        {recent.length > 0 && (
           <SessionTable
-            title="Recent past"
-            rows={recent}
-            emptyHint=""
-            muted
+            title="Upcoming"
+            rows={upcoming}
+            emptyHint="No upcoming sessions yet — generate a term above."
           />
-        )}
 
-        {me?.role === "admin" && <BulkDeleteForm />}
+          {recent.length > 0 && (
+            <SessionTable
+              title="Recent past"
+              rows={recent}
+              emptyHint=""
+              muted
+            />
+          )}
+
+          {me?.role === "admin" && <BulkDeleteForm />}
+        </div>
       </div>
     </>
   );

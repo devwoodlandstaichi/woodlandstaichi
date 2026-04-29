@@ -45,6 +45,7 @@ export default async function TestimonialsPage() {
         }
       />
 
+      <div className="min-h-0 flex-1 overflow-y-auto pt-4">
       {rows.length === 0 ? (
         <Card className="p-8 text-center text-muted-foreground">
           No testimonials yet.
@@ -104,6 +105,7 @@ export default async function TestimonialsPage() {
           ))}
         </div>
       )}
+      </div>
     </>
   );
 }

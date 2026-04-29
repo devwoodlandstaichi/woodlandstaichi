@@ -18,6 +18,7 @@ export default async function KioskSettingsPage() {
         description="A short numeric PIN gates exit from kiosk mode so curious members can't drop themselves back into the admin area."
       />
 
+      <div className="min-h-0 flex-1 overflow-y-auto pt-4">
       <Card className="p-6 mb-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -64,6 +65,7 @@ export default async function KioskSettingsPage() {
         PIN against the hash is reasonable to defend by rate-limiting
         verification (TODO).
       </p>
+      </div>
     </>
   );
 }
