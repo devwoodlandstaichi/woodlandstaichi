@@ -12,7 +12,7 @@ import {
   type MemberStatus,
 } from "@/lib/format";
 import { MemberFilters } from "./filters";
-import { DangerZone } from "./danger-zone";
+import { DangerZoneButton } from "./danger-zone";
 import { BulkIssueQrsButton } from "./bulk-issue-button";
 import { getSessionUser } from "@/lib/auth/dal";
 
@@ -149,7 +149,12 @@ export default async function MembersPage({
       <PageHeader
         title="Members"
         description="Roster. Click a name to view details, edit, or change status."
-        action={<BulkIssueQrsButton />}
+        action={
+          <>
+            <BulkIssueQrsButton />
+            {user?.role === "admin" && <DangerZoneButton />}
+          </>
+        }
       />
 
       <MemberFilters q={q} level={level} status={status} />
@@ -248,11 +253,6 @@ export default async function MembersPage({
             ))}
           </tbody>
         </table>
-        {user?.role === "admin" && (
-          <div className="mt-6">
-            <DangerZone />
-          </div>
-        )}
         </div>
       )}
 
