@@ -116,25 +116,31 @@ export default async function ClassesPage({
       <ClassFilters q={q} level={level} day={day} status={status} />
 
       {sorted.length === 0 ? (
-        <Card className="p-8 text-center text-muted-foreground">
+        <Card className="mt-4 p-8 text-center text-muted-foreground">
           {filtered
             ? "No classes match these filters."
             : "No classes yet. Create one to populate the public schedule."}
         </Card>
       ) : (
+        // Scroll container — only the table body scrolls. min-h-0 is
+        // required so this flex child can actually shrink below content
+        // height; without it the parent's overflow:hidden has no effect.
+        // No negative bleed margin here: <main> has overflow:hidden so
+        // any horizontal extension would clip the leftmost column.
+        <div className="min-h-0 flex-1 overflow-y-auto">
         <table className="w-full text-left text-sm">
-          {/* Sticky lives on each <th>, not <thead>, because <thead>+z-index
-              doesn't reliably stack above <tbody> rows in tables — row text
-              would bleed through. Each cell carries its own bg + shadow so
-              the row reads as a single sticky strip. */}
+          {/* Sticky thead pins inside this scroll container at top:0
+              (relative to the container), so the column headers stay
+              visible while only rows scroll. Per-<th> sticky avoids the
+              <thead>+z-index bleed-through problem. */}
           <thead className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
             <tr>
-              <th className="sticky top-[161px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Name</th>
-              <th className="sticky top-[161px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">When</th>
-              <th className="sticky top-[161px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Where</th>
-              <th className="sticky top-[161px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Level</th>
-              <th className="sticky top-[161px] z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Status</th>
-              <th className="sticky top-[161px] z-[5] bg-background px-4 py-3 shadow-[inset_0_-1px_0_var(--border)]" />
+              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Name</th>
+              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">When</th>
+              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Where</th>
+              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Level</th>
+              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Status</th>
+              <th className="sticky top-0 z-[5] bg-background px-4 py-3 shadow-[inset_0_-1px_0_var(--border)]" />
             </tr>
           </thead>
           <tbody>
@@ -194,9 +200,10 @@ export default async function ClassesPage({
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
-      <div className="sticky bottom-0 -mx-4 mt-4 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">
+      <div className="-mx-4 shrink-0 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">
         <p className="text-xs text-muted-foreground">
           {sorted.length} {sorted.length === 1 ? "class" : "classes"}.
         </p>

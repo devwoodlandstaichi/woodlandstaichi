@@ -163,15 +163,14 @@ export function PageHeader({
   description?: string;
   action?: React.ReactNode;
 }) {
-  // Sticky strip is fixed-height so it bottom-aligns with the sidebar's
-  // brand strip across columns. The `mb-4` gives every page a uniform
-  // breathing gap below the header. On pages with a sticky filter bar at
-  // `top-16`, the filter pins flush with the header's bottom border once
-  // the user scrolls past 16px, so the gap exists only at the top of the
-  // page. Body gradient briefly peeking through the gap during scroll is
-  // intentional and visually subtle.
+  // Fixed-height strip that bottom-aligns with the sidebar's brand
+  // strip across columns. Lives in flow as the first child of <main>'s
+  // flex column — the surrounding layout pins it at the top by giving
+  // the scrollable middle region overflow:auto, not by making this
+  // sticky. `shrink-0` ensures the strip never collapses when the
+  // middle content grows.
   return (
-    <header className="sticky top-0 z-20 -mx-4 mb-4 flex h-16 items-center justify-between gap-3 border-b border-foreground/10 bg-background px-4 md:-mx-6 md:px-6">
+    <header className="-mx-4 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-foreground/10 bg-background px-4 md:-mx-6 md:px-6">
       <div className="min-w-0">
         <h1 className="truncate font-display text-xl font-medium leading-tight tracking-tight">
           {title}
