@@ -139,6 +139,91 @@ export async function updateProfile(
   return { ok: true };
 }
 
+// ---------------------------------------------------------------------------
+// Self-submitted testimonial — Phase 5.1.
+// Member writes a quote → action inserts row with status='pending', the
+// admin queue picks it up at /admin/testimonials?status=pending. The
+// "members submit testimonials" RLS policy enforces that the row's
+// member_id matches a row owned by auth.uid(), and that status='pending'
+// + active=false (so a member can't self-publish).
+// ---------------------------------------------------------------------------
+
+export type TestimonialSubmitState =
+  | undefined
+  | { ok: true }
+  | {
+      ok: false;
+      message?: string;
+      errors?: Partial<Record<"quote" | "attribution", string>>;
+      values?: { quote?: string; attribution?: string };
+    };
+
+export async function submitTestimonial(
+  _state: TestimonialSubmitState,
+  formData: FormData,
+): Promise<TestimonialSubmitState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "You're signed out." };
+
+  const quote = ((formData.get("quote") as string) ?? "").trim();
+  const attribution = ((formData.get("attribution") as string) ?? "").trim();
+  const values = { quote, attribution };
+
+  const errors: NonNullable<
+    Extract<TestimonialSubmitState, { ok: false }>["errors"]
+  > = {};
+  if (quote.length < 30)
+    errors.quote = "Tell us a little more — at least 30 characters.";
+  else if (quote.length > 2000) errors.quote = "Please keep it under 2000 characters.";
+  if (attribution.length > 200)
+    errors.attribution = "Attribution is too long (max 200 characters).";
+
+  if (Object.keys(errors).length > 0) {
+    return { ok: false, errors, values };
+  }
+
+  // Need the member row id (the policy keys off member_id).
+  const { data: member } = await supabase
+    .from("members")
+    .select("id, first_name, last_name")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!member) {
+    return {
+      ok: false,
+      message:
+        "We couldn't find your member record. Email info@woodlandstaichi.com so we can link it.",
+      values,
+    };
+  }
+
+  const memberName = `${member.first_name} ${member.last_name}`.trim();
+  const { error } = await supabase.from("testimonials").insert({
+    member_id: member.id,
+    member_name: memberName,
+    attribution: attribution || null,
+    quote,
+    status: "pending",
+    active: false,
+    submitted_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message:
+        "We couldn't submit your testimonial. Please try again or email info@woodlandstaichi.com.",
+      values,
+    };
+  }
+
+  revalidatePath("/members/me");
+  return { ok: true };
+}
+
 /** Best-effort: link auth user to a member row by matching email. Used on
  * first visit after sign-up so the member can edit their profile without
  * an admin manually wiring auth.users.id → members.user_id. */

@@ -6,8 +6,39 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/page-header";
 import { signOut } from "@/app/login/actions";
 import { ProfileForm, type ProfileDefaults } from "./profile-form";
+import { TestimonialForm } from "./testimonial-form";
 import { linkSelfByEmail } from "./actions";
 import { levelLabel } from "@/lib/format";
+
+type OwnTestimonial = {
+  id: string;
+  quote: string;
+  attribution: string | null;
+  status: "pending" | "approved" | "rejected";
+  submitted_at: string | null;
+  reviewer_note: string | null;
+};
+
+const TESTIMONIAL_STATUS_COPY: Record<
+  OwnTestimonial["status"],
+  { label: string; tone: string; description: string }
+> = {
+  pending: {
+    label: "Awaiting review",
+    tone: "border-vermillion/30 bg-vermillion/5 text-vermillion",
+    description: "The founder will review and publish once approved.",
+  },
+  approved: {
+    label: "Published",
+    tone: "border-jade/30 bg-jade/10 text-jade",
+    description: "Live on the public About page.",
+  },
+  rejected: {
+    label: "Not published",
+    tone: "border-foreground/15 bg-secondary text-foreground/65",
+    description: "Feel free to revise and submit again.",
+  },
+};
 
 export const metadata: Metadata = {
   title: "My profile — Woodlands Tai Chi",
@@ -173,6 +204,8 @@ export default async function MyProfilePage() {
           />
         </div>
 
+        <TestimonialPanel memberId={member.id} />
+
         <div className="rounded-2xl border border-foreground/10 bg-secondary/40 p-6 md:p-8">
           <p className="text-xs uppercase tracking-[0.25em] text-foreground/55 mb-2">
             Account
@@ -188,6 +221,82 @@ export default async function MyProfilePage() {
         </div>
       </section>
     </>
+  );
+}
+
+async function TestimonialPanel({ memberId }: { memberId: string }) {
+  // Use the admin client only because the policy chain on testimonials
+  // routes member-self reads through user_id → member_id, and we already
+  // know the member_id here. Same row set the RLS policy would yield.
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("testimonials")
+    .select("id,quote,attribution,status,submitted_at,reviewer_note")
+    .eq("member_id", memberId)
+    .order("submitted_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
+  const own = (data ?? []) as OwnTestimonial[];
+
+  return (
+    <div className="rounded-2xl border border-foreground/10 bg-card p-6 md:p-8">
+      <h2 className="font-display text-2xl tracking-tight mb-2">
+        Share your story
+      </h2>
+      <p className="text-sm text-foreground/60 mb-6 leading-relaxed">
+        Members&rsquo; words mean more to newcomers than anything we could
+        write. If Tai Chi has changed something for you, write a few
+        sentences. Submissions are reviewed before they go live.
+      </p>
+
+      <TestimonialForm />
+
+      {own.length > 0 && (
+        <div className="mt-10 border-t border-foreground/8 pt-6">
+          <h3 className="text-xs uppercase tracking-[0.22em] text-foreground/55 mb-4">
+            Your submissions
+          </h3>
+          <ul className="space-y-4">
+            {own.map((t) => {
+              const s = TESTIMONIAL_STATUS_COPY[t.status];
+              return (
+                <li
+                  key={t.id}
+                  className="rounded-xl border border-foreground/10 p-5"
+                >
+                  <div className="mb-3 flex flex-wrap items-center gap-3">
+                    <span
+                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${s.tone}`}
+                    >
+                      {s.label}
+                    </span>
+                    <span className="text-xs text-foreground/55">
+                      {s.description}
+                    </span>
+                  </div>
+                  <blockquote className="text-sm text-foreground/85 leading-relaxed">
+                    “{t.quote}”
+                  </blockquote>
+                  {t.attribution && (
+                    <p className="mt-2 text-xs uppercase tracking-[0.18em] text-foreground/50">
+                      {t.attribution}
+                    </p>
+                  )}
+                  {t.status === "rejected" && t.reviewer_note && (
+                    <p className="mt-3 rounded-md border border-foreground/10 bg-secondary px-3 py-2 text-xs text-foreground/70">
+                      <span className="font-medium text-foreground/85">
+                        Note from the founder:{" "}
+                      </span>
+                      {t.reviewer_note}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -3,6 +3,7 @@ import {
   CalendarRange,
   ClipboardList,
   CreditCard,
+  MessageSquareQuote,
   Newspaper,
   ShoppingBag,
   UserPlus,
@@ -139,6 +140,8 @@ async function loadCounts() {
     pendingPayments,
     unpaidOrders,
     newsDrafts,
+    pendingTestimonials,
+    approvedTestimonials,
   ] = await Promise.all([
     supabase
       .from("classes")
@@ -168,6 +171,14 @@ async function loadCounts() {
       .from("news_posts")
       .select("*", { count: "exact", head: true })
       .eq("published", false),
+    supabase
+      .from("testimonials")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending"),
+    supabase
+      .from("testimonials")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "approved"),
   ]);
 
   return {
@@ -178,6 +189,8 @@ async function loadCounts() {
     pending: pendingPayments.count ?? 0,
     unpaidOrders: unpaidOrders.count ?? 0,
     newsDrafts: newsDrafts.count ?? 0,
+    pendingTestimonials: pendingTestimonials.count ?? 0,
+    approvedTestimonials: approvedTestimonials.count ?? 0,
   };
 }
 
@@ -282,6 +295,18 @@ export default async function AdminHome() {
       sub: "Unpublished posts.",
       tone: "amber",
       accent: counts.newsDrafts > 0,
+    },
+    {
+      label: "Testimonials awaiting review",
+      value: counts.pendingTestimonials,
+      href: "/admin/testimonials?status=pending",
+      icon: MessageSquareQuote,
+      sub:
+        counts.approvedTestimonials > 0
+          ? `${counts.approvedTestimonials} published on the site.`
+          : "Member submissions land here for approval.",
+      tone: "amber",
+      accent: counts.pendingTestimonials > 0,
     },
     {
       label: "Active classes",

@@ -149,3 +149,53 @@ export async function deleteTestimonial(formData: FormData) {
   revalidatePath("/admin/testimonials");
   revalidatePath("/about");
 }
+
+// ---------------------------------------------------------------------------
+// Approval queue (Phase 5.1). Members can submit testimonials with
+// status='pending'. Approval flips status='approved' AND active=true, so
+// the row immediately appears on /about. Rejection records an optional
+// reviewer note that the member sees on their /members/me submissions list.
+// ---------------------------------------------------------------------------
+
+export async function approveTestimonial(formData: FormData) {
+  const reviewer = await requireStaff();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const supabase = await createClient();
+  await supabase
+    .from("testimonials")
+    .update({
+      status: "approved",
+      active: true,
+      reviewed_at: new Date().toISOString(),
+      reviewed_by_user_id: reviewer.id,
+      reviewer_note: null,
+    })
+    .eq("id", id);
+  revalidatePath("/admin/testimonials");
+  revalidatePath("/admin");
+  revalidatePath("/about");
+  revalidatePath("/members/me");
+}
+
+export async function rejectTestimonial(formData: FormData) {
+  const reviewer = await requireStaff();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const note = String(formData.get("reviewer_note") ?? "").trim() || null;
+  const supabase = await createClient();
+  await supabase
+    .from("testimonials")
+    .update({
+      status: "rejected",
+      active: false,
+      reviewed_at: new Date().toISOString(),
+      reviewed_by_user_id: reviewer.id,
+      reviewer_note: note,
+    })
+    .eq("id", id);
+  revalidatePath("/admin/testimonials");
+  revalidatePath("/admin");
+  revalidatePath("/about");
+  revalidatePath("/members/me");
+}

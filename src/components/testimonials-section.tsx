@@ -10,10 +10,14 @@ type Testimonial = {
 
 export async function TestimonialsSection({ limit }: { limit?: number } = {}) {
   const supabase = await createClient();
+  // RLS already restricts public reads to status='approved' AND active=true,
+  // but the explicit filter makes the query self-documenting and survives
+  // any future policy refactor.
   let query = supabase
     .from("testimonials")
     .select("id,member_name,attribution,quote")
     .eq("active", true)
+    .eq("status", "approved")
     .order("display_order", { ascending: true });
 
   if (limit) query = query.limit(limit);

@@ -30,6 +30,21 @@ else
   echo "· No supabase/seed.local.sql to apply (skipped)"
 fi
 
+# Re-run the testimonial-link backfill migration. The migration itself
+# is idempotent, but in this two-stage local workflow the migration
+# fires before seed.local.sql loads members — so we replay it here once
+# the members table is populated. On prod, the migration runs against
+# already-existing members and this script is never invoked.
+if [ -f "supabase/migrations/20260430020000_backfill_testimonial_member_links.sql" ]; then
+  docker cp supabase/migrations/20260430020000_backfill_testimonial_member_links.sql \
+    "${CONTAINER}":/tmp/backfill.sql >/dev/null
+  docker exec "${CONTAINER}" psql -U postgres -d postgres -q \
+    -f /tmp/backfill.sql >/dev/null
+  linked=$(docker exec "${CONTAINER}" psql -U postgres -d postgres -tAc \
+    "select count(*) from public.testimonials where member_id is not null")
+  echo "✔ Backfilled testimonial → member links (${linked} linked)"
+fi
+
 # Inline interpolation is fine for dev defaults — values aren't user-supplied.
 docker exec -i "${CONTAINER}" psql -U postgres -d postgres \
   -v ON_ERROR_STOP=1 -q <<EOSQL
