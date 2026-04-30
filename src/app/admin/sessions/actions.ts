@@ -158,14 +158,29 @@ export async function deleteSession(sessionId: string): Promise<DeleteResult> {
   };
 }
 
-/** Bulk delete sessions inside an inclusive date range. Admin-only —
- * destructive enough that we don't want instructors firing it. */
+// Bulk delete sessions inside an inclusive date range. Admin-only —
+// destructive enough that we don't want instructors firing it. Mirrors
+// the typed-DELETE gate from /admin/members clearAllMembers so the
+// header-button-modal flow works the same way.
+export type BulkDeleteState =
+  | { ok: false; message: string }
+  | { ok: true; deleted: number; attendanceWiped: number }
+  | undefined;
+
 export async function deleteSessionsInRange(
-  startDate: string,
-  endDate: string,
-  options: { onlyEmpty?: boolean } = {},
-): Promise<DeleteResult> {
+  _prev: BulkDeleteState,
+  formData: FormData,
+): Promise<BulkDeleteState> {
   await requireAdmin();
+
+  const confirm = String(formData.get("confirm") ?? "").trim();
+  if (confirm !== "DELETE") {
+    return { ok: false, message: "Type DELETE to confirm." };
+  }
+
+  const startDate = String(formData.get("start_date") ?? "");
+  const endDate = String(formData.get("end_date") ?? "");
+  const onlyEmpty = formData.get("only_empty") === "on";
 
   if (!DATE_RE.test(startDate) || !DATE_RE.test(endDate)) {
     return { ok: false, message: "Use YYYY-MM-DD for both dates." };
@@ -176,8 +191,6 @@ export async function deleteSessionsInRange(
 
   const supabase = await createClient();
 
-  // Find candidate session ids first so we can report counts and
-  // optionally skip ones with attendance.
   const { data: candidates, error: candErr } = await supabase
     .from("class_sessions")
     .select("id, attendance(count)")
@@ -189,7 +202,7 @@ export async function deleteSessionsInRange(
   type Cand = { id: string; attendance: { count: number }[] | null };
   const all = (candidates ?? []) as Cand[];
 
-  const deletable = options.onlyEmpty
+  const deletable = onlyEmpty
     ? all.filter((c) => (c.attendance?.[0]?.count ?? 0) === 0)
     : all;
 
