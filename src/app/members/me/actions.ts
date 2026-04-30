@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -222,6 +223,56 @@ export async function submitTestimonial(
 
   revalidatePath("/members/me");
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// First-time password setup
+// Members who signed in via magic-link OTP have an auth.users row but no
+// password. /members/me gates everything else on having one set so they
+// can sign in normally next time without going through email each visit.
+// ---------------------------------------------------------------------------
+
+const PASSWORD_RULES_MSG =
+  "Password must be at least 12 characters and include upper-case, lower-case, and a digit.";
+
+function passwordOk(p: string): boolean {
+  return p.length >= 12 && /[a-z]/.test(p) && /[A-Z]/.test(p) && /\d/.test(p);
+}
+
+export type SetPasswordState =
+  | undefined
+  | { ok: false; message: string };
+
+export async function setInitialPassword(
+  _state: SetPasswordState,
+  formData: FormData,
+): Promise<SetPasswordState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "You're signed out." };
+
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+
+  if (!passwordOk(password)) return { ok: false, message: PASSWORD_RULES_MSG };
+  if (password !== confirm)
+    return { ok: false, message: "Passwords don't match." };
+
+  // Set the password AND flag user_metadata.password_set so the gate
+  // knows this was a deliberate user choice. We can't trust
+  // auth.users.encrypted_password to detect "real password" — GoTrue
+  // assigns a placeholder hash to magic-link users so the column is
+  // always populated.
+  const { error } = await supabase.auth.updateUser({
+    password,
+    data: { password_set: true },
+  });
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath("/members/me");
+  redirect("/members/me");
 }
 
 /** Best-effort: link auth user to a member row by matching email. Used on

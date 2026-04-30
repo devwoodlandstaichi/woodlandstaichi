@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/page-header";
 import { signOut } from "@/app/login/actions";
 import { ProfileForm, type ProfileDefaults } from "./profile-form";
+import { SetPasswordForm } from "./set-password-form";
 import { TestimonialForm } from "./testimonial-form";
 import { linkSelfByEmail } from "./actions";
 import { levelLabel } from "@/lib/format";
@@ -97,10 +98,45 @@ async function loadMember(): Promise<{
   };
 }
 
+async function userHasPasswordSet(): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  // We track a `password_set` boolean in user_metadata. GoTrue stamps a
+  // placeholder bcrypt on magic-link signups, so encrypted_password is
+  // always populated and useless as a signal. Anything truthy here means
+  // the user explicitly set their password via /members/me.
+  return user?.user_metadata?.password_set === true;
+}
+
 export default async function MyProfilePage() {
   const { member, email } = await loadMember();
 
   if (!email) redirect("/login?next=/members/me");
+
+  // Members who signed in via magic-link OTP have no password they
+  // chose yet. Block the rest of the page until they set one so they
+  // can sign in normally next time without waiting on email.
+  const hasPassword = await userHasPasswordSet();
+  if (member && !hasPassword) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="One more step"
+          title="Set a"
+          italic="password."
+          intro="So you can sign in next time without waiting on a one-time email code. Choose something memorable but strong."
+          glyph="鍵"
+        />
+        <section className="mx-auto max-w-md px-6 py-3 md:py-5">
+          <div className="rounded-2xl border border-foreground/10 bg-card p-6 md:p-8">
+            <SetPasswordForm />
+          </div>
+        </section>
+      </>
+    );
+  }
 
   if (!member) {
     return (

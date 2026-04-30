@@ -40,7 +40,14 @@ export async function signIn(
     return { ok: false, message: "Invalid email or password." };
   }
 
-  redirect(next);
+  // Role-aware redirect — same logic as verifyCode. Without this,
+  // every successful password sign-in goes to /admin (safeNext's
+  // default) and bounces non-staff right back to /login?error=unauthorized.
+  const session = await getSessionUser();
+  const isStaff = session?.role === "admin" || session?.role === "instructor";
+  if (isStaff && next.startsWith("/admin")) redirect(next);
+  if (next.startsWith("/members")) redirect(next);
+  redirect(isStaff ? "/admin" : "/members/me");
 }
 
 export async function signOut() {

@@ -74,9 +74,19 @@ begin
       'authenticated', 'authenticated',
       e, crypt(p, gen_salt('bf')),
       now(), now(), now(),
-      '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb,
+      '{"provider":"email","providers":["email"]}'::jsonb,
+      -- password_set=true so /members/me's gate doesn't prompt the
+      -- dev admin to set a password they already have.
+      '{"password_set": true}'::jsonb,
       '', '', '', '', '', '', '', ''
     ) returning id into uid;
+  else
+    -- Idempotent: backfill the flag if the row exists from an older
+    -- restore that didn't set it.
+    update auth.users
+      set raw_user_meta_data =
+        coalesce(raw_user_meta_data, '{}'::jsonb) || '{"password_set": true}'::jsonb
+      where id = uid;
   end if;
   insert into public.user_roles (user_id, role)
     values (uid, 'admin')
