@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 export function Hero() {
   return (
     <section
@@ -16,8 +14,8 @@ export function Hero() {
       </span>
 
       <div className="mx-auto grid max-w-7xl grid-cols-12 gap-x-6 gap-y-6 px-6 pt-7 pb-12 md:px-10 md:pt-10 md:pb-20">
-        {/* Headline column */}
-        <div className="col-span-12 lg:col-span-8 relative">
+        {/* Headline column — full width now that the crest column is gone */}
+        <div className="col-span-12 relative">
           <p className="rise text-xs uppercase tracking-[0.45em] text-foreground/55 mb-8">
             <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
             The Woodlands · Texas
@@ -72,28 +70,6 @@ export function Hero() {
           </p>
         </div>
 
-        {/* Crest column */}
-        <div className="col-span-12 lg:col-span-4 relative flex items-start justify-center lg:justify-end">
-          <div className="fade relative" style={{ animationDelay: "200ms" }}>
-            <span
-              aria-hidden
-              className="absolute -inset-10 -z-10 rounded-full bg-gradient-to-br from-vermillion/15 via-transparent to-cobalt/10 blur-3xl"
-            />
-            <div className="relative h-44 w-44 md:h-56 md:w-56 lg:h-64 lg:w-64">
-              <Image
-                src="/logo.jpg"
-                alt="Woodlands Tai Chi crane crest"
-                fill
-                sizes="(max-width: 1024px) 18rem, 20rem"
-                className="object-contain drop-shadow-2xl"
-                priority
-              />
-            </div>
-            <p className="mt-6 text-center text-xs uppercase tracking-[0.3em] text-foreground/50">
-              Est. community — taught since 2018
-            </p>
-          </div>
-        </div>
       </div>
     </section>
   );
