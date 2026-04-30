@@ -45,6 +45,19 @@ if [ -f "supabase/migrations/20260430020000_backfill_testimonial_member_links.sq
   echo "✔ Backfilled testimonial → member links (${linked} linked)"
 fi
 
+# Re-run the attribution → submitted_at parsing on the freshly-seeded
+# testimonials. Same staging quirk as the link backfill: the migration
+# fires before seed.sql inserts the rows, so locally we replay it now.
+if [ -f "supabase/migrations/20260430040000_testimonial_attribution_to_date.sql" ]; then
+  docker cp supabase/migrations/20260430040000_testimonial_attribution_to_date.sql \
+    "${CONTAINER}":/tmp/attr.sql >/dev/null
+  docker exec "${CONTAINER}" psql -U postgres -d postgres -q \
+    -f /tmp/attr.sql >/dev/null
+  parsed=$(docker exec "${CONTAINER}" psql -U postgres -d postgres -tAc \
+    "select count(*) from public.testimonials where submitted_at is not null")
+  echo "✔ Parsed testimonial attribution dates (${parsed} dated)"
+fi
+
 # Inline interpolation is fine for dev defaults — values aren't user-supplied.
 docker exec -i "${CONTAINER}" psql -U postgres -d postgres \
   -v ON_ERROR_STOP=1 -q <<EOSQL

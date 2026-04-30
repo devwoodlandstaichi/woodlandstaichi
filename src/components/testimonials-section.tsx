@@ -6,7 +6,32 @@ type Testimonial = {
   member_name: string;
   attribution: string | null;
   quote: string;
+  submitted_at: string | null;
+  created_at: string;
 };
+
+// "AUG 2021" — short month + year, uppercase to match the tracked
+// attribution slot. Date source priority on each card:
+//   1. submitted_at (member self-submission OR migrated from a
+//      parseable attribution like "8/5/21")
+//   2. created_at as a fallback — only when the row has no
+//      attribution either (we don't want to show the seed-time date
+//      next to a free-form "member since 2017" because they'd
+//      disagree).
+function formatDate(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d
+    .toLocaleDateString("en-US", { month: "short", year: "numeric" })
+    .toUpperCase();
+}
+
+function pickDate(t: Testimonial): string | null {
+  if (t.submitted_at) return formatDate(t.submitted_at);
+  if (t.attribution) return null; // attribution carries the time signal
+  return formatDate(t.created_at);
+}
 
 export async function TestimonialsSection({ limit }: { limit?: number } = {}) {
   const supabase = await createClient();
@@ -15,7 +40,7 @@ export async function TestimonialsSection({ limit }: { limit?: number } = {}) {
   // any future policy refactor.
   let query = supabase
     .from("testimonials")
-    .select("id,member_name,attribution,quote")
+    .select("id,member_name,attribution,quote,submitted_at,created_at")
     .eq("active", true)
     .eq("status", "approved")
     .order("display_order", { ascending: true });
@@ -80,11 +105,21 @@ export async function TestimonialsSection({ limit }: { limit?: number } = {}) {
               <cite className="not-italic font-display text-lg tracking-tight">
                 {t.member_name}
               </cite>
-              {t.attribution && (
-                <span className="text-xs uppercase tracking-[0.2em] text-foreground/50 text-right">
-                  {t.attribution}
-                </span>
-              )}
+              {(() => {
+                const date = pickDate(t);
+                const hasMeta = !!(date || t.attribution);
+                if (!hasMeta) return null;
+                return (
+                  <span className="text-xs uppercase tracking-[0.2em] text-foreground/50 text-right shrink-0 flex flex-col items-end gap-0.5">
+                    {date && <span>{date}</span>}
+                    {t.attribution && (
+                      <span className="text-foreground/40">
+                        {t.attribution}
+                      </span>
+                    )}
+                  </span>
+                );
+              })()}
             </footer>
             {/* corner index marker */}
             <span
