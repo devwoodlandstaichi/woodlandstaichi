@@ -15,7 +15,13 @@ export type ProfileDefaults = {
   bio: string | null;
 };
 
-export function ProfileForm({ defaults }: { defaults: ProfileDefaults }) {
+export function ProfileForm({
+  defaults,
+  onCancel,
+}: {
+  defaults: ProfileDefaults;
+  onCancel?: () => void;
+}) {
   const [state, formAction, pending] = useActionState<
     ProfileFormState,
     FormData
@@ -110,7 +116,7 @@ export function ProfileForm({ defaults }: { defaults: ProfileDefaults }) {
         error={errors.bio}
       />
 
-      <div>
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={pending}
@@ -119,6 +125,15 @@ export function ProfileForm({ defaults }: { defaults: ProfileDefaults }) {
           <Save size={16} aria-hidden />
           {pending ? "Saving…" : "Save profile"}
         </button>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="inline-flex items-center gap-2 rounded-full border border-foreground/15 px-5 py-3 text-sm text-foreground/70 hover:text-foreground hover:border-foreground/30 transition-colors"
+          >
+            Cancel
+          </button>
+        )}
       </div>
     </form>
   );

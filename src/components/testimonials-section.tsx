@@ -56,14 +56,16 @@ export async function TestimonialsSection({ limit }: { limit?: number } = {}) {
         </div>
       </div>
 
-      <ul
-        className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
-        style={{ columnGap: "1.5rem" }}
-      >
+      {/* CSS multi-column masonry — each card sizes to its own
+          content, then break-inside-avoid keeps it whole inside its
+          column. Reading flow is top-to-bottom by column rather than
+          left-to-right by row, which is the trade-off we accept to
+          eliminate the row-height gaps the CSS grid was producing. */}
+      <ul className="columns-1 gap-6 md:columns-2 lg:columns-3">
         {items.map((t, i) => (
           <li
             key={t.id}
-            className="group relative break-inside-avoid rounded-xl border border-foreground/10 bg-card p-7 transition-colors hover:border-vermillion/30"
+            className="group relative mb-6 break-inside-avoid rounded-xl border border-foreground/10 bg-card p-7 transition-colors hover:border-vermillion/30"
           >
             <Quote
               size={20}

@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Mail, ShieldAlert, UserCircle } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/page-header";
 import { signOut } from "@/app/login/actions";
-import { ProfileForm, type ProfileDefaults } from "./profile-form";
+import { EditDetailsSection } from "./edit-details-section";
+import { MemberHero } from "./member-hero";
+import { type ProfileDefaults } from "./profile-form";
 import { SetPasswordForm } from "./set-password-form";
 import { TestimonialForm } from "./testimonial-form";
 import { linkSelfByEmail } from "./actions";
-import { levelLabel } from "@/lib/format";
 
 type OwnTestimonial = {
   id: string;
@@ -56,6 +57,12 @@ type Member = ProfileDefaults & {
   level: string;
   status: string;
   user_id: string | null;
+  birthday: string | null;
+  photo_url: string | null;
+  created_at: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_relationship: string | null;
+  emergency_phone: string | null;
 };
 
 async function loadMember(): Promise<{
@@ -72,7 +79,7 @@ async function loadMember(): Promise<{
   const { data } = await supabase
     .from("members")
     .select(
-      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,bio,photo_url",
+      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,birthday,bio,photo_url,created_at,emergency_contact_name,emergency_contact_relationship,emergency_phone",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -87,7 +94,7 @@ async function loadMember(): Promise<{
   const { data: linked } = await admin
     .from("members")
     .select(
-      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,bio,photo_url",
+      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,birthday,bio,photo_url,created_at,emergency_contact_name,emergency_contact_relationship,emergency_phone",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -184,77 +191,46 @@ export default async function MyProfilePage() {
     );
   }
 
-  const fullName = `${member.first_name} ${member.last_name}`;
-
   return (
     <>
-      <PageHeader
-        eyebrow="My profile"
-        title={member.first_name}
-        italic="welcome back."
-        intro="Keep your details current so instructors can reach you, and write a short bio you'd be proud to have on the public Instructors page if you ever take that step."
-        glyph="己"
+      <MemberHero
+        first_name={member.first_name}
+        last_name={member.last_name}
+        email={member.email}
+        phone={member.phone}
+        street={member.street}
+        city={member.city}
+        state={member.state}
+        postal_code={member.postal_code}
+        birthday={member.birthday}
+        level={member.level}
+        status={member.status}
+        bio={member.bio}
+        photo_url={member.photo_url}
+        created_at={member.created_at}
+        emergency_contact_name={member.emergency_contact_name}
+        emergency_contact_relationship={member.emergency_contact_relationship}
+        emergency_phone={member.emergency_phone}
       />
 
-      <section className="mx-auto max-w-3xl px-6 py-3 md:py-5 grid gap-8">
-        <div className="grid gap-4 rounded-2xl border border-foreground/10 bg-card p-6 md:p-8 sm:grid-cols-3">
-          <Identity
-            label="Name"
-            value={fullName}
-            icon={<UserCircle size={18} aria-hidden />}
-          />
-          <Identity
-            label="Email"
-            value={member.email}
-            icon={<Mail size={18} aria-hidden />}
-          />
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.22em] text-foreground/55 mb-1">
-              Level
-            </p>
-            <p className="text-base">{levelLabel(member.level)}</p>
-            <p className="mt-1 text-xs text-foreground/55 capitalize">
-              {member.status}
-            </p>
-          </div>
-        </div>
+      <EditDetailsSection
+        defaults={{
+          nickname: member.nickname,
+          phone: member.phone,
+          street: member.street,
+          city: member.city,
+          state: member.state,
+          postal_code: member.postal_code,
+          bio: member.bio,
+        }}
+      />
 
-        <div className="rounded-2xl border border-foreground/10 bg-card p-6 md:p-8">
-          <h2 className="font-display text-2xl tracking-tight mb-2">
-            Edit your details
-          </h2>
-          <p className="text-sm text-foreground/60 mb-6 leading-relaxed">
-            Name, email, and level are managed by an instructor. Everything
-            else here is yours to update.
-          </p>
-          <ProfileForm
-            defaults={{
-              nickname: member.nickname,
-              phone: member.phone,
-              street: member.street,
-              city: member.city,
-              state: member.state,
-              postal_code: member.postal_code,
-              bio: member.bio,
-            }}
-          />
-        </div>
-
+      <section
+        id="share-story"
+        aria-labelledby="share-story-title"
+        className="relative mx-auto max-w-7xl px-6 md:px-10 pb-20 scroll-mt-24"
+      >
         <TestimonialPanel memberId={member.id} />
-
-        <div className="rounded-2xl border border-foreground/10 bg-secondary/40 p-6 md:p-8">
-          <p className="text-xs uppercase tracking-[0.25em] text-foreground/55 mb-2">
-            Account
-          </p>
-          <form action={signOut} className="mt-2">
-            <button
-              type="submit"
-              className="inline-flex h-10 items-center rounded-md border border-input bg-background px-4 text-sm hover:bg-accent/10"
-            >
-              Sign out
-            </button>
-          </form>
-        </div>
       </section>
     </>
   );
@@ -336,26 +312,3 @@ async function TestimonialPanel({ memberId }: { memberId: string }) {
   );
 }
 
-function Identity({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <div>
-      <p className="text-[11px] uppercase tracking-[0.22em] text-foreground/55 mb-1">
-        {label}
-      </p>
-      <p className="flex items-center gap-2 text-base">
-        <span aria-hidden className="text-foreground/45">
-          {icon}
-        </span>
-        <span className="truncate">{value}</span>
-      </p>
-    </div>
-  );
-}
