@@ -66,3 +66,7 @@ service-account*.json
 
 # Local data import scratch (CSVs, migration scripts)
 toImport/
+supabase/seed.local.sql
+
+# Claude Code local config
+.claude/

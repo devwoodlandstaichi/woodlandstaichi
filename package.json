@@ -10,6 +10,8 @@
     "db:start": "set -a; [ -f .env.local ] && . ./.env.local; set +a; supabase start",
     "db:stop": "supabase stop",
     "db:reset": "set -a; [ -f .env.local ] && . ./.env.local; set +a; supabase db reset",
+    "db:restore": "bash scripts/db-restore.sh",
+    "db:reset:full": "npm run db:reset && npm run db:restore",
     "db:status": "supabase status",
     "build": "next build",
     "start": "next start",

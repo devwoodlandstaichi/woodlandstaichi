@@ -4,16 +4,22 @@ export function Hero() {
       className="relative overflow-hidden"
       aria-labelledby="hero-title"
     >
-      {/* CJK background watermark — same treatment as PageHeader.
-          Stillness (靜) for the home hero. */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute right-0 md:right-6 top-1/2 -translate-y-1/2 hidden md:block font-display leading-none select-none text-foreground/[0.12] text-[clamp(18rem,30vw,33rem)] tracking-tighter"
-      >
-        靜
-      </span>
+      {/* The watermark lives inside the max-w-7xl container so it
+          tracks the right edge of the content, not the viewport. With
+          `overflow-hidden` on the section, anything that bleeds past
+          the section edges still gets clipped. */}
+      <div className="relative mx-auto grid max-w-7xl grid-cols-12 gap-x-6 gap-y-6 px-6 pt-7 pb-12 md:px-10 md:pt-10 md:pb-20">
+        {/* CJK background watermark — same treatment as PageHeader.
+            Stillness (靜) for the home hero. Right edge anchored to the
+            inner-content right edge so resizing keeps it in line with
+            the headline column. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 hidden md:block font-display leading-none select-none text-foreground/[0.12] text-[clamp(18rem,30vw,33rem)] tracking-tighter md:right-10"
+        >
+          靜
+        </span>
 
-      <div className="mx-auto grid max-w-7xl grid-cols-12 gap-x-6 gap-y-6 px-6 pt-7 pb-12 md:px-10 md:pt-10 md:pb-20">
         {/* Headline column — full width now that the crest column is gone */}
         <div className="col-span-12 relative">
           <p className="rise text-xs uppercase tracking-[0.45em] text-foreground/55 mb-8">

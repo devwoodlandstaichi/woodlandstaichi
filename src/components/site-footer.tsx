@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionUser } from "@/lib/auth/dal";
 
 const FOOTER_LINKS = [
   { href: "/about", label: "About" },
@@ -13,11 +13,9 @@ const FOOTER_LINKS = [
 ];
 
 export async function SiteFooter() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   const signedIn = !!user;
+  const isStaff = user?.role === "admin" || user?.role === "instructor";
 
   return (
     <footer className="mt-20 border-t border-foreground/10 bg-ink-950 text-ink-100">
@@ -102,6 +100,16 @@ export async function SiteFooter() {
                   {signedIn ? "My profile →" : "Member sign-in →"}
                 </Link>
               </li>
+              {isStaff && (
+                <li>
+                  <Link
+                    href="/admin"
+                    className="hover:text-vermillion-300 transition-colors"
+                  >
+                    Admin →
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
         </div>

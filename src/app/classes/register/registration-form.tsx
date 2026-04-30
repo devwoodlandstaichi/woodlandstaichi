@@ -13,6 +13,7 @@ import { submitRegistration, type RegistrationState } from "./actions";
 import {
   COHORT_OPTIONS,
   PAYMENT_METHODS,
+  SEX_OPTIONS,
   SHIRT_SIZES,
 } from "./schema";
 
@@ -204,16 +205,26 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
             error={errors.postal_code}
           />
         </div>
-        <Field
-          name="birthday"
-          label="Birthday"
-          type="date"
-          required
-          hint="Your real birthday — kept private."
-          autoComplete="bday"
-          defaultValue={v("birthday")}
-          error={errors.birthday}
-        />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field
+            name="birthday"
+            label="Birthday"
+            type="date"
+            required
+            hint="Your real birthday — kept private."
+            autoComplete="bday"
+            defaultValue={v("birthday")}
+            error={errors.birthday}
+          />
+          <RadioGroup
+            name="sex"
+            label="Sex"
+            required
+            options={SEX_OPTIONS}
+            defaultValue={v("sex")}
+            error={errors.sex}
+          />
+        </div>
       </FormSection>
 
       <FormSection

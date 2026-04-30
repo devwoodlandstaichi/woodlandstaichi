@@ -3,10 +3,10 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-import { signIn, type LoginState } from "./actions";
+import { signIn, type LoginState } from "../actions";
 import { Button, Field, Input } from "@/components/admin/ui";
 
-export function LoginForm({ next }: { next: string }) {
+export function PasswordForm({ next }: { next: string }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(
     signIn,
     undefined,

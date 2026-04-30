@@ -15,6 +15,11 @@ export const COHORT_OPTIONS = [
 
 export const SHIRT_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"] as const;
 
+export const SEX_OPTIONS = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+] as const;
+
 export const PAYMENT_METHODS = [
   { value: "zelle", label: "Zelle (preferred)" },
   { value: "venmo", label: "Venmo" },
@@ -56,6 +61,11 @@ export const registrationSchema = z.object({
   // Birthday
   birthday: requiredString("Birthday", 10).regex(/^\d{4}-\d{2}-\d{2}$/, {
     message: "Please enter a valid date.",
+  }),
+
+  // Sex
+  sex: z.enum(SEX_OPTIONS.map((o) => o.value) as [string, ...string[]], {
+    message: "Please pick one.",
   }),
 
   // Class preferences

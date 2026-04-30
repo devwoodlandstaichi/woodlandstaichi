@@ -107,6 +107,7 @@ export async function submitRegistration(
     state: data.state,
     postal_code: data.postal_code,
     birthday: data.birthday,
+    sex: data.sex as "male" | "female",
     level: "beginners" as const,
     status: "waitlist" as const,
     physical_limitations: data.physical_limitations ?? null,
