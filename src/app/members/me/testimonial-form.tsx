@@ -34,8 +34,7 @@ export function TestimonialForm() {
         <p className="font-medium text-foreground">Thank you.</p>
         <p className="mt-2 text-sm leading-relaxed">
           Your testimonial is in the queue. The founder will review it and
-          publish once it&rsquo;s approved. You can submit another below if
-          you&rsquo;d like.
+          publish once it&rsquo;s approved. You can close this dialog now.
         </p>
       </div>
     );

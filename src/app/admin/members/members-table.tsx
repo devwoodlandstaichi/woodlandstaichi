@@ -147,6 +147,14 @@ export function MembersTable({
   }
 
   function selectOnly(id: string) {
+    // Click a row that's already the sole selection → deselect. Click
+    // a row when other rows are selected → replace selection with this
+    // one (so a follow-up click can deselect it).
+    if (selected.size === 1 && selected.has(id)) {
+      setSelected(new Set());
+      setAnchor(null);
+      return;
+    }
     setSelected(new Set([id]));
     setAnchor(id);
   }

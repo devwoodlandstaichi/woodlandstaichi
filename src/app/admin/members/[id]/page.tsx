@@ -1,8 +1,17 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
-import { Pencil, QrCode } from "lucide-react";
+import {
+  Cake,
+  Mail,
+  MapPin,
+  Pencil,
+  Phone,
+  QrCode,
+  type LucideIcon,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
+import { Badge, Button, Card } from "@/components/admin/ui";
 import {
   MEMBER_LEVEL_LABELS,
   memberStatusLabel,
@@ -48,6 +57,8 @@ type Member = {
   birthday: string | null;
   level: MemberLevel;
   status: MemberStatus;
+  bio: string | null;
+  photo_url: string | null;
   physical_limitations: string | null;
   prior_experience: string | null;
   found_us_via: string | null;
@@ -104,256 +115,442 @@ export default async function MemberDetailPage({
   if (!m) notFound();
   const registrations = (registrationsRes.data ?? []) as unknown as Registration[];
 
+  const fullName = `${m.first_name} ${m.last_name}`.trim();
+  const initials = `${m.first_name[0] ?? ""}${m.last_name[0] ?? ""}`.toUpperCase();
+  const cityState = [m.city, m.state].filter(Boolean).join(", ");
   const fullAddress = [m.street, m.city, m.state, m.postal_code]
     .filter(Boolean)
     .join(", ");
 
+  const notesItems = [
+    m.physical_limitations && {
+      label: "Physical limitations",
+      value: m.physical_limitations,
+    },
+    m.prior_experience && {
+      label: "Prior experience",
+      value: m.prior_experience,
+    },
+    m.found_us_via && { label: "Found us via", value: m.found_us_via },
+    m.expectations && { label: "Expectations", value: m.expectations },
+  ].filter(Boolean) as { label: string; value: string }[];
+
   return (
-    <>
-      <PageHeader
-        title={`${m.first_name} ${m.last_name}`}
-        description={
-          m.nickname ? `“${m.nickname}”` : `Member since ${formatDate(m.created_at.slice(0, 10))}`
-        }
-        action={
-          <div className="flex shrink-0 gap-2">
+    <div className="min-h-0 flex-1 overflow-y-auto pb-12">
+      {/* HERO */}
+      <section
+        aria-label="Member overview"
+        className="relative isolate overflow-hidden rounded-2xl border border-foreground/10"
+      >
+        {/* atmospheric backdrop */}
+        <div className="relative h-44 w-full bg-foreground md:h-52">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-[0.55]"
+            style={{
+              background:
+                "radial-gradient(80% 120% at 85% 0%, color-mix(in oklch, var(--vermillion-500) 55%, transparent) 0%, transparent 60%), radial-gradient(60% 110% at 0% 100%, color-mix(in oklch, var(--cobalt-500) 50%, transparent) 0%, transparent 60%)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 mix-blend-overlay opacity-30"
+            style={{
+              backgroundImage:
+                "linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px)",
+              backgroundSize: "44px 44px",
+            }}
+          />
+          {/* CJK accent — quiet, decorative */}
+          <span
+            aria-hidden
+            className="absolute right-6 top-4 select-none font-display text-7xl leading-none text-background/15 md:text-8xl"
+          >
+            和
+          </span>
+
+          {/* Status / level chips top-right */}
+          <div className="absolute right-4 top-4 z-10 hidden flex-wrap items-center gap-2 md:flex">
+            <Badge tone={STATUS_TONE[m.status]}>
+              {memberStatusLabel(m.status)}
+            </Badge>
+            <Badge tone={LEVEL_TONE[m.level]}>
+              {MEMBER_LEVEL_LABELS[m.level]}
+            </Badge>
+            {m.waiver_signed_at && (
+              <Badge tone="muted">Waiver signed</Badge>
+            )}
+          </div>
+
+          {/* Action pills bottom-right */}
+          <div className="absolute bottom-4 right-4 z-10 flex gap-2">
             <Link href={`/admin/members/${m.id}/qr`}>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="bg-background/90 backdrop-blur-sm">
                 <QrCode size={14} aria-hidden /> QR
               </Button>
             </Link>
             <Link href={`/admin/members/${m.id}/edit`}>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="bg-background/90 backdrop-blur-sm">
                 <Pencil size={14} aria-hidden /> Edit
               </Button>
             </Link>
           </div>
-        }
-      />
+        </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto pb-10">
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        <Badge tone={LEVEL_TONE[m.level]}>{MEMBER_LEVEL_LABELS[m.level]}</Badge>
-        <Badge tone={STATUS_TONE[m.status]}>{memberStatusLabel(m.status)}</Badge>
-        {m.waiver_signed_at && (
-          <Badge tone="muted">
-            Waiver signed {formatDate(m.waiver_signed_at.slice(0, 10))}
-          </Badge>
-        )}
-      </div>
+        {/* identity strip — avatar overlaps banner edge */}
+        <div className="relative bg-card px-5 pb-5 pt-14 md:px-7 md:pt-16">
+          <div className="absolute -top-12 left-5 md:left-7">
+            {m.photo_url ? (
+              <Image
+                src={m.photo_url}
+                alt={fullName}
+                width={96}
+                height={96}
+                className="h-24 w-24 rounded-full border-4 border-background object-cover shadow-md"
+              />
+            ) : (
+              <div
+                className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-background bg-vermillion/15 shadow-md"
+                aria-label={fullName}
+              >
+                <span className="font-display text-3xl font-medium tracking-tight text-vermillion">
+                  {initials || "·"}
+                </span>
+              </div>
+            )}
+          </div>
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        {m.status !== "active" && (
-          <form action={markActive}>
-            <input type="hidden" name="id" value={m.id} />
-            <Button type="submit">Mark active</Button>
-          </form>
-        )}
-        {m.status !== "waitlist" && (
-          <form action={markWaitlist}>
-            <input type="hidden" name="id" value={m.id} />
-            <Button type="submit" variant="outline">
-              Move to waitlist
-            </Button>
-          </form>
-        )}
-        {m.status !== "inactive" && (
-          <form action={markInactive}>
-            <input type="hidden" name="id" value={m.id} />
-            <Button type="submit" variant="ghost">
-              Mark inactive
-            </Button>
-          </form>
-        )}
-      </div>
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div className="min-w-0">
+              <h1 className="font-display text-3xl font-medium leading-tight tracking-tight md:text-4xl">
+                {fullName}
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {m.nickname ? (
+                  <span className="italic">&ldquo;{m.nickname}&rdquo;</span>
+                ) : null}
+                {m.nickname ? <span className="mx-2">·</span> : null}
+                Member since {formatDate(m.created_at.slice(0, 10))}
+                {cityState ? (
+                  <>
+                    <span className="mx-2">·</span>
+                    {cityState}
+                  </>
+                ) : null}
+              </p>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="p-5">
-          <h2 className="font-display text-lg font-medium tracking-tight">
-            Contact
-          </h2>
-          <dl className="mt-4 grid gap-3 text-sm">
-            <Row label="Email">
-              <a href={`mailto:${m.email}`} className="hover:text-foreground">
+              {/* mobile-only chip cluster (the desktop one sits in the banner) */}
+              <div className="mt-3 flex flex-wrap items-center gap-2 md:hidden">
+                <Badge tone={STATUS_TONE[m.status]}>
+                  {memberStatusLabel(m.status)}
+                </Badge>
+                <Badge tone={LEVEL_TONE[m.level]}>
+                  {MEMBER_LEVEL_LABELS[m.level]}
+                </Badge>
+                {m.waiver_signed_at && (
+                  <Badge tone="muted">Waiver signed</Badge>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {m.status !== "active" && (
+                <form action={markActive}>
+                  <input type="hidden" name="id" value={m.id} />
+                  <Button type="submit" size="sm">
+                    Mark active
+                  </Button>
+                </form>
+              )}
+              {m.status !== "waitlist" && (
+                <form action={markWaitlist}>
+                  <input type="hidden" name="id" value={m.id} />
+                  <Button type="submit" size="sm" variant="outline">
+                    Move to waitlist
+                  </Button>
+                </form>
+              )}
+              {m.status !== "inactive" && (
+                <form action={markInactive}>
+                  <input type="hidden" name="id" value={m.id} />
+                  <Button type="submit" size="sm" variant="ghost">
+                    Mark inactive
+                  </Button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION ANCHOR NAV */}
+      <nav
+        aria-label="Sections"
+        className="sticky top-0 z-20 -mx-1 mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-foreground/10 bg-background/85 px-1 py-3 text-xs uppercase tracking-[0.18em] text-foreground/55 backdrop-blur"
+      >
+        <span aria-hidden className="inline-block h-px w-6 bg-vermillion" />
+        <a href="#contact" className="hover:text-foreground">
+          Contact
+        </a>
+        <a href="#emergency" className="hover:text-foreground">
+          Emergency
+        </a>
+        {m.bio && (
+          <a href="#bio" className="hover:text-foreground">
+            Biography
+          </a>
+        )}
+        {notesItems.length > 0 && (
+          <a href="#notes" className="hover:text-foreground">
+            Notes
+          </a>
+        )}
+        <a href="#registrations" className="hover:text-foreground">
+          Registrations
+          <span className="ml-1 text-foreground/45">
+            ({registrations.length})
+          </span>
+        </a>
+      </nav>
+
+      {/* QUICK INFO — 4-up icon grid */}
+      <section id="contact" className="mt-8 scroll-mt-20">
+        <Card className="grid gap-px overflow-hidden bg-foreground/10 sm:grid-cols-2 lg:grid-cols-4">
+          <InfoTile
+            icon={Mail}
+            label="Email"
+            value={
+              <a
+                href={`mailto:${m.email}`}
+                className="break-words hover:text-vermillion"
+              >
                 {m.email}
               </a>
-            </Row>
-            <Row label="Phone">
-              {m.phone ? (
-                <a href={`tel:${m.phone}`} className="hover:text-foreground">
+            }
+          />
+          <InfoTile
+            icon={Phone}
+            label="Phone"
+            value={
+              m.phone ? (
+                <a href={`tel:${m.phone}`} className="hover:text-vermillion">
                   {m.phone}
                 </a>
               ) : (
                 "—"
-              )}
-            </Row>
-            <Row label="Address">{fullAddress || "—"}</Row>
-            <Row label="Birthday">
-              {m.birthday ? formatDate(m.birthday) : "—"}
-            </Row>
-          </dl>
+              )
+            }
+          />
+          <InfoTile
+            icon={Cake}
+            label="Birthday"
+            value={m.birthday ? formatDate(m.birthday) : "—"}
+          />
+          <InfoTile
+            icon={MapPin}
+            label="Address"
+            value={fullAddress || "—"}
+          />
         </Card>
+      </section>
 
-        <Card className="p-5">
-          <h2 className="font-display text-lg font-medium tracking-tight">
-            Emergency contact
-          </h2>
-          <dl className="mt-4 grid gap-3 text-sm">
-            <Row label="Name">{m.emergency_contact_name ?? "—"}</Row>
-            <Row label="Relationship">
-              {m.emergency_contact_relationship ?? "—"}
-            </Row>
-            <Row label="Phone">
-              {m.emergency_phone ? (
-                <a
-                  href={`tel:${m.emergency_phone}`}
-                  className="hover:text-foreground"
-                >
-                  {m.emergency_phone}
-                </a>
-              ) : (
-                "—"
-              )}
-            </Row>
-          </dl>
+      {/* EMERGENCY CONTACT */}
+      <section id="emergency" className="mt-8 scroll-mt-20">
+        <SectionHeading
+          eyebrow="Emergency"
+          title="In case of."
+          accent="emergency"
+        />
+        <Card className="mt-4 grid gap-6 p-5 sm:grid-cols-3">
+          <Stack label="Name">{m.emergency_contact_name ?? "—"}</Stack>
+          <Stack label="Relationship">
+            {m.emergency_contact_relationship ?? "—"}
+          </Stack>
+          <Stack label="Phone">
+            {m.emergency_phone ? (
+              <a
+                href={`tel:${m.emergency_phone}`}
+                className="hover:text-vermillion"
+              >
+                {m.emergency_phone}
+              </a>
+            ) : (
+              "—"
+            )}
+          </Stack>
         </Card>
+      </section>
 
-        {(m.physical_limitations ||
-          m.prior_experience ||
-          m.found_us_via ||
-          m.expectations) && (
-          <Card className="p-5 lg:col-span-2">
-            <h2 className="font-display text-lg font-medium tracking-tight">
-              Notes
-            </h2>
-            <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
-              {m.physical_limitations && (
-                <Row label="Physical limitations" stack>
-                  {m.physical_limitations}
-                </Row>
-              )}
-              {m.prior_experience && (
-                <Row label="Prior experience" stack>
-                  {m.prior_experience}
-                </Row>
-              )}
-              {m.found_us_via && (
-                <Row label="Found us via" stack>
-                  {m.found_us_via}
-                </Row>
-              )}
-              {m.expectations && (
-                <Row label="Expectations" stack>
-                  {m.expectations}
-                </Row>
-              )}
-            </dl>
-          </Card>
-        )}
-
-        <Card className="lg:col-span-2 overflow-hidden">
-          <div className="border-b border-foreground/10 px-5 py-4">
-            <h2 className="font-display text-lg font-medium tracking-tight">
-              Registrations
-              <span className="ml-2 text-sm font-normal text-muted-foreground">
-                ({registrations.length})
-              </span>
-            </h2>
-          </div>
-          {registrations.length === 0 ? (
-            <p className="px-5 py-6 text-sm text-muted-foreground">
-              No registrations yet.
+      {/* BIO */}
+      {m.bio && (
+        <section id="bio" className="mt-8 scroll-mt-20">
+          <SectionHeading eyebrow="Biography" title="In their words." />
+          <Card className="mt-4 p-6">
+            <p className="text-[0.95rem] leading-[1.65] text-foreground/85 whitespace-pre-wrap">
+              {m.bio}
             </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-foreground/5 text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                  <tr>
-                    <th className="px-5 py-3 font-medium">Class</th>
-                    <th className="px-5 py-3 font-medium">When</th>
-                    <th className="px-5 py-3 font-medium">Shirt</th>
-                    <th className="px-5 py-3 font-medium">Payment</th>
-                    <th className="px-5 py-3 font-medium">Registered</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {registrations.map((r) => (
-                    <tr
-                      key={r.id}
-                      className="border-b border-foreground/5 last:border-0"
-                    >
-                      <td className="px-5 py-3">
-                        <p className="font-medium">{r.classes?.name ?? "—"}</p>
-                        {r.classes?.level && (
-                          <p className="mt-1">
-                            <Badge tone="cobalt">
-                              {levelLabel(r.classes.level)}
-                            </Badge>
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-5 py-3 text-muted-foreground">
-                        {r.classes?.day_of_week
-                          ? dayLabel(r.classes.day_of_week)
-                          : "—"}
-                        <br />
-                        <span className="text-foreground">
-                          {r.classes?.start_time && r.classes?.end_time
-                            ? formatTimeRange(
-                                r.classes.start_time,
-                                r.classes.end_time,
-                              )
-                            : ""}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3">{r.shirt_size ?? "—"}</td>
-                      <td className="px-5 py-3">
-                        <PaymentBadge status={r.payment_status} />
-                        {r.payment_method && (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            via {r.payment_method}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-5 py-3 text-muted-foreground">
-                        {formatDate(r.registered_at.slice(0, 10))}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-      </div>
-      </div>
-    </>
+          </Card>
+        </section>
+      )}
+
+      {/* NOTES */}
+      {notesItems.length > 0 && (
+        <section id="notes" className="mt-8 scroll-mt-20">
+          <SectionHeading
+            eyebrow="On record"
+            title="From their registration."
+          />
+          <Card className="mt-4 grid gap-5 p-5 sm:grid-cols-2">
+            {notesItems.map((n) => (
+              <Stack key={n.label} label={n.label}>
+                {n.value}
+              </Stack>
+            ))}
+          </Card>
+        </section>
+      )}
+
+      {/* REGISTRATIONS */}
+      <section id="registrations" className="mt-8 scroll-mt-20">
+        <SectionHeading
+          eyebrow={`Registrations · ${registrations.length}`}
+          title="Classes they're enrolled in."
+        />
+        {registrations.length === 0 ? (
+          <Card className="mt-4 p-8 text-center text-sm text-muted-foreground">
+            No registrations yet.
+          </Card>
+        ) : (
+          <div className="mt-4 grid gap-3">
+            {registrations.map((r) => {
+              const c = r.classes;
+              return (
+                <Card
+                  key={r.id}
+                  className="grid grid-cols-1 items-center gap-4 p-4 md:grid-cols-[1fr_auto] md:gap-6 md:p-5"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <h3 className="font-display text-lg font-medium tracking-tight">
+                        {c?.name ?? "—"}
+                      </h3>
+                      {c?.level && (
+                        <Badge tone="cobalt">{levelLabel(c.level)}</Badge>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {c?.day_of_week ? dayLabel(c.day_of_week) : "—"}
+                      {c?.start_time && c?.end_time ? (
+                        <>
+                          <span className="mx-2">·</span>
+                          <span className="font-mono tabular-nums text-foreground/85">
+                            {formatTimeRange(c.start_time, c.end_time)}
+                          </span>
+                        </>
+                      ) : null}
+                      {c?.location ? (
+                        <>
+                          <span className="mx-2">·</span>
+                          {c.location}
+                        </>
+                      ) : null}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 md:flex-col md:items-end md:gap-2">
+                    <PaymentBadge status={r.payment_status} />
+                    <p className="text-xs text-muted-foreground">
+                      Registered {formatDate(r.registered_at.slice(0, 10))}
+                      {r.payment_method && (
+                        <>
+                          <span className="mx-1.5">·</span>
+                          via {r.payment_method}
+                        </>
+                      )}
+                      {r.shirt_size && (
+                        <>
+                          <span className="mx-1.5">·</span>
+                          shirt {r.shirt_size}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
 
-function Row({
+function InfoTile({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3 bg-card p-5">
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-vermillion/10 text-vermillion">
+        <Icon size={16} aria-hidden />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
+          {label}
+        </p>
+        <p className="mt-1 break-words text-sm text-foreground/90">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function SectionHeading({
+  eyebrow,
+  title,
+  accent,
+}: {
+  eyebrow: string;
+  title: string;
+  accent?: "emergency";
+}) {
+  return (
+    <div>
+      <p className="flex items-center gap-3 text-[0.7rem] uppercase tracking-[0.32em] text-muted-foreground">
+        <span
+          aria-hidden
+          className={
+            accent === "emergency"
+              ? "inline-block h-px w-6 bg-vermillion"
+              : "inline-block h-px w-6 bg-foreground/40"
+          }
+        />
+        {eyebrow}
+      </p>
+      <h2 className="mt-2 font-display text-xl font-medium tracking-tight md:text-2xl">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+function Stack({
   label,
   children,
-  stack,
 }: {
   label: string;
   children: React.ReactNode;
-  stack?: boolean;
 }) {
   return (
-    <div className={stack ? "" : "grid grid-cols-[8rem_1fr] items-baseline gap-3"}>
-      <dt
-        className={
-          stack
-            ? "text-xs uppercase tracking-[0.14em] text-muted-foreground"
-            : "text-xs uppercase tracking-[0.14em] text-muted-foreground"
-        }
-      >
+    <div>
+      <dt className="text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
         {label}
       </dt>
-      <dd className={stack ? "mt-1 text-foreground/85" : "text-foreground/85"}>
-        {children}
-      </dd>
+      <dd className="mt-1 text-sm text-foreground/85">{children}</dd>
     </div>
   );
 }

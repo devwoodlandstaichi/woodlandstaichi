@@ -7,14 +7,15 @@ import {
   MapPin,
   Phone,
 } from "lucide-react";
-import { signOut } from "@/app/login/actions";
 import { levelLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { EditDetailsDialog } from "./edit-details-dialog";
 
 type MemberHeroProps = {
   first_name: string;
   last_name: string;
   email: string;
+  nickname: string | null;
   phone: string | null;
   street: string | null;
   city: string | null;
@@ -118,27 +119,28 @@ export function MemberHero(props: MemberHeroProps) {
       aria-labelledby="member-hero-name"
       className="relative mx-auto max-w-7xl px-6 pt-8 pb-12 md:px-10 md:pt-12 md:pb-16 overflow-hidden"
     >
-      {/* CJK watermark — self (己) — same idiom as PageHeader,
-          anchored to inner content right edge. */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 hidden md:block font-display leading-none select-none text-foreground/[0.06] text-[clamp(20rem,32vw,38rem)] tracking-tighter md:right-10"
-      >
-        己
-      </span>
-
       <div className="relative grid grid-cols-12 gap-x-6 gap-y-10">
-        {/* Portrait / placeholder */}
-        <div className="col-span-12 md:col-span-5 lg:col-span-4">
-          <PortraitFrame
-            photo_url={props.photo_url}
-            alt={`Portrait of ${fullName}`}
-            initials={initials(props.first_name, props.last_name)}
-          />
-        </div>
+        {/* Portrait — only when an actual photo is on file. The fallback
+            initials placeholder felt like dead weight, so we drop the
+            whole column when there's nothing to show and let the
+            identity content take the full width. */}
+        {props.photo_url && (
+          <div className="col-span-12 md:col-span-5 lg:col-span-4">
+            <PortraitFrame
+              photo_url={props.photo_url}
+              alt={`Portrait of ${fullName}`}
+              initials={initials(props.first_name, props.last_name)}
+            />
+          </div>
+        )}
 
         {/* Identity column */}
-        <div className="col-span-12 md:col-span-7 lg:col-span-8 md:pl-6 lg:pl-10 flex flex-col">
+        <div
+          className={cn(
+            "col-span-12 flex flex-col",
+            props.photo_url && "md:col-span-7 lg:col-span-8 md:pl-6 lg:pl-10",
+          )}
+        >
           <p className="rise text-[11px] uppercase tracking-[0.45em] text-foreground/55 mb-6">
             <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
             Welcome, this is
@@ -181,12 +183,20 @@ export function MemberHero(props: MemberHeroProps) {
             ) : (
               <p className="text-base text-foreground/55 italic leading-[1.7]">
                 You haven&rsquo;t written a bio yet.{" "}
-                <a
-                  href="#edit-details"
-                  className="not-italic underline decoration-vermillion underline-offset-4 text-foreground hover:text-vermillion transition-colors"
+                <EditDetailsDialog
+                  variant="link"
+                  defaults={{
+                    nickname: props.nickname,
+                    phone: props.phone,
+                    street: props.street,
+                    city: props.city,
+                    state: props.state,
+                    postal_code: props.postal_code,
+                    bio: props.bio,
+                  }}
                 >
                   Add a few sentences →
-                </a>
+                </EditDetailsDialog>
               </p>
             )}
           </div>
@@ -258,16 +268,18 @@ export function MemberHero(props: MemberHeroProps) {
             className="rise mt-12 flex flex-wrap items-center gap-2 border-t border-foreground/10 pt-6"
             style={{ animationDelay: "600ms" }}
           >
-            <ChipLink href="#edit-details">Edit details</ChipLink>
+            <EditDetailsDialog
+              defaults={{
+                nickname: props.nickname,
+                phone: props.phone,
+                street: props.street,
+                city: props.city,
+                state: props.state,
+                postal_code: props.postal_code,
+                bio: props.bio,
+              }}
+            />
             <ChipLink href="#share-story">Share your story</ChipLink>
-            <form action={signOut} className="ml-auto">
-              <button
-                type="submit"
-                className="inline-flex h-10 items-center rounded-full border border-foreground/12 px-4 text-sm text-foreground/65 hover:text-foreground hover:border-foreground/30 transition-colors"
-              >
-                Sign out
-              </button>
-            </form>
           </div>
         </div>
       </div>

@@ -3,8 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { ChevronDown, Menu, X } from "lucide-react";
+import { ChevronDown, Menu, User, X } from "lucide-react";
 import { FontScaler } from "@/components/font-scaler";
+import { signOut } from "@/app/login/actions";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -38,9 +39,6 @@ export type SiteHeaderClientProps = {
 
 export function SiteHeaderClient({ signedIn, isStaff }: SiteHeaderClientProps) {
   const [open, setOpen] = useState(false);
-
-  const accountHref = signedIn ? "/members/me" : "/login?next=/members/me";
-  const accountLabel = signedIn ? "My profile" : "Sign in";
 
   return (
     <header className="sticky top-0 z-40 w-full">
@@ -122,27 +120,85 @@ export function SiteHeaderClient({ signedIn, isStaff }: SiteHeaderClientProps) {
 
         <div className="flex items-center gap-3">
           <FontScaler />
-          {isStaff && (
-            <Link
-              href="/admin"
-              className="hidden md:inline-flex items-center text-sm tracking-wide text-foreground/75 hover:text-foreground transition-colors"
+          {/* Account dropdown — same hover/focus pattern as the About menu.
+              Signed out: just a "Sign in" item. Signed in: Admin (staff
+              only), My profile, Sign out. */}
+          <div className="hidden md:block group relative">
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-label={signedIn ? "Account menu" : "Sign in menu"}
+              className="inline-flex items-center gap-1 text-sm tracking-wide text-foreground/75 hover:text-foreground transition-colors"
             >
-              Admin
+              <User size={16} aria-hidden className="opacity-80" />
+              <ChevronDown
+                size={14}
+                aria-hidden
+                className="opacity-50 transition-transform group-hover:rotate-180"
+              />
+            </button>
+            <div
+              className={cn(
+                "invisible opacity-0 absolute right-0 top-full pt-3",
+                "group-hover:visible group-hover:opacity-100",
+                "focus-within:visible focus-within:opacity-100",
+                "transition-opacity duration-150",
+              )}
+            >
+              <div
+                role="menu"
+                className="min-w-[12rem] rounded-lg border border-foreground/10 bg-background/95 backdrop-blur-md shadow-xl py-2"
+              >
+                {signedIn ? (
+                  <>
+                    {isStaff && (
+                      <Link
+                        href="/admin"
+                        role="menuitem"
+                        className="block px-4 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-foreground/5 transition-colors"
+                      >
+                        Admin
+                      </Link>
+                    )}
+                    <Link
+                      href="/members/me"
+                      role="menuitem"
+                      className="block px-4 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-foreground/5 transition-colors"
+                    >
+                      My profile
+                    </Link>
+                    <div className="my-1 h-px bg-foreground/8" />
+                    <form action={signOut}>
+                      <button
+                        type="submit"
+                        role="menuitem"
+                        className="block w-full px-4 py-2 text-left text-sm text-foreground/80 hover:text-foreground hover:bg-foreground/5 transition-colors"
+                      >
+                        Sign out
+                      </button>
+                    </form>
+                  </>
+                ) : (
+                  <Link
+                    href="/login?next=/members/me"
+                    role="menuitem"
+                    className="block px-4 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-foreground/5 transition-colors"
+                  >
+                    Sign in
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+          {!signedIn && (
+            <Link
+              href="/classes/register"
+              className="hidden md:inline-flex items-center gap-2 rounded-full bg-vermillion px-5 py-2.5 text-sm font-medium text-background hover:bg-vermillion-600 transition-colors"
+            >
+              Register
+              <span aria-hidden>→</span>
             </Link>
           )}
-          <Link
-            href={accountHref}
-            className="hidden md:inline-flex items-center text-sm tracking-wide text-foreground/75 hover:text-foreground transition-colors"
-          >
-            {accountLabel}
-          </Link>
-          <Link
-            href="/classes/register"
-            className="hidden md:inline-flex items-center gap-2 rounded-full bg-vermillion px-5 py-2.5 text-sm font-medium text-background hover:bg-vermillion-600 transition-colors"
-          >
-            Register
-            <span aria-hidden>→</span>
-          </Link>
           {/* Mobile menu toggle */}
           <button
             type="button"
@@ -192,13 +248,6 @@ export function SiteHeaderClient({ signedIn, isStaff }: SiteHeaderClientProps) {
               )}
             </div>
           ))}
-          <Link
-            href={accountHref}
-            onClick={() => setOpen(false)}
-            className="block py-3 border-b border-foreground/5 text-base text-foreground/85 hover:text-foreground"
-          >
-            {accountLabel}
-          </Link>
           {isStaff && (
             <Link
               href="/admin"
@@ -208,14 +257,44 @@ export function SiteHeaderClient({ signedIn, isStaff }: SiteHeaderClientProps) {
               Admin
             </Link>
           )}
-          <Link
-            href="/classes/register"
-            onClick={() => setOpen(false)}
-            className="mt-3 mb-2 inline-flex items-center justify-center gap-2 rounded-full bg-vermillion px-5 py-3 text-base font-medium text-background"
-          >
-            Register
-            <span aria-hidden>→</span>
-          </Link>
+          {signedIn ? (
+            <>
+              <Link
+                href="/members/me"
+                onClick={() => setOpen(false)}
+                className="block py-3 border-b border-foreground/5 text-base text-foreground/85 hover:text-foreground"
+              >
+                My profile
+              </Link>
+              <form action={signOut}>
+                <button
+                  type="submit"
+                  onClick={() => setOpen(false)}
+                  className="block w-full py-3 text-left border-b border-foreground/5 text-base text-foreground/85 hover:text-foreground"
+                >
+                  Sign out
+                </button>
+              </form>
+            </>
+          ) : (
+            <Link
+              href="/login?next=/members/me"
+              onClick={() => setOpen(false)}
+              className="block py-3 border-b border-foreground/5 text-base text-foreground/85 hover:text-foreground"
+            >
+              Sign in
+            </Link>
+          )}
+          {!signedIn && (
+            <Link
+              href="/classes/register"
+              onClick={() => setOpen(false)}
+              className="mt-3 mb-2 inline-flex items-center justify-center gap-2 rounded-full bg-vermillion px-5 py-3 text-base font-medium text-background"
+            >
+              Register
+              <span aria-hidden>→</span>
+            </Link>
+          )}
         </nav>
       </div>
     </header>

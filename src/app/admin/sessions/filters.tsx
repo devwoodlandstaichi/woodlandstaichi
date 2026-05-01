@@ -7,15 +7,12 @@ import {
   CLASS_LEVEL_VALUES,
   type ClassLevel,
 } from "@/lib/format";
+import {
+  SESSION_PERIOD_VALUES,
+  type SessionPeriod,
+} from "./filter-types";
 
 const TEXT_DEBOUNCE_MS = 400;
-
-export type SessionPeriod = "upcoming" | "past" | "all";
-export const SESSION_PERIOD_VALUES: readonly SessionPeriod[] = [
-  "upcoming",
-  "past",
-  "all",
-];
 
 const PERIOD_LABEL: Record<SessionPeriod, string> = {
   upcoming: "Upcoming",

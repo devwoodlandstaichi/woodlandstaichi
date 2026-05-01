@@ -5,12 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/page-header";
 import { signOut } from "@/app/login/actions";
-import { EditDetailsSection } from "./edit-details-section";
 import { MemberHero } from "./member-hero";
 import { PracticeNotes } from "./practice-notes";
 import { type ProfileDefaults } from "./profile-form";
 import { SetPasswordForm } from "./set-password-form";
-import { TestimonialForm } from "./testimonial-form";
+import { TestimonialDialog } from "./testimonial-dialog";
 import { linkSelfByEmail } from "./actions";
 
 type OwnTestimonial = {
@@ -202,6 +201,7 @@ export default async function MyProfilePage() {
         first_name={member.first_name}
         last_name={member.last_name}
         email={member.email}
+        nickname={member.nickname}
         phone={member.phone}
         street={member.street}
         city={member.city}
@@ -223,18 +223,6 @@ export default async function MyProfilePage() {
         prior_experience={member.prior_experience}
         found_us_via={member.found_us_via}
         expectations={member.expectations}
-      />
-
-      <EditDetailsSection
-        defaults={{
-          nickname: member.nickname,
-          phone: member.phone,
-          street: member.street,
-          city: member.city,
-          state: member.state,
-          postal_code: member.postal_code,
-          bio: member.bio,
-        }}
       />
 
       <section
@@ -262,21 +250,32 @@ async function TestimonialPanel({ memberId }: { memberId: string }) {
 
   const own = (data ?? []) as OwnTestimonial[];
 
+  // One submission per member: hide the trigger if anything pending or
+  // approved exists. A rejected submission shouldn't lock them out —
+  // they can revise and resubmit.
+  const hasLiveSubmission = own.some(
+    (t) => t.status === "pending" || t.status === "approved",
+  );
+
+  const intro = hasLiveSubmission
+    ? "Thanks for sharing — see your submission below. Each member can submit one story; reach out to the school if you'd like to revise it."
+    : "Members’ words mean more to newcomers than anything we could write. If Tai Chi has changed something for you, write a few sentences. Submissions are reviewed before they go live.";
+
   return (
     <div className="rounded-2xl border border-foreground/10 bg-card p-6 md:p-8">
       <h2 className="font-display text-2xl tracking-tight mb-2">
-        Share your story
+        {hasLiveSubmission ? "Your story" : "Share your story"}
       </h2>
       <p className="text-sm text-foreground/60 mb-6 leading-relaxed">
-        Members&rsquo; words mean more to newcomers than anything we could
-        write. If Tai Chi has changed something for you, write a few
-        sentences. Submissions are reviewed before they go live.
+        {intro}
       </p>
 
-      <TestimonialForm />
+      {!hasLiveSubmission && <TestimonialDialog />}
 
       {own.length > 0 && (
-        <div className="mt-10 border-t border-foreground/8 pt-6">
+        <div
+          className={`${hasLiveSubmission ? "" : "mt-10 border-t border-foreground/8 pt-6"}`}
+        >
           <h3 className="text-xs uppercase tracking-[0.22em] text-foreground/55 mb-4">
             Your submissions
           </h3>

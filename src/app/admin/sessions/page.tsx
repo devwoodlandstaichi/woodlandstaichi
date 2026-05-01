@@ -13,11 +13,11 @@ import { BulkDeleteButton } from "./bulk-delete-button";
 import { DeleteSessionButton } from "./delete-session-button";
 import { toggleNewcomerFriendly } from "./actions";
 import { CapacityInput } from "./capacity-input";
+import { SessionFilters } from "./filters";
 import {
   SESSION_PERIOD_VALUES,
-  SessionFilters,
   type SessionPeriod,
-} from "./filters";
+} from "./filter-types";
 import { getSessionUser } from "@/lib/auth/dal";
 
 export const metadata = { title: "Sessions" };
