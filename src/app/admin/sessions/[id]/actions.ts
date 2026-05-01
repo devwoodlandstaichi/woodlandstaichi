@@ -51,16 +51,35 @@ async function setRsvpStatus(
   return error;
 }
 
-export async function approveRsvp(formData: FormData) {
+// Generic action-state shape used by client wrappers around the
+// useActionState pattern. `undefined` is the initial state so a fresh
+// render shows neither success nor error.
+export type ActionState =
+  | { ok: true; message?: string }
+  | { ok: false; message: string }
+  | undefined;
+
+export async function approveRsvp(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const reviewer = await requireStaff();
   const id = String(formData.get("id") ?? "");
   const sessionId = String(formData.get("session_id") ?? "");
-  if (!id || !sessionId) return;
+  if (!id || !sessionId) return { ok: false, message: "Missing identifier." };
   // Trigger session_rsvps_capacity_guard rejects this if it would
   // overbook. UI also disables the button at capacity, but the DB is
-  // the source of truth.
-  await setRsvpStatus(id, "approved", reviewer.id);
+  // the source of truth — surface the error if a race somehow gets
+  // through.
+  const err = await setRsvpStatus(id, "approved", reviewer.id);
+  if (err) {
+    const friendly = err.message.toLowerCase().includes("at capacity")
+      ? "Session is at capacity — someone else just took the last seat."
+      : err.message;
+    return { ok: false, message: friendly };
+  }
   revalidatePath(`/admin/sessions/${sessionId}`);
+  return { ok: true };
 }
 
 export async function rejectRsvp(formData: FormData) {
@@ -88,6 +107,33 @@ export async function restoreRsvpToPending(formData: FormData) {
   const sessionId = String(formData.get("session_id") ?? "");
   if (!id || !sessionId) return;
   await setRsvpStatus(id, "pending", reviewer.id, null);
+  revalidatePath(`/admin/sessions/${sessionId}`);
+}
+
+/** Re-open a cancelled RSVP back to pending. The unique
+ * (session_id, member_id) constraint blocks members from re-requesting
+ * after cancelling, so this is the admin's escape hatch. */
+export async function reopenRsvp(formData: FormData) {
+  const reviewer = await requireStaff();
+  const id = String(formData.get("id") ?? "");
+  const sessionId = String(formData.get("session_id") ?? "");
+  if (!id || !sessionId) return;
+  await setRsvpStatus(id, "pending", reviewer.id, null);
+  revalidatePath(`/admin/sessions/${sessionId}`);
+}
+
+/** Toggle whether members can submit new requests for this session.
+ * Doesn't affect existing rows. */
+export async function toggleAcceptingRsvps(formData: FormData) {
+  await requireStaff();
+  const sessionId = String(formData.get("session_id") ?? "");
+  const next = formData.get("next") === "true";
+  if (!sessionId) return;
+  const supabase = await createClient();
+  await supabase
+    .from("class_sessions")
+    .update({ accepting_rsvps: next })
+    .eq("id", sessionId);
   revalidatePath(`/admin/sessions/${sessionId}`);
 }
 
@@ -129,13 +175,21 @@ function dateLabelFor(dateIso: string, day: DayOfWeek) {
   return `${DAY_LABEL[day]}, ${formatDate(dateIso)}`;
 }
 
-export async function sendApprovalRoster(formData: FormData): Promise<void> {
+export type RosterState =
+  | { ok: true; message: string }
+  | { ok: false; message: string }
+  | undefined;
+
+export async function sendApprovalRoster(
+  _prev: RosterState,
+  formData: FormData,
+): Promise<RosterState> {
   const reviewer = await requireStaff();
   const sessionId = String(formData.get("session_id") ?? "");
-  if (!sessionId) return;
+  if (!sessionId) return { ok: false, message: "Missing session id." };
 
   const ctx = await loadSessionContext(sessionId);
-  if (!ctx) return;
+  if (!ctx) return { ok: false, message: "Session not found." };
 
   const supabase = await createClient();
   // Pull approved RSVPs that haven't been notified yet — they're the
@@ -164,7 +218,8 @@ export async function sendApprovalRoster(formData: FormData): Promise<void> {
     } | { first_name: string; last_name: string; email: string }[] | null;
   };
   const unsent = (unsentRes.data ?? []) as Row[];
-  if (unsent.length === 0) return;
+  if (unsent.length === 0)
+    return { ok: false, message: "No new approvals to notify." };
 
   const recipientEmails: string[] = [];
   const unsentIds: string[] = [];
@@ -174,7 +229,11 @@ export async function sendApprovalRoster(formData: FormData): Promise<void> {
     recipientEmails.push(m.email);
     unsentIds.push(r.id);
   }
-  if (recipientEmails.length === 0) return;
+  if (recipientEmails.length === 0)
+    return {
+      ok: false,
+      message: "Approved members have no email on file.",
+    };
 
   const allRows = (allApprovedRes.data ?? []) as Row[];
   const participantNames = allRows
@@ -197,7 +256,7 @@ export async function sendApprovalRoster(formData: FormData): Promise<void> {
       recipientEmails,
     }),
   );
-  if (!sendRes.ok) return;
+  if (!sendRes.ok) return { ok: false, message: sendRes.message };
 
   const admin = createAdminClient();
   const now = new Date().toISOString();
@@ -211,15 +270,24 @@ export async function sendApprovalRoster(formData: FormData): Promise<void> {
     .eq("id", sessionId);
 
   revalidatePath(`/admin/sessions/${sessionId}`);
+  return {
+    ok: true,
+    message: `Sent to ${recipientEmails.length} member${
+      recipientEmails.length === 1 ? "" : "s"
+    }.`,
+  };
 }
 
-export async function sendRejectionRoster(formData: FormData): Promise<void> {
+export async function sendRejectionRoster(
+  _prev: RosterState,
+  formData: FormData,
+): Promise<RosterState> {
   const reviewer = await requireStaff();
   const sessionId = String(formData.get("session_id") ?? "");
-  if (!sessionId) return;
+  if (!sessionId) return { ok: false, message: "Missing session id." };
 
   const ctx = await loadSessionContext(sessionId);
-  if (!ctx) return;
+  if (!ctx) return { ok: false, message: "Session not found." };
 
   const supabase = await createClient();
   const { data } = await supabase
@@ -243,7 +311,8 @@ export async function sendRejectionRoster(formData: FormData): Promise<void> {
     recipientEmails.push(m.email);
     ids.push(r.id);
   }
-  if (recipientEmails.length === 0) return;
+  if (recipientEmails.length === 0)
+    return { ok: false, message: "No new rejections to notify." };
 
   const sendRes = await sendEmail(
     sessionRejectionRoster({
@@ -256,7 +325,7 @@ export async function sendRejectionRoster(formData: FormData): Promise<void> {
       recipientEmails,
     }),
   );
-  if (!sendRes.ok) return;
+  if (!sendRes.ok) return { ok: false, message: sendRes.message };
 
   const admin = createAdminClient();
   const now = new Date().toISOString();
@@ -273,4 +342,10 @@ export async function sendRejectionRoster(formData: FormData): Promise<void> {
     .eq("id", sessionId);
 
   revalidatePath(`/admin/sessions/${sessionId}`);
+  return {
+    ok: true,
+    message: `Sent to ${recipientEmails.length} member${
+      recipientEmails.length === 1 ? "" : "s"
+    }.`,
+  };
 }

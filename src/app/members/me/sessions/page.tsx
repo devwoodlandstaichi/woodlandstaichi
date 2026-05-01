@@ -157,9 +157,11 @@ export default async function MemberSessionsPage() {
     return startMs - nowMs >= cutoffMs;
   });
 
-  // Per-session approved counts + member's own RSVP status.
+  // Per-session approved counts + member's own RSVP status, plus the
+  // member's full RSVP history (for the "Past requests" collapsible
+  // beneath the visible window).
   const sessionIds = visible.map((s) => s.id);
-  const [approvedRes, ownRes] = await Promise.all([
+  const [approvedRes, ownRes, historyRes] = await Promise.all([
     sessionIds.length > 0
       ? supabase
           .from("session_rsvps")
@@ -174,6 +176,14 @@ export default async function MemberSessionsPage() {
           .eq("member_id", member.id)
           .in("class_session_id", sessionIds)
       : Promise.resolve({ data: [] as OwnRsvp[] }),
+    supabase
+      .from("session_rsvps")
+      .select(
+        "id, status, requested_at, reviewer_note, class_session_id, class_sessions:class_session_id(session_date, start_time, end_time, classes(name, location))",
+      )
+      .eq("member_id", member.id)
+      .order("requested_at", { ascending: false })
+      .limit(50),
   ]);
 
   const approvedByMap = new Map<string, number>();
@@ -187,6 +197,30 @@ export default async function MemberSessionsPage() {
   for (const r of (ownRes.data ?? []) as OwnRsvp[]) {
     ownByMap.set(r.class_session_id, r);
   }
+
+  // History: any RSVP whose underlying session isn't in the currently
+  // visible list. Includes past dates and rejected/cancelled rows that
+  // rolled out of the window.
+  type HistoryRow = {
+    id: string;
+    status: OwnRsvp["status"];
+    requested_at: string;
+    reviewer_note: string | null;
+    class_session_id: string;
+    class_sessions: {
+      session_date: string;
+      start_time: string;
+      end_time: string;
+      classes:
+        | { name: string; location: string | null }
+        | { name: string; location: string | null }[]
+        | null;
+    } | null;
+  };
+  const visibleIds = new Set(sessionIds);
+  const history = ((historyRes.data ?? []) as unknown as HistoryRow[]).filter(
+    (h) => !visibleIds.has(h.class_session_id),
+  );
 
   return (
     <>
@@ -234,8 +268,88 @@ export default async function MemberSessionsPage() {
             })}
           </ul>
         )}
+
+        {history.length > 0 && (
+          <details className="mt-12 group">
+            <summary className="cursor-pointer list-none text-[11px] uppercase tracking-[0.32em] text-foreground/55 hover:text-foreground">
+              <span className="mr-3 inline-block h-px w-6 align-middle bg-foreground/40 group-open:bg-vermillion transition-colors" />
+              Past requests · {history.length}
+            </summary>
+            <ul className="mt-5 grid gap-2">
+              {history.map((h) => (
+                <HistoryRow key={h.id} row={h} />
+              ))}
+            </ul>
+          </details>
+        )}
       </section>
     </>
+  );
+}
+
+type HistoryDisplayRow = {
+  id: string;
+  status: OwnRsvp["status"];
+  requested_at: string;
+  reviewer_note: string | null;
+  class_sessions: {
+    session_date: string;
+    start_time: string;
+    end_time: string;
+    classes:
+      | { name: string; location: string | null }
+      | { name: string; location: string | null }[]
+      | null;
+  } | null;
+};
+
+function HistoryRow({ row }: { row: HistoryDisplayRow }) {
+  const cs = row.class_sessions;
+  const cls = cs
+    ? Array.isArray(cs.classes)
+      ? cs.classes[0] ?? null
+      : cs.classes
+    : null;
+  const tone =
+    row.status === "approved"
+      ? "jade"
+      : row.status === "rejected"
+        ? "vermillion"
+        : row.status === "waitlisted"
+          ? "cobalt"
+          : "muted";
+  const label =
+    row.status === "approved"
+      ? "Attended / approved"
+      : row.status === "rejected"
+        ? "Not approved"
+        : row.status === "waitlisted"
+          ? "Waitlisted"
+          : row.status === "cancelled"
+            ? "Cancelled"
+            : "Pending";
+  return (
+    <li className="rounded-xl border border-foreground/8 bg-card/60 p-4 text-sm">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="font-medium text-foreground/85">{cls?.name ?? "—"}</p>
+        <Badge tone={tone}>{label}</Badge>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {cs
+          ? `${formatDate(cs.session_date)} · ${formatTimeRange(
+              cs.start_time,
+              cs.end_time,
+            )}`
+          : "—"}
+        {cls?.location ? ` · ${cls.location}` : ""}
+      </p>
+      {row.status === "rejected" && row.reviewer_note && (
+        <p className="mt-2 rounded-md border border-foreground/10 bg-secondary px-3 py-2 text-xs text-foreground/70">
+          <span className="font-medium text-foreground/85">Note: </span>
+          {row.reviewer_note}
+        </p>
+      )}
+    </li>
   );
 }
 

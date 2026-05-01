@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Check, Hourglass, Mail, X } from "lucide-react";
+import { ArrowLeft, Hourglass, RotateCcw, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
 import {
@@ -10,13 +10,17 @@ import {
   type DayOfWeek,
 } from "@/lib/format";
 import {
-  approveRsvp,
   rejectRsvp,
+  reopenRsvp,
   restoreRsvpToPending,
-  sendApprovalRoster,
-  sendRejectionRoster,
   waitlistRsvp,
 } from "./actions";
+import {
+  AcceptingRsvpsToggle,
+  ApproveButton,
+  SendApprovalsButton,
+  SendRejectionsButton,
+} from "./client-actions";
 
 export const metadata = { title: "Session detail" };
 export const dynamic = "force-dynamic";
@@ -188,14 +192,17 @@ export default async function SessionDetailPage({
               Scans recorded
             </p>
             <p className="mt-2 font-display text-4xl tracking-tight">{scans}</p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               {cls?.level && (
                 <Badge tone="cobalt">{levelLabel(cls.level)}</Badge>
               )}
               {s.newcomer_friendly && (
                 <Badge tone="vermillion">Welcoming</Badge>
               )}
-              {!s.accepting_rsvps && <Badge tone="muted">RSVPs closed</Badge>}
+              <AcceptingRsvpsToggle
+                sessionId={s.id}
+                accepting={s.accepting_rsvps}
+              />
             </div>
           </Card>
         </div>
@@ -213,34 +220,15 @@ export default async function SessionDetailPage({
                 only notified once per decision.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <form action={sendApprovalRoster}>
-                <input type="hidden" name="session_id" value={s.id} />
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={unsentApprovals === 0}
-                  className="inline-flex items-center gap-1.5"
-                >
-                  <Mail size={14} aria-hidden />
-                  Send approvals
-                  {unsentApprovals > 0 ? ` (${unsentApprovals})` : ""}
-                </Button>
-              </form>
-              <form action={sendRejectionRoster}>
-                <input type="hidden" name="session_id" value={s.id} />
-                <Button
-                  type="submit"
-                  size="sm"
-                  variant="outline"
-                  disabled={unsentRejections === 0}
-                  className="inline-flex items-center gap-1.5"
-                >
-                  <Mail size={14} aria-hidden />
-                  Send rejections
-                  {unsentRejections > 0 ? ` (${unsentRejections})` : ""}
-                </Button>
-              </form>
+            <div className="flex flex-wrap items-start gap-3">
+              <SendApprovalsButton
+                sessionId={s.id}
+                unsentCount={unsentApprovals}
+              />
+              <SendRejectionsButton
+                sessionId={s.id}
+                unsentCount={unsentRejections}
+              />
             </div>
           </div>
           <dl className="mt-4 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
@@ -435,19 +423,26 @@ function RsvpCard({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-start gap-2">
           {showApprove && (
-            <form action={approveRsvp}>
+            <ApproveButton
+              rsvpId={rsvp.id}
+              sessionId={sessionId}
+              disabled={fullCapacity}
+            />
+          )}
+          {rsvp.status === "cancelled" && (
+            <form action={reopenRsvp}>
               <input type="hidden" name="id" value={rsvp.id} />
               <input type="hidden" name="session_id" value={sessionId} />
               <Button
                 type="submit"
                 size="sm"
-                disabled={fullCapacity}
+                variant="outline"
                 className="inline-flex items-center gap-1.5"
               >
-                <Check size={14} aria-hidden />
-                Approve
+                <RotateCcw size={14} aria-hidden />
+                Reopen
               </Button>
             </form>
           )}
