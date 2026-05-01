@@ -70,3 +70,4 @@ supabase/seed.local.sql
 
 # Claude Code local config
 .claude/
+backup-pre-push-*.sql

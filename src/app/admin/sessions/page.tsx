@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
@@ -224,12 +225,17 @@ export default async function SessionsPage({
                     className="border-b border-foreground/5 last:border-0"
                   >
                     <td className="min-w-[14rem] px-4 py-3">
-                      <p className="font-medium">
-                        {formatDate(s.session_date)}
-                      </p>
-                      <p className="mt-0.5 font-mono text-xs tabular-nums text-muted-foreground">
-                        {formatTimeRange(s.start_time, s.end_time)}
-                      </p>
+                      <Link
+                        href={`/admin/sessions/${s.id}`}
+                        className="block hover:text-vermillion"
+                      >
+                        <p className="font-medium underline-offset-4 hover:underline">
+                          {formatDate(s.session_date)}
+                        </p>
+                        <p className="mt-0.5 font-mono text-xs tabular-nums text-muted-foreground">
+                          {formatTimeRange(s.start_time, s.end_time)}
+                        </p>
+                      </Link>
                     </td>
                     <td className="px-4 py-3">{s.classes?.name ?? "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">

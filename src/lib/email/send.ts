@@ -21,6 +21,7 @@ export type SendResult =
  * an explicit error rather than silently dropping the message. */
 export async function sendEmail(opts: {
   to: string;
+  bcc?: string[];
   subject: string;
   html: string;
   text?: string;
@@ -44,6 +45,7 @@ export async function sendEmail(opts: {
     const { data, error } = await resend.emails.send({
       from,
       to: opts.to,
+      bcc: opts.bcc && opts.bcc.length > 0 ? opts.bcc : undefined,
       subject: opts.subject,
       html: opts.html,
       text: opts.text,
