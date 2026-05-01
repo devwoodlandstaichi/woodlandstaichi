@@ -30,9 +30,11 @@
   --vermillion-600: oklch(0.48 0.19 28);
   --vermillion-700: oklch(0.40 0.18 28);
 
+  --cobalt-300:  oklch(0.78 0.10 250);     /* readable on dark bg */
   --cobalt-500:  oklch(0.42 0.13 250);     /* logo waves */
   --cobalt-700:  oklch(0.30 0.14 252);
 
+  --jade-300:    oklch(0.80 0.08 175);     /* readable on dark bg */
   --jade-500:    oklch(0.55 0.07 175);     /* feather accents */
 
   /* Map to shadcn semantic tokens */
@@ -110,9 +112,14 @@
   --color-ink-900: var(--ink-900);
   --color-ink-950: var(--ink-950);
   --color-vermillion: var(--vermillion-500);
+  --color-vermillion-300: var(--vermillion-300);
   --color-vermillion-600: var(--vermillion-600);
+  --color-vermillion-700: var(--vermillion-700);
   --color-cobalt: var(--cobalt-500);
+  --color-cobalt-300: var(--cobalt-300);
+  --color-cobalt-700: var(--cobalt-700);
   --color-jade: var(--jade-500);
+  --color-jade-300: var(--jade-300);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

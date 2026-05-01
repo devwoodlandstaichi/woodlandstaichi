@@ -12,20 +12,25 @@ type ClassRow = {
   description: string | null;
 };
 
+// The schedule renders inside an inverted (ink-bg) section, so the
+// badge text must be readable on near-black. Use the -300 shades
+// (defined in globals.css) and lift the bg/border opacities slightly.
 const LEVEL_TONE: Record<string, string> = {
-  beginners: "bg-vermillion/10 text-vermillion-600 border-vermillion/20",
-  intermediate: "bg-cobalt/10 text-cobalt border-cobalt/20",
-  advanced: "bg-cobalt/15 text-cobalt-700 border-cobalt/25",
-  remedial: "bg-foreground/5 text-foreground/70 border-foreground/15",
-  play_only: "bg-foreground/5 text-foreground/70 border-foreground/15",
-  combined: "bg-jade/10 text-jade border-jade/25",
+  beginners: "bg-vermillion/15 text-vermillion-300 border-vermillion/35",
+  intermediate: "bg-cobalt/15 text-cobalt-300 border-cobalt/35",
+  advanced: "bg-cobalt/20 text-cobalt-300 border-cobalt/40",
+  remedial: "bg-background/10 text-background/80 border-background/25",
+  play_only: "bg-background/10 text-background/80 border-background/25",
+  combined: "bg-jade/15 text-jade-300 border-jade/35",
 };
 
 export async function ScheduleSection() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("classes")
-    .select("id,name,level,location,day_of_week,start_time,end_time,description")
+    .select(
+      "id,name,level,location,day_of_week,start_time,end_time,description",
+    )
     .eq("active", true)
     .order("display_order", { ascending: true });
 
@@ -63,7 +68,7 @@ export async function ScheduleSection() {
             <p className="text-lg text-background/75 leading-relaxed">
               Beginners are welcome at any of the four open sessions below.
               Intermediate, advanced, and remedial sessions are by invitation
-              after a beginner cohort.
+              after a beginners class.
             </p>
           </div>
         </div>
@@ -91,7 +96,8 @@ export async function ScheduleSection() {
                   {dayLabel(day)}
                 </h3>
                 <span className="text-xs uppercase tracking-[0.25em] text-background/50">
-                  {byDay[day].length} session{byDay[day].length === 1 ? "" : "s"}
+                  {byDay[day].length} session
+                  {byDay[day].length === 1 ? "" : "s"}
                 </span>
               </div>
               <ul className="space-y-5">
@@ -103,7 +109,10 @@ export async function ScheduleSection() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
                           <p className="text-base font-medium leading-snug">
-                            {c.name.replace(/^(Wednesday|Thursday|Friday|Monday|Tuesday|Saturday|Sunday)\s+(Morning|Evening)\s+/i, "")}
+                            {c.name.replace(
+                              /^(Wednesday|Thursday|Friday|Monday|Tuesday|Saturday|Sunday)\s+(Morning|Evening)\s+/i,
+                              "",
+                            )}
                           </p>
                           <p className="mt-1 text-sm text-background/60">
                             {c.location}
@@ -133,11 +142,11 @@ export async function ScheduleSection() {
             href="#contact"
             className="inline-flex items-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors"
           >
-            Enroll for the next beginner cohort
+            Enroll for the next beginners class
             <span aria-hidden>→</span>
           </a>
           <p className="text-sm text-background/60">
-            Free for beginners · Reg/shirt fee at enrollment
+            Free for all · Reg/shirt fee at enrollment
           </p>
         </div>
       </div>
