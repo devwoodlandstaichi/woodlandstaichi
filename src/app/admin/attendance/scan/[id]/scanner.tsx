@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Camera, CameraOff, Check, AlertCircle, RotateCw } from "lucide-react";
+import {
+  AlertCircle,
+  Camera,
+  CameraOff,
+  Check,
+  RotateCw,
+  SwitchCamera,
+} from "lucide-react";
 import { Button, Card } from "@/components/admin/ui";
 import { cn } from "@/lib/utils";
 import { recordByToken, recordByMember, searchMembers } from "../../actions";
@@ -55,11 +62,18 @@ function playBeep(tone: BeepTone) {
   }
 }
 
+type FacingMode = "environment" | "user";
+
 export function Scanner({ sessionId }: { sessionId: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
+  // iPads default to the rear camera, but the kiosk often sits with the
+  // member facing the screen; let the operator flip to the front-facing
+  // ("user") camera. Browser falls back gracefully if the device only
+  // exposes one.
+  const [facingMode, setFacingMode] = useState<FacingMode>("environment");
 
   // last-token-and-when, to debounce repeated reads of the same QR
   const lastSeen = useRef<{ token: string; at: number } | null>(null);
@@ -89,10 +103,11 @@ export function Scanner({ sessionId }: { sessionId: string }) {
         const reader = new BrowserMultiFormatReader();
         readerRef.current = reader;
 
-        // Prefer rear camera if available (admin usually scans from a laptop,
-        // but tablets default to front; this lets the device choose sensibly).
-        const controls = await reader.decodeFromVideoDevice(
-          undefined,
+        // Prefer the requested facing mode. `ideal` so a desktop with
+        // only one camera still works — the constraint is treated as a
+        // preference, not a hard requirement.
+        const controls = await reader.decodeFromConstraints(
+          { video: { facingMode: { ideal: facingMode } } },
           videoRef.current!,
           (result) => {
             if (!result) return;
@@ -132,7 +147,7 @@ export function Scanner({ sessionId }: { sessionId: string }) {
       readerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scanning]);
+  }, [scanning, facingMode]);
 
   function handleToken(encoded: string) {
     void (async () => {
@@ -296,6 +311,21 @@ export function Scanner({ sessionId }: { sessionId: string }) {
                 <Camera size={16} aria-hidden /> Start scanning
               </>
             )}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() =>
+              setFacingMode((m) => (m === "environment" ? "user" : "environment"))
+            }
+            title={
+              facingMode === "environment"
+                ? "Switch to front camera"
+                : "Switch to rear camera"
+            }
+          >
+            <SwitchCamera size={16} aria-hidden />
+            {facingMode === "environment" ? "Use front camera" : "Use rear camera"}
           </Button>
           {error && (
             <p className="text-sm text-destructive flex items-center gap-2">
