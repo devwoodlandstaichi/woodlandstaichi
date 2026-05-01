@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/page-header";
 import { signOut } from "@/app/login/actions";
 import { MemberHero } from "./member-hero";
+import { MemberTabs } from "./tab-nav";
 import { PracticeNotes } from "./practice-notes";
 import { type ProfileDefaults } from "./profile-form";
 import { SetPasswordForm } from "./set-password-form";
@@ -195,8 +196,17 @@ export default async function MyProfilePage() {
     );
   }
 
+  const showSessionsTab = member.status === "active";
+  const tabs = showSessionsTab
+    ? [
+        { href: "/members/me", label: "Profile" },
+        { href: "/members/me/sessions", label: "Sessions" },
+      ]
+    : [{ href: "/members/me", label: "Profile" }];
+
   return (
     <>
+      <MemberTabs tabs={tabs} />
       <MemberHero
         first_name={member.first_name}
         last_name={member.last_name}
