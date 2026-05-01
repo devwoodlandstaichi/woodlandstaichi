@@ -21,6 +21,7 @@ import {
   SendApprovalsButton,
   SendRejectionsButton,
 } from "./client-actions";
+import { PendingPanel, type PendingRow } from "./bulk-pending";
 
 export const metadata = { title: "Session detail" };
 export const dynamic = "force-dynamic";
@@ -79,6 +80,49 @@ export default async function SessionDetailPage({
       .select("id", { count: "exact", head: true })
       .eq("class_session_id", id),
   ]);
+
+  // Approval context: recent-attendance count + active registrations per
+  // member appearing in the RSVPs list. Lets admins glance "they show
+  // up regularly" / "no recent attendance" before deciding.
+  const memberIds = Array.from(
+    new Set(
+      ((rsvpsRes.data ?? []) as { members: { id: string } | { id: string }[] | null }[])
+        .map((r) =>
+          Array.isArray(r.members)
+            ? r.members[0]?.id
+            : (r.members as { id: string } | null)?.id,
+        )
+        .filter((x): x is string => !!x),
+    ),
+  );
+  // Server component reads wall-clock time on each render; React's
+  // purity rule is conservative for client components.
+  // eslint-disable-next-line react-hooks/purity
+  const thirtyDaysAgoIso = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    .toISOString();
+  const [recentAttRes, regsRes] = await Promise.all([
+    memberIds.length > 0
+      ? supabase
+          .from("attendance")
+          .select("member_id, scanned_at")
+          .in("member_id", memberIds)
+          .gte("scanned_at", thirtyDaysAgoIso)
+      : Promise.resolve({ data: [] as { member_id: string }[] }),
+    memberIds.length > 0
+      ? supabase
+          .from("registrations")
+          .select("member_id")
+          .in("member_id", memberIds)
+      : Promise.resolve({ data: [] as { member_id: string }[] }),
+  ]);
+  const recentAttBy = new Map<string, number>();
+  for (const row of (recentAttRes.data ?? []) as { member_id: string }[]) {
+    recentAttBy.set(row.member_id, (recentAttBy.get(row.member_id) ?? 0) + 1);
+  }
+  const regsBy = new Map<string, number>();
+  for (const row of (regsRes.data ?? []) as { member_id: string }[]) {
+    regsBy.set(row.member_id, (regsBy.get(row.member_id) ?? 0) + 1);
+  }
 
   if (!sessionRes.data) notFound();
 
@@ -238,23 +282,37 @@ export default async function SessionDetailPage({
         </Card>
 
         {/* RSVP queues */}
-        <RsvpSection
-          title="Pending"
-          eyebrow={`Pending · ${byStatus.pending.length}`}
-          empty="Nothing waiting on you."
-        >
-          {byStatus.pending.map((r) => (
-            <RsvpCard
-              key={r.id}
-              rsvp={r}
+        <section className="mb-8">
+          <div className="mb-3 flex items-center gap-3">
+            <span aria-hidden className="inline-block h-px w-6 bg-foreground/40" />
+            <p className="text-[0.7rem] uppercase tracking-[0.32em] text-muted-foreground">
+              Pending · {byStatus.pending.length}
+            </p>
+          </div>
+          {byStatus.pending.length === 0 ? (
+            <Card className="p-5 text-sm text-muted-foreground">
+              Nothing waiting on you.
+            </Card>
+          ) : (
+            <PendingPanel
+              rows={byStatus.pending.map<PendingRow>((r) => ({
+                id: r.id,
+                requested_at: r.requested_at,
+                reviewer_note: r.reviewer_note,
+                notified_at: r.notified_at,
+                member: r.members,
+                recentAttCount: r.members
+                  ? recentAttBy.get(r.members.id) ?? 0
+                  : 0,
+                registrationsCount: r.members
+                  ? regsBy.get(r.members.id) ?? 0
+                  : 0,
+              }))}
               sessionId={s.id}
               fullCapacity={isFull}
-              showApprove
-              showReject
-              showWaitlist
             />
-          ))}
-        </RsvpSection>
+          )}
+        </section>
 
         <RsvpSection
           title="Approved"
@@ -267,6 +325,7 @@ export default async function SessionDetailPage({
               rsvp={r}
               sessionId={s.id}
               fullCapacity={isFull}
+              {...rsvpContext(r, recentAttBy, regsBy)}
               showRestore
               showWaitlist
             />
@@ -284,6 +343,7 @@ export default async function SessionDetailPage({
               rsvp={r}
               sessionId={s.id}
               fullCapacity={isFull}
+              {...rsvpContext(r, recentAttBy, regsBy)}
               showApprove
               showReject
               showRestore
@@ -303,6 +363,7 @@ export default async function SessionDetailPage({
                 rsvp={r}
                 sessionId={s.id}
                 fullCapacity={isFull}
+                {...rsvpContext(r, recentAttBy, regsBy)}
                 showRestore
               />
             ))}
@@ -321,6 +382,7 @@ export default async function SessionDetailPage({
                 rsvp={r}
                 sessionId={s.id}
                 fullCapacity={isFull}
+                {...rsvpContext(r, recentAttBy, regsBy)}
               />
             ))}
           </RsvpSection>
@@ -328,6 +390,19 @@ export default async function SessionDetailPage({
       </div>
     </>
   );
+}
+
+function rsvpContext(
+  rsvp: RsvpRow,
+  recentAttBy: Map<string, number>,
+  regsBy: Map<string, number>,
+): { recentAttCount?: number; registrationsCount?: number } {
+  const id = rsvp.members?.id;
+  if (!id) return {};
+  return {
+    recentAttCount: recentAttBy.get(id) ?? 0,
+    registrationsCount: regsBy.get(id) ?? 0,
+  };
 }
 
 function RsvpSection({
@@ -370,6 +445,8 @@ function RsvpCard({
   showReject,
   showWaitlist,
   showRestore,
+  recentAttCount,
+  registrationsCount,
 }: {
   rsvp: RsvpRow;
   sessionId: string;
@@ -378,6 +455,8 @@ function RsvpCard({
   showReject?: boolean;
   showWaitlist?: boolean;
   showRestore?: boolean;
+  recentAttCount?: number;
+  registrationsCount?: number;
 }) {
   const m = rsvp.members;
   const memberName = m
@@ -421,6 +500,29 @@ function RsvpCard({
               </>
             )}
           </p>
+          {(recentAttCount !== undefined || registrationsCount !== undefined) && (
+            <p className="mt-1.5 text-[11px] uppercase tracking-[0.16em] text-foreground/55">
+              {recentAttCount !== undefined && (
+                <>
+                  <span className="font-mono tabular-nums text-foreground/85">
+                    {recentAttCount}
+                  </span>{" "}
+                  scan{recentAttCount === 1 ? "" : "s"} · last 30d
+                </>
+              )}
+              {recentAttCount !== undefined && registrationsCount !== undefined && (
+                <span className="mx-2">·</span>
+              )}
+              {registrationsCount !== undefined && (
+                <>
+                  <span className="font-mono tabular-nums text-foreground/85">
+                    {registrationsCount}
+                  </span>{" "}
+                  registration{registrationsCount === 1 ? "" : "s"}
+                </>
+              )}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-wrap items-start gap-2">

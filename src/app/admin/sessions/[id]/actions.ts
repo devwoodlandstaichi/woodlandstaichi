@@ -111,6 +111,85 @@ export async function restoreRsvpToPending(formData: FormData) {
   revalidatePath(`/admin/sessions/${sessionId}`);
 }
 
+// ---------------------------------------------------------------------
+// Bulk decisions. Process a list of pending RSVP ids in one click.
+// Capacity guard still applies per row — if approving the whole batch
+// would overbook, the trigger refuses the overflow rows and the action
+// returns a count of how many actually went through.
+// ---------------------------------------------------------------------
+
+export type BulkActionState =
+  | { ok: true; processed: number; capped?: number; message: string }
+  | { ok: false; message: string }
+  | undefined;
+
+function getIds(formData: FormData): string[] {
+  const all = formData.getAll("id");
+  return Array.from(
+    new Set(all.map((v) => String(v)).filter((v) => v.length > 0)),
+  );
+}
+
+export async function bulkApproveRsvps(
+  _prev: BulkActionState,
+  formData: FormData,
+): Promise<BulkActionState> {
+  const reviewer = await requireStaff();
+  const sessionId = String(formData.get("session_id") ?? "");
+  const ids = getIds(formData);
+  if (!sessionId || ids.length === 0)
+    return { ok: false, message: "Pick at least one row to approve." };
+
+  let processed = 0;
+  let capped = 0;
+  for (const id of ids) {
+    const err = await setRsvpStatus(id, "approved", reviewer.id);
+    if (err) {
+      if (err.message.toLowerCase().includes("at capacity")) capped++;
+      else
+        return {
+          ok: false,
+          message: `Stopped after ${processed}: ${err.message}`,
+        };
+    } else processed++;
+  }
+
+  revalidatePath(`/admin/sessions/${sessionId}`);
+  const tail = capped
+    ? ` ${capped} skipped — session at capacity.`
+    : "";
+  return {
+    ok: true,
+    processed,
+    capped,
+    message: `Approved ${processed}.${tail}`,
+  };
+}
+
+export async function bulkRejectRsvps(
+  _prev: BulkActionState,
+  formData: FormData,
+): Promise<BulkActionState> {
+  const reviewer = await requireStaff();
+  const sessionId = String(formData.get("session_id") ?? "");
+  const ids = getIds(formData);
+  const note = String(formData.get("reviewer_note") ?? "").trim() || null;
+  if (!sessionId || ids.length === 0)
+    return { ok: false, message: "Pick at least one row to reject." };
+
+  for (const id of ids) {
+    const err = await setRsvpStatus(id, "rejected", reviewer.id, note);
+    if (err) return { ok: false, message: err.message };
+  }
+
+  revalidatePath(`/admin/sessions/${sessionId}`);
+  return {
+    ok: true,
+    processed: ids.length,
+    message: `Rejected ${ids.length}.`,
+  };
+}
+
 /** Re-open a cancelled RSVP back to pending. The unique
  * (session_id, member_id) constraint blocks members from re-requesting
  * after cancelling, so this is the admin's escape hatch. */
