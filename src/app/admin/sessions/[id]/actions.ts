@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireStaff } from "@/lib/auth/dal";
 import { sendEmail } from "@/lib/email/send";
+import { buildSessionIcs } from "@/lib/ics/build-event";
 import {
   sessionApprovalRoster,
   sessionRejectionRoster,
@@ -244,8 +245,20 @@ export async function sendApprovalRoster(
     .filter((s): s is string => !!s)
     .sort((a, b) => a.localeCompare(b));
 
-  const sendRes = await sendEmail(
-    sessionApprovalRoster({
+  const ics = buildSessionIcs({
+    uid: ctx.id,
+    title: `${ctx.class_name} — Woodlands Tai Chi`,
+    description: `You're approved to attend this session.\nLocation: ${
+      ctx.class_location ?? "TBD"
+    }\nReply to this email if you can no longer make it.`,
+    location: ctx.class_location,
+    sessionDate: ctx.session_date,
+    startTime: ctx.start_time,
+    endTime: ctx.end_time,
+  });
+
+  const sendRes = await sendEmail({
+    ...sessionApprovalRoster({
       session: {
         className: ctx.class_name,
         location: ctx.class_location,
@@ -255,7 +268,13 @@ export async function sendApprovalRoster(
       participantNames,
       recipientEmails,
     }),
-  );
+    attachments: [
+      {
+        filename: "session.ics",
+        content: Buffer.from(ics, "utf8"),
+      },
+    ],
+  });
   if (!sendRes.ok) return { ok: false, message: sendRes.message };
 
   const admin = createAdminClient();

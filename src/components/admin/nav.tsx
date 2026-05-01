@@ -9,6 +9,7 @@ import {
   ExternalLink,
   GraduationCap,
   Home,
+  ListChecks,
   MessageSquareQuote,
   Newspaper,
   ScanLine,
@@ -84,6 +85,12 @@ const NAV: NavGroup[] = [
   {
     label: "Settings",
     items: [
+      {
+        href: "/admin/settings/rsvps",
+        label: "RSVP rules",
+        icon: ListChecks,
+        adminOnly: true,
+      },
       {
         href: "/admin/settings/kiosk",
         label: "Kiosk PIN",
