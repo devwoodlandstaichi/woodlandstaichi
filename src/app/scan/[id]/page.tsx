@@ -7,6 +7,7 @@ import { formatDate, formatTimeRange, levelLabel } from "@/lib/format";
 import { Scanner } from "@/app/admin/attendance/scan/[id]/scanner";
 import { ExitKiosk } from "./exit-kiosk";
 import { Clock } from "./clock";
+import { KioskAutoRefresh } from "./auto-refresh";
 import { isKioskPinSet } from "@/lib/settings/kiosk-pin";
 
 export const metadata = {
@@ -61,7 +62,7 @@ export default async function KioskScanPage({
 
   const pinRequired = await isKioskPinSet();
 
-  const [sessionRes, attRes] = await Promise.all([
+  const [sessionRes, attRes, rsvpRes] = await Promise.all([
     supabase
       .from("class_sessions")
       .select(
@@ -76,12 +77,66 @@ export default async function KioskScanPage({
       )
       .eq("class_session_id", id)
       .order("scanned_at", { ascending: false })
-      .limit(40),
+      .limit(80),
+    supabase
+      .from("session_rsvps")
+      .select(
+        "id,members:member_id(id,first_name,last_name,nickname,level)",
+      )
+      .eq("class_session_id", id)
+      .eq("status", "approved"),
   ]);
 
   const session = sessionRes.data as unknown as SessionDetail | null;
   if (!session) notFound();
   const attendance = (attRes.data ?? []) as unknown as AttendanceRow[];
+
+  type ApprovedRow = {
+    id: string;
+    members: AttendanceRow["members"] | AttendanceRow["members"][] | null;
+  };
+  const approvedRows = (rsvpRes.data ?? []) as unknown as ApprovedRow[];
+
+  // Map: member_id → most-recent attendance row for this session.
+  const attByMember = new Map<string, AttendanceRow>();
+  for (const a of attendance) {
+    if (a.members?.id && !attByMember.has(a.members.id)) {
+      attByMember.set(a.members.id, a);
+    }
+  }
+
+  // Approved-and-expected list. Sorted: scanned-in first (most recent
+  // first), then still-pending alphabetical.
+  const approvedList = approvedRows
+    .map((r) => {
+      const m = Array.isArray(r.members) ? r.members[0] ?? null : r.members;
+      if (!m) return null;
+      const att = attByMember.get(m.id) ?? null;
+      return { member: m, attendance: att };
+    })
+    .filter((x): x is { member: NonNullable<AttendanceRow["members"]>; attendance: AttendanceRow | null } => !!x)
+    .sort((a, b) => {
+      // checked-in first, sorted by scan time desc
+      if (a.attendance && !b.attendance) return -1;
+      if (!a.attendance && b.attendance) return 1;
+      if (a.attendance && b.attendance) {
+        return (
+          new Date(b.attendance.scanned_at).getTime() -
+          new Date(a.attendance.scanned_at).getTime()
+        );
+      }
+      const an = `${a.member.first_name} ${a.member.last_name}`;
+      const bn = `${b.member.first_name} ${b.member.last_name}`;
+      return an.localeCompare(bn);
+    });
+
+  const approvedMemberIds = new Set(approvedList.map((x) => x.member.id));
+  const checkedInCount = approvedList.filter((x) => x.attendance).length;
+
+  // Walk-ins: scanned but not on the approved roster. Newest first.
+  const walkIns = attendance.filter(
+    (a) => a.members?.id && !approvedMemberIds.has(a.members.id),
+  );
 
   // Pick a deterministic atmosphere photo per session so it's stable
   // through re-renders but varies between sessions.
@@ -203,73 +258,114 @@ export default async function KioskScanPage({
             </p>
           </div>
 
-          {/* Roster — feels like a welcoming "people here today" panel
-              rather than a database log. */}
-          <aside className="rounded-2xl border border-foreground/10 bg-card/85 backdrop-blur-sm overflow-hidden self-start shadow-sm">
-            <div className="border-b border-foreground/10 px-5 py-4 flex items-baseline justify-between">
-              <div>
-                <h2 className="font-display text-xl font-medium tracking-tight">
-                  Welcome circle
-                </h2>
-                <p className="mt-0.5 text-xs uppercase tracking-[0.25em] text-muted-foreground">
-                  In the dojo today
-                </p>
-              </div>
-              <span className="font-display text-3xl font-medium tabular-nums leading-none">
-                {attendance.length}
-              </span>
-            </div>
-            {attendance.length === 0 ? (
-              <p className="px-5 py-10 text-center text-sm text-muted-foreground italic">
-                No one has scanned in yet.
-                <br />
-                <span className="not-italic text-xs uppercase tracking-[0.3em] mt-2 block">
-                  First arrival lights the room
-                </span>
-              </p>
-            ) : (
-              <ul className="divide-y divide-foreground/5 max-h-[58vh] overflow-y-auto">
-                {attendance.map((a, i) => {
-                  const m = a.members;
-                  const initials = m
-                    ? `${m.first_name[0] ?? ""}${m.last_name[0] ?? ""}`.toUpperCase()
-                    : "—";
-                  const displayName = m
-                    ? m.nickname ?? `${m.first_name} ${m.last_name}`
-                    : "—";
-                  const time = new Date(a.scanned_at).toLocaleTimeString([], {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  });
-                  return (
-                    <li
-                      key={a.id}
-                      className="px-4 py-3 flex items-center gap-3"
-                      style={{
-                        // Subtle stagger so the list feels alive on first paint
-                        animationDelay: `${i * 30}ms`,
-                      }}
+          {/* Roster — split into "approved roster" (everyone we expect
+              today, with a checkmark when they walk in) and "walk-ins"
+              (anyone who scanned without an approved RSVP). Gives the
+              instructor full transparency on who showed, who didn't,
+              and who's here without being on the list. */}
+          <aside className="flex flex-col gap-5 self-start">
+            <KioskAutoRefresh />
+
+            <RosterCard
+              title="Approved roster"
+              eyebrow={
+                approvedList.length === 0
+                  ? "No RSVPs today"
+                  : `${checkedInCount} of ${approvedList.length} checked in`
+              }
+              empty="No one requested to attend this session."
+              ariaLabel="Approved attendees"
+            >
+              {approvedList.map((row) => {
+                const m = row.member;
+                const initials =
+                  `${m.first_name[0] ?? ""}${m.last_name[0] ?? ""}`.toUpperCase();
+                const displayName = m.nickname ?? `${m.first_name} ${m.last_name}`;
+                const time = row.attendance
+                  ? new Date(row.attendance.scanned_at).toLocaleTimeString([], {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })
+                  : null;
+                return (
+                  <li
+                    key={m.id}
+                    className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                      row.attendance
+                        ? "bg-jade/8"
+                        : "bg-transparent text-foreground/70"
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-medium tracking-wide ${
+                        row.attendance
+                          ? "bg-jade/20 text-jade"
+                          : "bg-foreground/8 text-foreground/50"
+                      }`}
                     >
-                      <span
-                        aria-hidden
-                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-vermillion/10 text-vermillion text-xs font-medium tracking-wide"
-                      >
-                        {initials}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-sm truncate">
-                          {displayName}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground tabular-nums">
-                          {time}
-                          {a.method === "manual" ? " · manual" : ""}
-                        </p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+                      {row.attendance ? "✓" : initials}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">
+                        {displayName}
+                      </p>
+                      <p className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                        {row.attendance
+                          ? `${time}${
+                              row.attendance.method === "manual" ? " · manual" : ""
+                            }`
+                          : "Pending arrival"}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </RosterCard>
+
+            <RosterCard
+              title="Walk-ins"
+              eyebrow={
+                walkIns.length === 0
+                  ? "None yet"
+                  : `${walkIns.length} not on the list`
+              }
+              empty=""
+              ariaLabel="Walk-in attendees"
+              tone="vermillion"
+            >
+              {walkIns.map((a) => {
+                const m = a.members;
+                if (!m) return null;
+                const initials =
+                  `${m.first_name[0] ?? ""}${m.last_name[0] ?? ""}`.toUpperCase();
+                const displayName = m.nickname ?? `${m.first_name} ${m.last_name}`;
+                const time = new Date(a.scanned_at).toLocaleTimeString([], {
+                  hour: "numeric",
+                  minute: "2-digit",
+                });
+                return (
+                  <li
+                    key={a.id}
+                    className="flex items-center gap-3 bg-vermillion/5 px-4 py-3"
+                  >
+                    <span
+                      aria-hidden
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-vermillion/15 text-xs font-medium tracking-wide text-vermillion"
+                    >
+                      {initials}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{displayName}</p>
+                      <p className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                        {time}
+                        {a.method === "manual" ? " · manual" : ""}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </RosterCard>
           </aside>
         </div>
 
@@ -286,5 +382,54 @@ export default async function KioskScanPage({
         </footer>
       </div>
     </div>
+  );
+}
+
+function RosterCard({
+  title,
+  eyebrow,
+  empty,
+  ariaLabel,
+  tone,
+  children,
+}: {
+  title: string;
+  eyebrow: string;
+  empty: string;
+  ariaLabel: string;
+  tone?: "vermillion";
+  children: React.ReactNode;
+}) {
+  const childArray = Array.isArray(children) ? children : [children];
+  const hasChildren = childArray.some((c) => c !== null && c !== undefined && c !== false);
+  const accent =
+    tone === "vermillion"
+      ? "border-vermillion/25 bg-vermillion/[0.04]"
+      : "border-foreground/10 bg-card/85";
+  return (
+    <section
+      aria-label={ariaLabel}
+      className={`overflow-hidden rounded-2xl border ${accent} backdrop-blur-sm shadow-sm`}
+    >
+      <div className="flex items-baseline justify-between border-b border-foreground/10 px-5 py-4">
+        <div>
+          <h2 className="font-display text-lg font-medium tracking-tight">
+            {title}
+          </h2>
+          <p className="mt-0.5 text-xs uppercase tracking-[0.25em] text-muted-foreground">
+            {eyebrow}
+          </p>
+        </div>
+      </div>
+      {!hasChildren && empty ? (
+        <p className="px-5 py-8 text-center text-sm italic text-muted-foreground">
+          {empty}
+        </p>
+      ) : !hasChildren ? null : (
+        <ul className="max-h-[40vh] divide-y divide-foreground/5 overflow-y-auto">
+          {children}
+        </ul>
+      )}
+    </section>
   );
 }
