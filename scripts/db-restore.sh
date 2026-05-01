@@ -58,22 +58,35 @@ if [ -f "supabase/migrations/20260430040000_testimonial_attribution_to_date.sql"
   echo "✔ Parsed testimonial attribution dates (${parsed} dated)"
 fi
 
-# Inline interpolation is fine for dev defaults — values aren't user-supplied.
-docker exec -i "${CONTAINER}" psql -U postgres -d postgres \
-  -v ON_ERROR_STOP=1 -q <<EOSQL
+# ensure_user EMAIL PASSWORD PASSWORD_SET ROLE
+#   PASSWORD_SET = "true" or "" (empty = unset, so /members/me's gate fires)
+#   ROLE         = "admin" / "instructor" / "" (empty = no role row)
+#
+# Idempotent. Reconciles the public.members row's user_id to the
+# auth row id so seeded members re-link after every reset (without
+# this, an old user_id from a previous run would block linkSelfByEmail
+# with "already linked to a different account").
+ensure_user() {
+  local email="$1" pass="$2" pwset="$3" role="$4"
+  docker exec -i "${CONTAINER}" psql -U postgres -d postgres \
+    -v ON_ERROR_STOP=1 -q <<EOSQL >/dev/null
 do \$\$
 declare uid uuid;
-declare e text := '${DEV_EMAIL}';
-declare p text := '${DEV_PASS}';
+declare e text := '${email}';
+declare p text := '${pass}';
+declare meta jsonb;
 begin
+  meta := case
+    when '${pwset}' = 'true' then '{"password_set": true}'::jsonb
+    else '{}'::jsonb
+  end;
+
   select id into uid from auth.users where email = e;
   if uid is null then
     -- GoTrue refuses to scan NULL in confirmation_token / recovery_token /
-    -- email_change_token_* / phone_change* / reauthentication_token —
-    -- it errors with "converting NULL to string is unsupported" on /otp
-    -- and other endpoints. Studio's "Add user" UI sets them to '' which
-    -- is what GoTrue expects. Mirror that here so manually-created users
-    -- can sign in / receive OTPs.
+    -- email_change_token_* / phone_change* / reauthentication_token
+    -- ("converting NULL to string is unsupported" on /otp). Studio's
+    -- "Add user" UI sets them to '' — mirror that.
     insert into auth.users (
       instance_id, id, aud, role, email, encrypted_password,
       email_confirmed_at, created_at, updated_at,
@@ -88,23 +101,40 @@ begin
       e, crypt(p, gen_salt('bf')),
       now(), now(), now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
-      -- password_set=true so /members/me's gate doesn't prompt the
-      -- dev admin to set a password they already have.
-      '{"password_set": true}'::jsonb,
+      meta,
       '', '', '', '', '', '', '', ''
     ) returning id into uid;
   else
-    -- Idempotent: backfill the flag if the row exists from an older
-    -- restore that didn't set it.
-    update auth.users
-      set raw_user_meta_data =
-        coalesce(raw_user_meta_data, '{}'::jsonb) || '{"password_set": true}'::jsonb
-      where id = uid;
+    -- Reconcile metadata if password_set was supposed to be true.
+    if '${pwset}' = 'true' then
+      update auth.users
+        set raw_user_meta_data =
+          coalesce(raw_user_meta_data, '{}'::jsonb) || '{"password_set": true}'::jsonb
+        where id = uid;
+    end if;
   end if;
-  insert into public.user_roles (user_id, role)
-    values (uid, 'admin')
-    on conflict (user_id) do update set role = 'admin';
+
+  -- Re-anchor the matching member row to this auth.users.id, even if
+  -- it pointed at a stale id from a previous reset cycle.
+  update public.members set user_id = uid where email = e;
+
+  if '${role}' <> '' then
+    insert into public.user_roles (user_id, role)
+      values (uid, '${role}'::user_role)
+      on conflict (user_id) do update set role = excluded.role;
+  end if;
 end \$\$;
 EOSQL
+}
 
+ensure_user "${DEV_EMAIL}" "${DEV_PASS}" "true" "admin"
 echo "✔ Dev admin ready: ${DEV_EMAIL} (role=admin)"
+
+# Persistent member test user — exercises the magic-link onboarding +
+# password gate. password_set is intentionally unset so /members/me
+# prompts on first visit. The known password lets you also test the
+# direct password sign-in flow if you want.
+DEV_MEMBER_EMAIL="${DEV_MEMBER_EMAIL:-chanthy.gutierrez@gmail.com}"
+DEV_MEMBER_PASS="${DEV_MEMBER_PASS:-LocalDev2026!}"
+ensure_user "${DEV_MEMBER_EMAIL}" "${DEV_MEMBER_PASS}" "" ""
+echo "✔ Test member ready: ${DEV_MEMBER_EMAIL} (no role, gate will fire)"

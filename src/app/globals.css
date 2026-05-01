@@ -171,11 +171,13 @@ body {
   font-optical-sizing: auto;
 }
 
-/* Generous focus ring for accessibility */
+/* Generous focus ring for accessibility. The outline naturally
+   follows each element's own border-radius, so we don't override
+   the element's shape here — doing so reshapes pill-rounded inputs
+   into squarish rectangles while focused. */
 *:focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: 3px;
-  border-radius: 2px;
 }
 
 /* Skip-to-content link */

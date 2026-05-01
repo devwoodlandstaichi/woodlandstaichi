@@ -6,6 +6,7 @@ import {
   MessageSquareQuote,
   Newspaper,
   ShoppingBag,
+  UserCheck,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -142,6 +143,7 @@ async function loadCounts() {
     newsDrafts,
     pendingTestimonials,
     approvedTestimonials,
+    pendingReactivations,
   ] = await Promise.all([
     supabase
       .from("classes")
@@ -179,6 +181,10 @@ async function loadCounts() {
       .from("testimonials")
       .select("*", { count: "exact", head: true })
       .eq("status", "approved"),
+    supabase
+      .from("member_reactivation_requests")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending"),
   ]);
 
   return {
@@ -191,6 +197,7 @@ async function loadCounts() {
     newsDrafts: newsDrafts.count ?? 0,
     pendingTestimonials: pendingTestimonials.count ?? 0,
     approvedTestimonials: approvedTestimonials.count ?? 0,
+    pendingReactivations: pendingReactivations.count ?? 0,
   };
 }
 
@@ -307,6 +314,15 @@ export default async function AdminHome() {
           : "Member submissions land here for approval.",
       tone: "amber",
       accent: counts.pendingTestimonials > 0,
+    },
+    {
+      label: "Reactivation requests",
+      value: counts.pendingReactivations,
+      href: "/admin/reactivations",
+      icon: UserCheck,
+      sub: "Returning players asking to come back.",
+      tone: "vermillion",
+      accent: counts.pendingReactivations > 0,
     },
     {
       label: "Active classes",

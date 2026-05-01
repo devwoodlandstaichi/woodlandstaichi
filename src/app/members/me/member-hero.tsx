@@ -59,16 +59,19 @@ function formatBirthday(iso: string | null): string | null {
 }
 
 function formatLocation(
+  street: string | null,
   city: string | null,
   state: string | null,
   postal: string | null,
 ): string | null {
-  const parts: string[] = [];
-  if (city) parts.push(city);
-  if (state) parts.push(state);
-  const head = parts.join(", ");
-  if (postal) return head ? `${head} ${postal}` : postal;
-  return head || null;
+  const cityState: string[] = [];
+  if (city) cityState.push(city);
+  if (state) cityState.push(state);
+  const cityLine = cityState.join(", ");
+  const tail = postal ? `${cityLine} ${postal}`.trim() : cityLine;
+  if (street && tail) return `${street}, ${tail}`;
+  if (street) return street;
+  return tail || null;
 }
 
 function memberSinceYear(createdAt: string | null | undefined): string | null {
@@ -97,7 +100,12 @@ export function MemberHero(props: MemberHeroProps) {
   }`;
   const since = memberSinceYear(props.created_at ?? null);
   const birthday = formatBirthday(props.birthday);
-  const location = formatLocation(props.city, props.state, props.postal_code);
+  const location = formatLocation(
+    props.street,
+    props.city,
+    props.state,
+    props.postal_code,
+  );
   const hasBio = !!props.bio?.trim();
   const ec = formatEmergencyContact(
     props.emergency_contact_name,
@@ -225,7 +233,7 @@ export function MemberHero(props: MemberHeroProps) {
             {location && (
               <DetailRow
                 icon={<MapPin size={16} aria-hidden />}
-                label="Lives in"
+                label="Address"
               >
                 {location}
               </DetailRow>

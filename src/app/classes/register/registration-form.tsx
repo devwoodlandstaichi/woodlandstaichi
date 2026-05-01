@@ -9,9 +9,9 @@ import {
   Checkbox,
   FormSection,
 } from "@/components/form-fields";
+import { Listbox } from "@/components/listbox";
 import { submitRegistration, type RegistrationState } from "./actions";
 import {
-  COHORT_OPTIONS,
   PAYMENT_METHODS,
   SEX_OPTIONS,
   SHIRT_SIZES,
@@ -31,7 +31,7 @@ function formatUsPhone(raw: string): string {
   return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 }
 
-export type SessionOption = { value: string; label: string };
+export type SessionOption = { value: string; label: string; sub?: string };
 
 const SHIRT_OPTIONS = SHIRT_SIZES.map((s) => ({ value: s, label: s }));
 
@@ -205,48 +205,42 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
             error={errors.postal_code}
           />
         </div>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field
-            name="birthday"
-            label="Birthday"
-            type="date"
-            required
-            hint="Your real birthday — kept private."
-            autoComplete="bday"
-            defaultValue={v("birthday")}
-            error={errors.birthday}
-          />
-          <RadioGroup
-            name="sex"
-            label="Sex"
-            required
-            options={SEX_OPTIONS}
-            defaultValue={v("sex")}
-            error={errors.sex}
-          />
-        </div>
+        <Field
+          name="birthday"
+          label="Birthday"
+          type="date"
+          required
+          hint="Your real birthday — kept private."
+          autoComplete="bday"
+          defaultValue={v("birthday")}
+          error={errors.birthday}
+        />
+        <Select
+          name="sex"
+          label="Sex"
+          required
+          options={SEX_OPTIONS}
+          placeholder="Pick one"
+          defaultValue={v("sex")}
+          error={errors.sex}
+          className="sm:w-1/2"
+        />
       </FormSection>
 
       <FormSection
         number={2}
-        title="Pick a cohort"
-        description="Cohorts open in February, June, and late September. Pick the one whose schedule you can fully commit to."
+        title="Pick your first session"
+        description="Pick from upcoming dates our instructors have marked welcoming for newcomers. Show up, observe, ask questions — that's the whole assignment."
       >
-        <Select
-          name="cohort"
-          label="Beginner cohort"
-          required
-          options={COHORT_OPTIONS}
-          defaultValue={v("cohort")}
-          error={errors.cohort}
-        />
-        <RadioGroup
-          name="class_id"
-          label="Preferred session"
+        <Listbox
+          name="session_id"
+          label="Session"
           required
           options={sessions}
-          defaultValue={v("class_id")}
-          error={errors.class_id}
+          defaultValue={v("session_id")}
+          error={errors.session_id}
+          hint="Listed earliest first."
+          placeholder="Choose a date…"
         />
       </FormSection>
 

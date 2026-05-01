@@ -131,6 +131,7 @@ export default async function MemberDetailPage({
         }
       />
 
+      <div className="min-h-0 flex-1 overflow-y-auto pb-10">
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <Badge tone={LEVEL_TONE[m.level]}>{MEMBER_LEVEL_LABELS[m.level]}</Badge>
         <Badge tone={STATUS_TONE[m.status]}>{memberStatusLabel(m.status)}</Badge>
@@ -324,6 +325,7 @@ export default async function MemberDetailPage({
             </div>
           )}
         </Card>
+      </div>
       </div>
     </>
   );

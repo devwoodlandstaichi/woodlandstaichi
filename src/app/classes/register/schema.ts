@@ -1,17 +1,12 @@
 import { z } from "zod";
 
-export const COHORT_OPTIONS = [
-  { value: "2026-06", label: "June 2026" },
-  { value: "2026-09", label: "September / October 2026" },
-  { value: "2027-02", label: "February 2027" },
-] as const;
-
-// Session options used to live here as hardcoded (day_of_week, start_time)
-// tuples, mapped back to a class row via `SESSION_TO_CLASS_KEY`. That
-// silently broke whenever an admin edited a beginner class's day or time
-// in /admin/classes. The form now receives the live list of active
-// beginner classes from the page (see page.tsx) and posts the selected
-// `class_id` directly.
+// New-beginner registration now picks a specific upcoming session
+// (class_session row) that staff have marked newcomer_friendly. Old
+// flow asked for a recurring class + a hand-picked cohort label;
+// the cohort concept was admin-curated, brittle to edit, and didn't
+// reflect the school's actual onboarding rhythm. With sessions
+// instead, instructors flag specific drop-in dates and the form
+// surfaces those automatically.
 
 export const SHIRT_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"] as const;
 
@@ -68,14 +63,11 @@ export const registrationSchema = z.object({
     message: "Please pick one.",
   }),
 
-  // Class preferences
-  cohort: z.enum(COHORT_OPTIONS.map((o) => o.value) as [string, ...string[]], {
-    message: "Please pick a cohort.",
-  }),
-  // Live class id chosen from the rendered list of active beginner
-  // classes. The action verifies the row still exists + is active, so a
-  // stale form pointing at an archived class fails clearly.
-  class_id: z.uuid({ message: "Please pick a session." }),
+  // Live class_session id chosen from the rendered list of upcoming
+  // newcomer-friendly sessions. The action verifies the row still
+  // exists, is still flagged welcoming, and hasn't moved into the
+  // past, so a stale form fails clearly with a "pick a current one".
+  session_id: z.uuid({ message: "Please pick a session." }),
 
   // Health & experience
   physical_limitations: optionalString(2000),
@@ -110,45 +102,13 @@ export const registrationSchema = z.object({
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;
 
-// Returning-player re-registration: a near-strict subset of the new-member
-// form. Beginner-only commitments (shirt, payment, "how you found us",
-// expectations, cohort) are dropped; address fields are optional; a new
-// "change in status" textarea collects any updates since last enrollment.
-export const returningRegistrationSchema = z.object({
-  // Identity
-  first_name: requiredString("First name", 100),
-  last_name: requiredString("Last name", 100),
-  email: requiredString("Email")
-    .email({ message: "Please enter a valid email address." }),
-  phone: requiredString("Phone")
-    .regex(/^[\d\s().+-]{7,}$/, { message: "Please enter a valid phone number." }),
-
-  // Address — optional, change-of-address only.
-  street: optionalString(200),
-  city: optionalString(100),
-  state: optionalString(50),
-  postal_code: optionalString(20),
-
-  // The chosen class (any active non-beginner class).
-  class_id: z.uuid({ message: "Please pick a class." }),
-
-  // What's changed since last registration.
-  status_changes: optionalString(2000),
-
-  // Emergency contact
-  emergency_name: requiredString("Emergency contact name", 200),
-  emergency_relationship: requiredString("Relationship", 100),
-  emergency_phone: requiredString("Emergency phone")
-    .regex(/^[\d\s().+-]{7,}$/, { message: "Please enter a valid phone number." }),
-
-  // Waiver
-  waiver_accepted: z
-    .union([z.literal("on"), z.literal("true"), z.literal("1")])
-    .transform(() => true)
-    .pipe(z.literal(true)),
-  waiver_signature: requiredString("Signature", 200),
+// Returning-player flow is now an approval queue, not a self-service
+// re-registration. The form asks for nothing but an email — staff
+// look the member up and approve or decline reactivation.
+export const reactivationRequestSchema = z.object({
+  email: requiredString("Email").email({
+    message: "Please enter a valid email address.",
+  }),
 });
 
-export type ReturningRegistrationInput = z.infer<
-  typeof returningRegistrationSchema
->;
+export type ReactivationRequestInput = z.infer<typeof reactivationRequestSchema>;

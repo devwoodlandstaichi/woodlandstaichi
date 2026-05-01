@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
 import { createClient } from "@/lib/supabase/server";
-import { dayLabel, formatTimeRange } from "@/lib/format";
+import { formatDate, formatTimeRange } from "@/lib/format";
 import { RegistrationForm, type SessionOption } from "./registration-form";
 import { ReturningRegistrationForm } from "./returning-form";
 
@@ -44,31 +44,41 @@ export default async function RegisterPage({
   const mode: Mode = params.mode === "returning" ? "returning" : "new";
 
   const supabase = await createClient();
-  const baseQuery = supabase
-    .from("classes")
-    .select("id,name,location,day_of_week,start_time,end_time,level")
-    .eq("active", true)
-    .order("level", { ascending: true })
-    .order("display_order", { ascending: true });
+  const todayIso = new Date().toISOString().slice(0, 10);
 
-  const query =
-    mode === "new"
-      ? baseQuery.eq("level", "beginners")
-      : baseQuery.neq("level", "beginners");
+  // New-mode: surface upcoming class_sessions staff have flagged
+  // newcomer_friendly so first-timers pick a specific welcoming
+  // date — not a recurring class abstraction.
+  // Returning-mode: still pick a recurring (non-beginner) class —
+  // returning players know the rhythm and don't need date-picking.
+  let sessions: SessionOption[] = [];
+  if (mode === "new") {
+    const { data } = await supabase
+      .from("class_sessions")
+      .select(
+        "id,session_date,start_time,end_time,classes!inner(name,location)",
+      )
+      .eq("newcomer_friendly", true)
+      .gte("session_date", todayIso)
+      .order("session_date", { ascending: true })
+      .order("start_time", { ascending: true })
+      .limit(20);
 
-  const { data } = await query;
-
-  const sessions: SessionOption[] = (data ?? []).map((c) => {
-    const time = formatTimeRange(c.start_time, c.end_time);
-    const day = dayLabel(c.day_of_week);
-    return {
-      value: c.id,
-      label:
-        mode === "new"
-          ? `${day} · ${time} · ${c.location}`
-          : `${c.name} — ${day} ${time} · ${c.location}`,
-    };
-  });
+    sessions = ((data ?? []) as unknown as Array<{
+      id: string;
+      session_date: string;
+      start_time: string;
+      end_time: string;
+      classes: { name: string; location: string } | null;
+    }>).map((s) => ({
+      value: s.id,
+      label: `${formatDate(s.session_date)} · ${formatTimeRange(s.start_time, s.end_time)}`,
+      sub: s.classes?.location ?? undefined,
+    }));
+  }
+  // Returning mode no longer asks about classes — it submits a
+  // reactivation request that staff approve. The sessions list stays
+  // empty for that branch.
 
   return (
     <>
@@ -82,8 +92,8 @@ export default async function RegisterPage({
           italic={mode === "new" ? "here." : "back."}
           intro={
             mode === "new"
-              ? "Tell us about you, pick a cohort, sign the waiver. We'll email you within a few days with the shirt-payment instructions and the first class details."
-              : "Already practiced with us? Confirm your details, pick the class you'd like to attend, and re-sign the waiver. The form is short — we still have your record."
+              ? "Tell us about you, pick an upcoming session, sign the waiver. We'll email you within a few days with the shirt-payment instructions and what to bring."
+              : "Practiced with us before? Type the email you used to register and we'll forward your reactivation request to the founder. You'll hear back by email."
           }
           glyph={mode === "new" ? "始" : "再"}
         />
@@ -91,12 +101,12 @@ export default async function RegisterPage({
         <section className="mx-auto max-w-2xl px-6 py-12 md:py-16">
           <ModeSwitcher mode={mode} />
 
-          {sessions.length === 0 ? (
+          {mode === "returning" ? (
+            <ReturningRegistrationForm />
+          ) : sessions.length === 0 ? (
             <EmptyState mode={mode} />
-          ) : mode === "new" ? (
-            <RegistrationForm sessions={sessions} />
           ) : (
-            <ReturningRegistrationForm sessions={sessions} />
+            <RegistrationForm sessions={sessions} />
           )}
         </section>
       </main>
@@ -135,35 +145,23 @@ function ModeSwitcher({ mode }: { mode: Mode }) {
 }
 
 function EmptyState({ mode }: { mode: Mode }) {
-  if (mode === "returning") {
-    return (
-      <div className="rounded-md border border-foreground/15 bg-secondary p-6 text-foreground/80">
-        <p className="font-medium">No classes are currently open.</p>
-        <p className="mt-2 text-sm text-foreground/65">
-          Email{" "}
-          <a
-            href="mailto:info@woodlandstaichi.com"
-            className="underline underline-offset-2"
-          >
-            info@woodlandstaichi.com
-          </a>{" "}
-          and we&apos;ll let you know when the next session opens.
-        </p>
-      </div>
-    );
-  }
+  // Returning mode has its own inline UX (no sessions list to be empty).
+  if (mode === "returning") return null;
   return (
     <div className="rounded-md border border-foreground/15 bg-secondary p-6 text-foreground/80">
-      <p className="font-medium">No beginner sessions are open right now.</p>
+      <p className="font-medium">
+        No newcomer-welcoming sessions are open right now.
+      </p>
       <p className="mt-2 text-sm text-foreground/65">
-        Cohorts open three times a year. Email{" "}
+        Our instructors flag specific dates as welcoming for first-timers, and
+        nothing&rsquo;s on the calendar at the moment. Email{" "}
         <a
           href="mailto:info@woodlandstaichi.com"
           className="underline underline-offset-2"
         >
           info@woodlandstaichi.com
         </a>{" "}
-        to be added to the next-cohort list.
+        and we&rsquo;ll let you know the moment one opens.
       </p>
     </div>
   );

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
+import { Badge, Button, PageHeader } from "@/components/admin/ui";
 import { dayLabel, formatDate, formatTimeRange, levelLabel } from "@/lib/format";
 import { markPaid, markPending, markRefunded, markWaived } from "./actions";
 import { RegistrationFilters, type PaymentStatus } from "./filters";
@@ -77,9 +77,7 @@ export default async function RegistrationsPage({
       <RegistrationFilters status={status} />
 
       {rows.length === 0 ? (
-        <Card className="mt-4 p-8 text-center text-muted-foreground">
-          No {status} registrations.
-        </Card>
+        <EmptyRegistrations status={status} />
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto">
         <table className="w-full text-left text-sm">
@@ -171,6 +169,54 @@ export default async function RegistrationsPage({
         </p>
       </div>
     </>
+  );
+}
+
+// Status-aware empty state. The standing 空 (kong, "empty / open
+// sky") backdrop turns the empty queue into a small Tai Chi joke:
+// Wuji is the void from which the first move arises. Each status
+// gets a distinct line so the founder gets a quiet wink rather
+// than the same generic "No X registrations" four ways.
+const EMPTY_COPY: Record<
+  PaymentStatus,
+  { headline: string; italic: string; sub: string }
+> = {
+  pending: {
+    headline: "Inbox zero,",
+    italic: "the queue is at rest.",
+    sub: "Mark something paid and the member auto-activates. Until then, deep breaths.",
+  },
+  paid: {
+    headline: "All squared up,",
+    italic: "no payments outstanding.",
+    sub: "New ones will land here the moment a member commits to a class.",
+  },
+  waived: {
+    headline: "Nothing waived,",
+    italic: "everyone paid the shirt fee.",
+    sub: "If you ever comp a registration, it'll show up here.",
+  },
+  refunded: {
+    headline: "Nothing reversed,",
+    italic: "money flowed the right way.",
+    sub: "Refunds are rare. That's the goal.",
+  },
+};
+
+function EmptyRegistrations({ status }: { status: PaymentStatus }) {
+  const copy = EMPTY_COPY[status];
+  return (
+    <div className="px-6 py-20 md:py-28">
+      <div className="mx-auto max-w-xl text-center">
+        <h2 className="font-display text-3xl md:text-4xl tracking-tight leading-[1.1]">
+          {copy.headline}{" "}
+          <span className="italic text-vermillion">{copy.italic}</span>
+        </h2>
+        <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+          {copy.sub}
+        </p>
+      </div>
+    </div>
   );
 }
 

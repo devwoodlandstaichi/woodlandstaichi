@@ -1,333 +1,127 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState } from "react";
+import Link from "next/link";
+import { Field } from "@/components/form-fields";
 import {
-  Field,
-  Textarea,
-  RadioGroup,
-  Checkbox,
-  FormSection,
-} from "@/components/form-fields";
-import {
-  submitReturningRegistration,
-  type RegistrationState,
+  submitReactivationRequest,
+  type ReactivationState,
 } from "./actions";
-import type { SessionOption } from "./registration-form";
 
-const PHONE_FIELD_NAMES = new Set(["phone", "emergency_phone"]);
+const INITIAL: ReactivationState = { status: "idle" };
 
-function formatUsPhone(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  const d =
-    digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
-  if (d.length !== 10) return raw;
-  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
-}
-
-const INITIAL: RegistrationState = { status: "idle" };
-
-export function ReturningRegistrationForm({
-  sessions,
-}: {
-  sessions: SessionOption[];
-}) {
+export function ReturningRegistrationForm() {
   const [state, formAction, pending] = useActionState(
-    submitReturningRegistration,
+    submitReactivationRequest,
     INITIAL,
   );
-  const errors = state.status === "error" ? state.fieldErrors ?? {} : {};
-  const submitted = state.status === "error" ? state.values ?? {} : {};
-  const v = (key: string) => submitted[key] ?? "";
-  const checked = (key: string) => {
-    const val = submitted[key];
-    return val === "on" || val === "true" || val === "1";
-  };
 
-  // Re-key the form on each failed submit so React remounts the inputs
-  // and re-applies the snapshot via `defaultValue`. Otherwise React 19's
-  // post-action reset wipes the user's typed values.
-  const [submitCount, setSubmitCount] = useState(0);
-  const [lastState, setLastState] = useState(state);
-  if (state !== lastState) {
-    setLastState(state);
-    if (state.status === "error") setSubmitCount((c) => c + 1);
-  }
-  const formKey = `s-${submitCount}`;
+  const errors =
+    state.status === "error" ? (state.fieldErrors ?? {}) : {};
+  const submittedEmail =
+    state.status === "error"
+      ? (state.values?.email ?? "")
+      : "";
 
-  // Jump to the first invalid field after a failed submit.
-  useEffect(() => {
-    if (state.status !== "error" || !state.fieldErrors) return;
-    const firstKey = Object.keys(state.fieldErrors)[0];
-    if (!firstKey) return;
-    const el =
-      document.getElementById(firstKey) ??
-      document.querySelector<HTMLElement>(`[name="${firstKey}"]`);
-    if (!el) return;
-    requestAnimationFrame(() => {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      if (
-        el instanceof HTMLInputElement ||
-        el instanceof HTMLTextAreaElement ||
-        el instanceof HTMLSelectElement
-      ) {
-        el.focus({ preventScroll: true });
-      }
-    });
-  }, [state]);
-
-  const handleBlur = (e: React.FocusEvent<HTMLFormElement>) => {
-    const t = e.target;
-    if (!(t instanceof HTMLInputElement)) return;
-    if (!PHONE_FIELD_NAMES.has(t.name)) return;
-    const next = formatUsPhone(t.value);
-    if (next !== t.value) t.value = next;
-  };
-
-  return (
-    <form
-      key={formKey}
-      action={formAction}
-      onBlur={handleBlur}
-      className="space-y-12"
-      noValidate
-    >
-      {state.status === "error" && (
+  // Inline branches — "not found" and "duplicate request" are not
+  // form-validation errors but legitimate states that need their own
+  // messaging.
+  if (state.status === "not_found") {
+    return (
+      <div className="space-y-6">
         <div
           role="alert"
-          className="rounded-md border border-vermillion bg-vermillion/5 p-4 text-vermillion"
+          className="rounded-md border border-vermillion/30 bg-vermillion/5 p-5"
+        >
+          <p className="font-medium text-foreground">
+            We don&rsquo;t see{" "}
+            <span className="text-vermillion">{state.email}</span> on our
+            roster.
+          </p>
+          <p className="mt-2 text-sm text-foreground/75 leading-relaxed">
+            That email isn&rsquo;t in our records. If you registered before,
+            it may have been with a different address — try another below.
+            Or, if it&rsquo;s your first time joining the school, please
+            register through the new-beginner form instead.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Link
+            href="/classes/register"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-vermillion px-6 py-3 text-sm font-medium text-background hover:bg-vermillion-600 transition-colors"
+          >
+            Register as a new beginner →
+          </Link>
+          <Link
+            href="/classes/register?mode=returning"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-foreground/15 px-5 py-3 text-sm text-foreground/75 hover:text-foreground hover:border-foreground/30 transition-colors"
+          >
+            Try a different email
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (state.status === "duplicate") {
+    return (
+      <div
+        role="status"
+        className="rounded-md border border-jade/30 bg-jade/5 p-5 text-foreground/85"
+      >
+        <p className="font-medium text-foreground">
+          You&rsquo;ve already got a request in the queue.
+        </p>
+        <p className="mt-2 text-sm leading-relaxed">
+          The founder will email you about{" "}
+          <span className="font-medium">{state.email}</span> shortly. No need
+          to submit again.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form action={formAction} className="space-y-6" noValidate>
+      <p className="text-base text-foreground/75 leading-relaxed">
+        Type the email you used when you last attended. We&rsquo;ll forward
+        your request to the founder, who&rsquo;ll review and email you back
+        once you&rsquo;re reactivated.
+      </p>
+
+      <Field
+        name="email"
+        label="Email"
+        type="email"
+        required
+        inputMode="email"
+        autoComplete="email"
+        defaultValue={submittedEmail}
+        error={errors.email}
+      />
+
+      {state.status === "error" && !errors.email && (
+        <p
+          role="alert"
+          className="rounded-md border border-vermillion bg-vermillion/5 p-3 text-sm text-vermillion"
         >
           {state.message}
-        </div>
+        </p>
       )}
 
-      <FormSection
-        number={1}
-        title="About you"
-        description="Just confirming the basics."
+      <button
+        type="submit"
+        disabled={pending}
+        className="inline-flex items-center justify-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field
-            name="first_name"
-            label="First name"
-            required
-            autoComplete="given-name"
-            defaultValue={v("first_name")}
-            error={errors.first_name}
-          />
-          <Field
-            name="last_name"
-            label="Last name"
-            required
-            autoComplete="family-name"
-            defaultValue={v("last_name")}
-            error={errors.last_name}
-          />
-        </div>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field
-            name="email"
-            label="Email"
-            type="email"
-            required
-            inputMode="email"
-            autoComplete="email"
-            defaultValue={v("email")}
-            error={errors.email}
-          />
-          <Field
-            name="phone"
-            label="Cell phone"
-            type="tel"
-            required
-            inputMode="tel"
-            autoComplete="tel"
-            placeholder="(000) 000-0000"
-            defaultValue={v("phone")}
-            error={errors.phone}
-          />
-        </div>
-      </FormSection>
+        {pending ? "Submitting…" : "Request reactivation"}
+        {!pending && <span aria-hidden>→</span>}
+      </button>
 
-      <FormSection
-        number={2}
-        title="Address change?"
-        description="Optional — only fill in if your address has changed since you last registered."
-      >
-        <Field
-          name="street"
-          label="Street address"
-          autoComplete="address-line1"
-          defaultValue={v("street")}
-          error={errors.street}
-        />
-        <div className="grid gap-5 sm:grid-cols-3">
-          <Field
-            name="city"
-            label="City"
-            autoComplete="address-level2"
-            defaultValue={v("city")}
-            error={errors.city}
-          />
-          <Field
-            name="state"
-            label="State"
-            autoComplete="address-level1"
-            defaultValue={v("state")}
-            error={errors.state}
-          />
-          <Field
-            name="postal_code"
-            label="ZIP"
-            inputMode="numeric"
-            autoComplete="postal-code"
-            defaultValue={v("postal_code")}
-            error={errors.postal_code}
-          />
-        </div>
-      </FormSection>
-
-      <FormSection
-        number={3}
-        title="Pick your class"
-        description="Choose the session you'd like to attend. Beginners must use the new-member registration."
-      >
-        <RadioGroup
-          name="class_id"
-          label="Class"
-          required
-          options={sessions}
-          defaultValue={v("class_id")}
-          error={errors.class_id}
-        />
-      </FormSection>
-
-      <FormSection
-        number={4}
-        title="Anything we should know?"
-        description="Let instructors know about any health changes, injuries, or anything else since your last enrollment."
-      >
-        <Textarea
-          name="status_changes"
-          label="Change in status since last registration"
-          hint="Optional. Health, mobility, contact preferences, etc."
-          rows={4}
-          defaultValue={v("status_changes")}
-          error={errors.status_changes}
-        />
-      </FormSection>
-
-      <FormSection
-        number={5}
-        title="Emergency contact"
-        description="Required — please confirm we still have the right person on file."
-      >
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field
-            name="emergency_name"
-            label="Emergency contact name"
-            required
-            autoComplete="off"
-            defaultValue={v("emergency_name")}
-            error={errors.emergency_name}
-          />
-          <Field
-            name="emergency_relationship"
-            label="Relationship"
-            required
-            placeholder="Spouse, child, friend…"
-            defaultValue={v("emergency_relationship")}
-            error={errors.emergency_relationship}
-          />
-        </div>
-        <Field
-          name="emergency_phone"
-          label="Emergency contact phone"
-          type="tel"
-          required
-          inputMode="tel"
-          placeholder="(000) 000-0000"
-          defaultValue={v("emergency_phone")}
-          error={errors.emergency_phone}
-        />
-      </FormSection>
-
-      <FormSection
-        number={6}
-        title="Waiver"
-        description="Required for all participants — please re-sign each season."
-      >
-        <div className="rounded-md border border-foreground/15 bg-secondary p-5 text-sm text-foreground/80 leading-relaxed max-h-72 overflow-y-auto space-y-3">
-          <p>
-            Prior to registering for this class, it is recommended that you
-            consult your physician.
-          </p>
-          <p>
-            In consideration of being allowed to participate in any program,
-            activity, or event sponsored by, performed by, or in any way
-            involving Woodlands Tai Chi and/or Sifu Sesco Saegusa (the
-            &ldquo;Program&rdquo;), I — as Participant, or as parent or
-            guardian of a minor Participant — and intending to be legally
-            bound, do hereby acknowledge and agree to the following:
-          </p>
-          <p>
-            I waive, discharge, and release any and all rights and claims for
-            damages — whether based upon negligence or any other theory of law
-            — which I, my child, or my heirs may have against Woodlands Tai
-            Chi and/or Sifu Sesco Saegusa, their affiliates, agents,
-            representatives, assigns, successors, and any officers, directors,
-            shareholders, agents, or employees, the municipalities or counties
-            in or through which the programs take place, or any other person,
-            entity, or sponsor connected with the Program, for any and all
-            injuries or damages I or my child may suffer while participating.
-          </p>
-          <p>
-            I assume any and all risks resulting from my or my child&apos;s
-            participation, and accept full personal responsibility for any
-            resulting damage including injury, permanent disability, or death.
-          </p>
-          <p>
-            I verify that I (or my child) am in good physical health and able
-            to participate in and/or complete the Program.
-          </p>
-          <p>
-            I agree to indemnify and hold Woodlands Tai Chi and Sifu Sesco
-            Saegusa harmless from and against all liabilities for any injury
-            arising out of or connected with participation in the Program.
-          </p>
-          <p>
-            I have read and fully understood this waiver and release. I
-            understand that by participating, I/we will have waived
-            substantial rights. I have knowingly and voluntarily agreed to
-            this waiver and release.
-          </p>
-        </div>
-        <Checkbox
-          name="waiver_accepted"
-          label="I have read and agree to the Waiver and Release."
-          required
-          defaultChecked={checked("waiver_accepted")}
-          error={errors.waiver_accepted}
-        />
-        <Field
-          name="waiver_signature"
-          label="Type your full name as your signature"
-          required
-          hint="By typing your name, you electronically sign the waiver above."
-          defaultValue={v("waiver_signature")}
-          error={errors.waiver_signature}
-        />
-      </FormSection>
-
-      <div className="flex flex-col gap-4 border-t border-foreground/10 pt-8">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex items-center justify-center gap-3 self-start rounded-full bg-vermillion px-8 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {pending ? "Submitting…" : "Submit re-registration"}
-          {!pending && <span aria-hidden>→</span>}
-        </button>
-      </div>
+      <p className="text-xs text-foreground/55">
+        We&rsquo;ll email you the moment a decision is made.
+      </p>
     </form>
   );
 }

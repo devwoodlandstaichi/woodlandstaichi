@@ -15,6 +15,7 @@ import {
   Settings,
   ShieldCheck,
   ShoppingBag,
+  UserCheck,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,7 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/admin/attendance", label: "Attendance", icon: ScanLine },
       { href: "/admin/registrations", label: "Registrations", icon: CreditCard },
+      { href: "/admin/reactivations", label: "Reactivations", icon: UserCheck },
       { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
     ],
   },

@@ -1,9 +1,23 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSessionUser } from "@/lib/auth/dal";
+
+/** Build the magic-link callback URL from the incoming request so it
+ * works in dev (http://127.0.0.1:3000) and prod (whatever host the
+ * site is served from) without an env var. */
+async function buildCallbackUrl(next: string): Promise<string> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "127.0.0.1:3000";
+  const proto = h.get("x-forwarded-proto") ?? "http";
+  const params = new URLSearchParams();
+  if (next) params.set("next", next);
+  const qs = params.toString();
+  return `${proto}://${host}/login/callback${qs ? `?${qs}` : ""}`;
+}
 
 export type LoginState =
   | { ok: false; message: string }
@@ -212,9 +226,12 @@ export async function lookupAndSendCode(
   }
 
   const supabase = await createClient();
+  const emailRedirectTo = await buildCallbackUrl(
+    next === "/admin" ? "" : next,
+  );
   await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true },
+    options: { shouldCreateUser: true, emailRedirectTo },
   });
 
   const params = new URLSearchParams({ step: "code", email });
@@ -243,9 +260,10 @@ export async function resendCode(
     return { ok: false, message: "Missing or invalid email." };
   }
   const supabase = await createClient();
+  const emailRedirectTo = await buildCallbackUrl("");
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true },
+    options: { shouldCreateUser: true, emailRedirectTo },
   });
   if (error) {
     return {

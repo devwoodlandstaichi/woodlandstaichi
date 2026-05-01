@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { signOut } from "@/app/login/actions";
 import { EditDetailsSection } from "./edit-details-section";
 import { MemberHero } from "./member-hero";
+import { PracticeNotes } from "./practice-notes";
 import { type ProfileDefaults } from "./profile-form";
 import { SetPasswordForm } from "./set-password-form";
 import { TestimonialForm } from "./testimonial-form";
@@ -63,6 +64,10 @@ type Member = ProfileDefaults & {
   emergency_contact_name: string | null;
   emergency_contact_relationship: string | null;
   emergency_phone: string | null;
+  physical_limitations: string | null;
+  prior_experience: string | null;
+  found_us_via: string | null;
+  expectations: string | null;
 };
 
 async function loadMember(): Promise<{
@@ -79,7 +84,7 @@ async function loadMember(): Promise<{
   const { data } = await supabase
     .from("members")
     .select(
-      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,birthday,bio,photo_url,created_at,emergency_contact_name,emergency_contact_relationship,emergency_phone",
+      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,birthday,bio,photo_url,created_at,emergency_contact_name,emergency_contact_relationship,emergency_phone,physical_limitations,prior_experience,found_us_via,expectations",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -94,7 +99,7 @@ async function loadMember(): Promise<{
   const { data: linked } = await admin
     .from("members")
     .select(
-      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,birthday,bio,photo_url,created_at,emergency_contact_name,emergency_contact_relationship,emergency_phone",
+      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,birthday,bio,photo_url,created_at,emergency_contact_name,emergency_contact_relationship,emergency_phone,physical_limitations,prior_experience,found_us_via,expectations",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -211,6 +216,13 @@ export default async function MyProfilePage() {
         emergency_contact_name={member.emergency_contact_name}
         emergency_contact_relationship={member.emergency_contact_relationship}
         emergency_phone={member.emergency_phone}
+      />
+
+      <PracticeNotes
+        physical_limitations={member.physical_limitations}
+        prior_experience={member.prior_experience}
+        found_us_via={member.found_us_via}
+        expectations={member.expectations}
       />
 
       <EditDetailsSection

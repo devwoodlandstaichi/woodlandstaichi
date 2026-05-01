@@ -3,10 +3,14 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendEmail } from "@/lib/email/send";
 import {
-  COHORT_OPTIONS,
+  adminReactivationNotice,
+  memberRequestAck,
+} from "@/lib/email/reactivation";
+import {
+  reactivationRequestSchema,
   registrationSchema,
-  returningRegistrationSchema,
 } from "./schema";
 
 export type RegistrationState =
@@ -55,31 +59,43 @@ export async function submitRegistration(
   const data = parsed.data;
   const supabase = createAdminClient();
 
-  // Resolve cohort label, then verify the chosen class is still an
-  // active beginner class (the user may have submitted a stale form
-  // after an admin archived or moved it).
-  const cohortLabel =
-    COHORT_OPTIONS.find((o) => o.value === data.cohort)?.label ?? data.cohort;
-
-  const { data: classRow, error: classError } = await supabase
-    .from("classes")
-    .select("id,name,location,day_of_week,start_time,end_time")
-    .eq("id", data.class_id)
-    .eq("level", "beginners")
-    .eq("active", true)
+  // Verify the chosen session is still upcoming, still flagged
+  // newcomer-friendly, and still belongs to an active class. Guards
+  // against a stale form pointing at a session that staff archived,
+  // unflagged, or that's now in the past.
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const { data: sessionRow, error: sessionError } = await supabase
+    .from("class_sessions")
+    .select(
+      "id,session_date,start_time,end_time,newcomer_friendly,classes!inner(id,name,location,active)",
+    )
+    .eq("id", data.session_id)
+    .eq("newcomer_friendly", true)
+    .gte("session_date", todayIso)
     .maybeSingle();
 
-  if (classError || !classRow) {
+  type SessionRow = {
+    id: string;
+    session_date: string;
+    start_time: string;
+    end_time: string;
+    newcomer_friendly: boolean;
+    classes: { id: string; name: string; location: string; active: boolean } | null;
+  };
+  const session = (sessionRow ?? null) as SessionRow | null;
+
+  if (sessionError || !session || !session.classes || !session.classes.active) {
     return {
       status: "error",
       message:
         "That session isn't available anymore — please reload this page and pick a current one. If you keep seeing this, email info@woodlandstaichi.com.",
-      fieldErrors: { class_id: "Pick a current session." },
+      fieldErrors: { session_id: "Pick a current session." },
       values: snapshotValues(formData),
     };
   }
 
-  const sessionLabel = classRow.name;
+  const sessionLabel = `${session.classes.name} on ${session.session_date}`;
+  const classRow = { id: session.classes.id };
 
   // Capture waiver metadata
   const headerStore = await headers();
@@ -155,7 +171,7 @@ export async function submitRegistration(
   }
 
   // Insert registration (idempotent if user re-submits same class)
-  const notes = `Cohort: ${cohortLabel}. Session: ${sessionLabel}. Waiver signed by: ${data.waiver_signature}.`;
+  const notes = `Session: ${sessionLabel}. Waiver signed by: ${data.waiver_signature}.`;
   const { error: regError } = await supabase
     .from("registrations")
     .upsert(
@@ -186,13 +202,36 @@ export async function submitRegistration(
   redirect(`/classes/register/thanks?id=${memberId}`);
 }
 
-export async function submitReturningRegistration(
-  _prev: RegistrationState,
-  formData: FormData,
-): Promise<RegistrationState> {
-  const raw = Object.fromEntries(formData.entries());
-  const parsed = returningRegistrationSchema.safeParse(raw);
+// ---------------------------------------------------------------------------
+// Returning-player reactivation request.
+//
+// Flow: member types only their email → we look it up in public.members.
+//   - Found: insert a member_reactivation_requests row, fire an admin
+//     notification email + a member acknowledgement email. Server
+//     redirects to /classes/register/thanks?mode=returning.
+//   - Not found: return a state telling the form to render a "we don't
+//     see you" message with a link to the new-beginner registration.
+// Approval/rejection happens at /admin/reactivations and triggers
+// follow-up emails to the member.
+// ---------------------------------------------------------------------------
 
+export type ReactivationState =
+  | { status: "idle" }
+  | {
+      status: "error";
+      message: string;
+      fieldErrors?: Record<string, string>;
+      values?: Record<string, string>;
+    }
+  | { status: "not_found"; email: string }
+  | { status: "duplicate"; email: string };
+
+export async function submitReactivationRequest(
+  _prev: ReactivationState,
+  formData: FormData,
+): Promise<ReactivationState> {
+  const raw = Object.fromEntries(formData.entries());
+  const parsed = reactivationRequestSchema.safeParse(raw);
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};
     for (const issue of parsed.error.issues) {
@@ -207,27 +246,31 @@ export async function submitReturningRegistration(
     };
   }
 
-  const data = parsed.data;
+  const email = parsed.data.email.trim().toLowerCase();
   const supabase = createAdminClient();
 
-  // Verify the chosen class is still active and is NOT a beginner class —
-  // beginners must use the full new-member form.
-  const { data: classRow, error: classError } = await supabase
-    .from("classes")
-    .select("id,name,location,day_of_week,start_time,end_time,level")
-    .eq("id", data.class_id)
-    .eq("active", true)
-    .neq("level", "beginners")
+  const { data: member } = await supabase
+    .from("members")
+    .select("id, first_name, last_name, email, status")
+    .eq("email", email)
     .maybeSingle();
 
-  if (classError || !classRow) {
-    return {
-      status: "error",
-      message:
-        "That class isn't available anymore — please reload this page and pick a current one. Beginners must use the new-member registration.",
-      fieldErrors: { class_id: "Pick a current class." },
-      values: snapshotValues(formData),
-    };
+  if (!member) {
+    return { status: "not_found", email };
+  }
+
+  // Don't queue a second pending request if one's already open — one
+  // approval at a time keeps the queue honest. Still send the ack
+  // email so the member knows their request landed.
+  const { data: open } = await supabase
+    .from("member_reactivation_requests")
+    .select("id")
+    .eq("member_id", member.id)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (open) {
+    return { status: "duplicate", email };
   }
 
   const headerStore = await headers();
@@ -237,97 +280,40 @@ export async function submitReturningRegistration(
     null;
   const userAgent = headerStore.get("user-agent") ?? null;
 
-  const { data: existingMember } = await supabase
-    .from("members")
-    .select("id,street,city,state,postal_code")
-    .eq("email", data.email)
-    .maybeSingle();
+  const { data: created, error: insertErr } = await supabase
+    .from("member_reactivation_requests")
+    .insert({
+      member_id: member.id,
+      email: member.email,
+      request_ip: ip,
+      request_user_agent: userAgent,
+    })
+    .select("id")
+    .single();
 
-  // Build a member payload that only updates fields the returning form
-  // actually collects. Address is overwritten only when the user provided
-  // new values; otherwise we leave the on-file address alone.
-  const returningPayload = {
-    first_name: data.first_name,
-    last_name: data.last_name,
-    email: data.email,
-    phone: data.phone,
-    ...(data.street !== undefined ? { street: data.street } : {}),
-    ...(data.city !== undefined ? { city: data.city } : {}),
-    ...(data.state !== undefined ? { state: data.state } : {}),
-    ...(data.postal_code !== undefined ? { postal_code: data.postal_code } : {}),
-    emergency_contact_name: data.emergency_name,
-    emergency_contact_relationship: data.emergency_relationship,
-    emergency_phone: data.emergency_phone,
-    waiver_signed_at: new Date().toISOString(),
-    waiver_ip: ip,
-    waiver_user_agent: userAgent,
-  };
-
-  let memberId: string;
-  if (existingMember) {
-    const { error: updateError } = await supabase
-      .from("members")
-      .update(returningPayload)
-      .eq("id", existingMember.id);
-    if (updateError) {
-      return {
-        status: "error",
-        message:
-          "We couldn't save your re-registration. Please try again or email info@woodlandstaichi.com.",
-        values: snapshotValues(formData),
-      };
-    }
-    memberId = existingMember.id;
-  } else {
-    // Returning by email but we have no record — treat as a fresh insert
-    // with whatever address they supplied (may be empty). Status starts as
-    // active since they're already an experienced practitioner.
-    const { data: newMember, error: insertError } = await supabase
-      .from("members")
-      .insert({
-        ...returningPayload,
-        level: "intermediate" as const,
-        status: "active" as const,
-      })
-      .select("id")
-      .single();
-    if (insertError || !newMember) {
-      return {
-        status: "error",
-        message:
-          "We couldn't save your re-registration. Please try again or email info@woodlandstaichi.com.",
-        values: snapshotValues(formData),
-      };
-    }
-    memberId = newMember.id;
-  }
-
-  const noteParts = [
-    `Returning player. Class: ${classRow.name}.`,
-    data.status_changes ? `Status changes: ${data.status_changes}` : null,
-    `Waiver signed by: ${data.waiver_signature}.`,
-  ].filter((p) => p !== null);
-
-  const { error: regError } = await supabase
-    .from("registrations")
-    .upsert(
-      {
-        member_id: memberId,
-        class_id: classRow.id,
-        payment_status: "paid" as const,
-        notes: noteParts.join(" "),
-      },
-      { onConflict: "member_id,class_id" },
-    );
-
-  if (regError) {
+  if (insertErr || !created) {
     return {
       status: "error",
       message:
-        "We saved your details but couldn't finish enrolling you. Please email info@woodlandstaichi.com so we can complete it.",
+        "We couldn't record your request. Please try again or email info@woodlandstaichi.com.",
       values: snapshotValues(formData),
     };
   }
 
-  redirect(`/classes/register/thanks?id=${memberId}&mode=returning`);
+  const memberName = `${member.first_name} ${member.last_name}`.trim();
+  // Fire-and-forget email sends. Failures are logged server-side but
+  // don't block the user's redirect — the request row is the source
+  // of truth.
+  await Promise.allSettled([
+    sendEmail(
+      adminReactivationNotice({
+        memberName,
+        memberEmail: member.email,
+        requestId: created.id,
+      }),
+    ),
+    sendEmail(memberRequestAck({ memberName, memberEmail: member.email })),
+  ]);
+
+  redirect(`/classes/register/thanks?mode=returning&id=${created.id}`);
 }
