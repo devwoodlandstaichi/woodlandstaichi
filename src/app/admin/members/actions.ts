@@ -228,6 +228,29 @@ export async function bulkSetMemberStatus(
   return { ok: true, updated: count ?? 0 };
 }
 
+export async function bulkSetMemberLevel(
+  ids: string[],
+  level: MemberLevel,
+): Promise<{ ok: true; updated: number } | { ok: false; message: string }> {
+  await requireStaff();
+  const cleanIds = ids.filter((id) => typeof id === "string" && id.length > 0);
+  if (cleanIds.length === 0) return { ok: true, updated: 0 };
+  if (!(MEMBER_LEVEL_VALUES as readonly string[]).includes(level)) {
+    return { ok: false, message: "Invalid level." };
+  }
+
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("members")
+    .update({ level }, { count: "exact" })
+    .in("id", cleanIds);
+
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath("/admin/members");
+  return { ok: true, updated: count ?? 0 };
+}
+
 export async function deleteMembers(
   ids: string[],
 ): Promise<{ ok: true; deleted: number } | { ok: false; message: string }> {

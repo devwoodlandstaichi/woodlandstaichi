@@ -10,13 +10,13 @@ import { MemberFilters } from "./filters";
 import { DangerZoneButton } from "./danger-zone";
 import { BulkIssueQrsButton } from "./bulk-issue-button";
 import { getSessionUser } from "@/lib/auth/dal";
+import { MembersTable } from "./members-table";
 import {
-  MembersTable,
   SORT_COLUMNS,
   type MemberRow,
   type SortColumn,
   type SortDir,
-} from "./members-table";
+} from "./table-types";
 
 export const metadata = { title: "Members" };
 export const dynamic = "force-dynamic";

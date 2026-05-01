@@ -232,3 +232,39 @@ export async function deleteSessionsInRange(
     attendanceWiped,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Newcomer-friendly toggle. Per-session flag — separate from the
+// class.level enum — so an instructor can mark specific drop-in
+// dates where a curious first-timer is welcome without changing the
+// class itself.
+// ---------------------------------------------------------------------------
+
+export async function setSessionCapacity(formData: FormData) {
+  await requireStaff();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const raw = formData.get("capacity");
+  const value = typeof raw === "string" ? raw.trim() : "";
+  const capacity = value === "" ? null : Number(value);
+  if (capacity !== null && (!Number.isInteger(capacity) || capacity < 0)) return;
+  const supabase = await createClient();
+  await supabase
+    .from("class_sessions")
+    .update({ capacity })
+    .eq("id", id);
+  revalidatePath("/admin/sessions");
+}
+
+export async function toggleNewcomerFriendly(formData: FormData) {
+  await requireStaff();
+  const id = String(formData.get("id") ?? "");
+  const next = formData.get("next") === "true";
+  if (!id) return;
+  const supabase = await createClient();
+  await supabase
+    .from("class_sessions")
+    .update({ newcomer_friendly: next })
+    .eq("id", id);
+  revalidatePath("/admin/sessions");
+}

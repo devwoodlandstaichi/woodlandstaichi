@@ -1,6 +1,6 @@
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, Card, PageHeader } from "@/components/admin/ui";
+import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
 import {
   CLASS_LEVEL_VALUES,
   formatDate,
@@ -11,6 +11,8 @@ import {
 import { GenerateTermButton } from "./generate-term-button";
 import { BulkDeleteButton } from "./bulk-delete-button";
 import { DeleteSessionButton } from "./delete-session-button";
+import { toggleNewcomerFriendly } from "./actions";
+import { CapacityInput } from "./capacity-input";
 import {
   SESSION_PERIOD_VALUES,
   SessionFilters,
@@ -34,10 +36,13 @@ type SessionRow = {
   session_date: string;
   start_time: string;
   end_time: string;
+  newcomer_friendly: boolean;
+  capacity: number | null;
   classes: {
     name: string;
     level: ClassLevel;
     location: string;
+    capacity: number | null;
   } | null;
   attendance: { count: number }[] | null;
 };
@@ -90,7 +95,7 @@ export default async function SessionsPage({
   let query = supabase
     .from("class_sessions")
     .select(
-      "id,session_date,start_time,end_time,classes!inner(name,level,location),attendance(count)",
+      "id,session_date,start_time,end_time,newcomer_friendly,capacity,classes!inner(name,level,location,capacity),attendance(count)",
     );
 
   if (period === "upcoming") query = query.gte("session_date", todayIso);
@@ -196,6 +201,12 @@ export default async function SessionsPage({
                   Level
                 </th>
                 <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">
+                  Capacity
+                </th>
+                <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">
+                  Newcomers
+                </th>
+                <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">
                   Scans
                 </th>
                 <th className="sticky top-0 z-[5] bg-background px-4 py-3 shadow-[inset_0_-1px_0_var(--border)]" />
@@ -230,6 +241,41 @@ export default async function SessionsPage({
                           {levelLabel(s.classes.level)}
                         </Badge>
                       )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <CapacityInput
+                        sessionId={s.id}
+                        capacity={s.capacity}
+                        classCapacity={s.classes?.capacity ?? null}
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <form action={toggleNewcomerFriendly}>
+                        <input type="hidden" name="id" value={s.id} />
+                        <input
+                          type="hidden"
+                          name="next"
+                          value={s.newcomer_friendly ? "false" : "true"}
+                        />
+                        {s.newcomer_friendly ? (
+                          <button
+                            type="submit"
+                            aria-label="Remove newcomer-friendly tag"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-vermillion/30 bg-vermillion/8 px-3 py-1 text-xs font-medium text-vermillion hover:bg-vermillion/15 transition-colors"
+                          >
+                            <Sparkles size={12} aria-hidden /> Welcoming
+                          </button>
+                        ) : (
+                          <Button
+                            type="submit"
+                            variant="ghost"
+                            size="sm"
+                            className="inline-flex items-center gap-1.5"
+                          >
+                            <Sparkles size={12} aria-hidden /> Mark welcoming
+                          </Button>
+                        )}
+                      </form>
                     </td>
                     <td className="px-4 py-3 font-mono text-sm tabular-nums text-muted-foreground">
                       {scans}

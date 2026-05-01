@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import {
   ChevronDown,
   ChevronUp,
+  GraduationCap,
   Pencil,
   Trash2,
   UserCheck,
@@ -25,34 +26,24 @@ import {
 } from "@/components/admin/confirm-dialog";
 import { useToast } from "@/components/admin/toast";
 import { EmailQrButton } from "./email-qr-button";
-import { bulkSetMemberStatus, deleteMembers } from "./actions";
+import {
+  bulkSetMemberLevel,
+  bulkSetMemberStatus,
+  deleteMembers,
+} from "./actions";
 import {
   MEMBER_LEVEL_LABELS,
+  MEMBER_LEVEL_VALUES,
   memberStatusLabel,
   type MemberLevel,
   type MemberStatus,
 } from "@/lib/format";
-
-export type MemberRow = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string | null;
-  level: MemberLevel;
-  status: MemberStatus;
-  qr_token: string | null;
-};
-
-export const SORT_COLUMNS = [
-  "last_name",
-  "email",
-  "phone",
-  "level",
-  "status",
-] as const;
-export type SortColumn = (typeof SORT_COLUMNS)[number];
-export type SortDir = "asc" | "desc";
+import {
+  SORT_COLUMNS,
+  type MemberRow,
+  type SortColumn,
+  type SortDir,
+} from "./table-types";
 
 const SORT_LABEL: Record<SortColumn, string> = {
   last_name: "Name",
@@ -180,9 +171,32 @@ export function MembersTable({
     // navigation / mailto: / send-QR / checkbox toggles.
     const target = e.target as HTMLElement;
     if (target.closest("a, button, input, label")) return;
-    if (e.shiftKey) selectRange(id);
-    else if (e.metaKey || e.ctrlKey) toggleOne(id);
-    else selectOnly(id);
+    if (e.shiftKey) {
+      // The shift+mousedown that starts a text range fires before this
+      // click — clear whatever the browser highlighted so the visual
+      // result is just the row selection, not selected text spanning
+      // the range.
+      window.getSelection()?.removeAllRanges();
+      selectRange(id);
+    } else if (e.metaKey || e.ctrlKey) {
+      toggleOne(id);
+    } else {
+      selectOnly(id);
+    }
+  }
+
+  // Suppress the browser's native shift-click text-range selection on
+  // rows. Without this, shift+click highlights every cell of text from
+  // anchor to target before our row handler fires. We only suppress
+  // when shift is held — so a normal click-and-drag can still select
+  // text inside a cell for copy/paste.
+  function handleRowMouseDown(e: ReactMouseEvent) {
+    if (e.shiftKey) {
+      const target = e.target as HTMLElement;
+      if (!target.closest("a, button, input, label")) {
+        e.preventDefault();
+      }
+    }
   }
 
   function handleContextMenu(e: ReactMouseEvent, id: string) {
@@ -214,6 +228,28 @@ export function MembersTable({
         toast({
           tone: "err",
           title: "Couldn't update status",
+          description: r.message,
+        });
+      }
+    });
+  }
+
+  function applyLevel(ids: string[], level: MemberLevel) {
+    setMenu(null);
+    startTransition(async () => {
+      const r = await bulkSetMemberLevel(ids, level);
+      if (r.ok) {
+        toast({
+          tone: "ok",
+          title: `Set ${r.updated} ${
+            r.updated === 1 ? "member" : "members"
+          } to ${MEMBER_LEVEL_LABELS[level]}`,
+        });
+        router.refresh();
+      } else {
+        toast({
+          tone: "err",
+          title: "Couldn't update level",
           description: r.message,
         });
       }
@@ -326,6 +362,7 @@ export function MembersTable({
                 <tr
                   key={m.id}
                   onClick={(e) => handleRowClick(e, m.id)}
+                  onMouseDown={handleRowMouseDown}
                   onContextMenu={(e) => handleContextMenu(e, m.id)}
                   aria-selected={isSel}
                   className={`cursor-default border-b border-foreground/5 last:border-0 ${
@@ -364,13 +401,8 @@ export function MembersTable({
                       />
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <a
-                      href={`mailto:${m.email}`}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      {m.email}
-                    </a>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {m.email}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {m.phone ?? "—"}
@@ -400,6 +432,7 @@ export function MembersTable({
           canDelete={canDelete}
           pending={pending}
           onStatus={(s) => applyStatus(menu.ids, s)}
+          onLevel={(l) => applyLevel(menu.ids, l)}
           onDelete={() => askDelete(menu.ids)}
         />
       )}
@@ -461,6 +494,7 @@ function ContextMenu({
   canDelete,
   pending,
   onStatus,
+  onLevel,
   onDelete,
 }: {
   x: number;
@@ -469,6 +503,7 @@ function ContextMenu({
   canDelete: boolean;
   pending: boolean;
   onStatus: (status: MemberStatus) => void;
+  onLevel: (level: MemberLevel) => void;
   onDelete: () => void;
 }) {
   const single = ids.length === 1 ? ids[0] : null;
@@ -519,6 +554,21 @@ function ContextMenu({
       >
         Mark inactive
       </MenuItem>
+
+      <div className="my-1 h-px bg-foreground/5" />
+      <p className="px-3 pb-1 pt-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+        Level
+      </p>
+      {MEMBER_LEVEL_VALUES.map((lvl) => (
+        <MenuItem
+          key={lvl}
+          icon={<GraduationCap size={14} aria-hidden />}
+          onClick={() => onLevel(lvl)}
+          disabled={pending}
+        >
+          {MEMBER_LEVEL_LABELS[lvl]}
+        </MenuItem>
+      ))}
 
       {canDelete && (
         <>

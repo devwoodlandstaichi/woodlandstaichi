@@ -5,12 +5,13 @@ import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
 import { ScheduleSection } from "@/components/schedule-section";
 import { ContactSection } from "@/components/contact-section";
+import { createClient } from "@/lib/supabase/server";
+import { dayShort, formatTimeRange, levelLabel } from "@/lib/format";
 import {
   CLASS_LEVELS,
   HOLIDAY_CLOSURES,
   REGISTRATION_STEPS,
   COURTESIES,
-  BEGINNER_COHORT_DATES,
 } from "@/lib/site-data";
 
 export const metadata: Metadata = {
@@ -19,19 +20,50 @@ export const metadata: Metadata = {
     "Free beginner Tai Chi classes in The Woodlands, Texas. Yang 8-step form, 4-month curriculum, soft soles required, water mandatory. Now enrolling June and October 2026.",
 };
 
-const STATUS_TONE: Record<string, string> = {
-  past: "border-foreground/15 text-foreground/40",
-  filling: "border-vermillion/30 text-vermillion-600 bg-vermillion/5",
-  open: "border-jade/30 text-jade bg-jade/5",
+export const dynamic = "force-dynamic";
+
+type WelcomingSession = {
+  id: string;
+  session_date: string;
+  start_time: string;
+  end_time: string;
+  classes: {
+    name: string;
+    level: string;
+    location: string;
+  } | null;
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  past: "Closed",
-  filling: "Waitlist",
-  open: "Open",
-};
+function formatSessionDate(iso: string): { day: string; date: string } {
+  // ISO date → "THU" + "May 7"
+  const d = new Date(iso + "T00:00:00");
+  return {
+    day: dayShort(
+      ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][d.getDay()],
+    ).toUpperCase(),
+    date: d.toLocaleDateString("en-US", { month: "long", day: "numeric" }),
+  };
+}
 
-export default function ClassesPage() {
+export default async function ClassesPage() {
+  const supabase = await createClient();
+  const todayIso = new Date().toISOString().slice(0, 10);
+
+  // Public schedule of newcomer-welcome sessions — instructors flip
+  // class_sessions.newcomer_friendly per occurrence. Sorted soonest
+  // first; capped so the section stays scannable.
+  const { data } = await supabase
+    .from("class_sessions")
+    .select(
+      "id,session_date,start_time,end_time,classes!inner(name,level,location)",
+    )
+    .eq("newcomer_friendly", true)
+    .gte("session_date", todayIso)
+    .order("session_date", { ascending: true })
+    .order("start_time", { ascending: true })
+    .limit(9);
+
+  const welcoming = (data ?? []) as unknown as WelcomingSession[];
   return (
     <>
       <SiteHeader />
@@ -44,65 +76,85 @@ export default function ClassesPage() {
           glyph="課"
         />
 
-        {/* Beginner cohorts */}
+        {/* Welcoming sessions — soonest first */}
         <section
-          aria-labelledby="cohorts-title"
+          aria-labelledby="welcoming-title"
           className="mx-auto max-w-7xl px-6 py-14 md:px-10 md:py-20"
         >
           <div className="grid grid-cols-12 gap-x-6 gap-y-6 mb-8">
             <div className="col-span-12 md:col-span-6">
               <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
                 <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
-                Upcoming cohorts
+                Welcoming sessions
               </p>
               <h2
-                id="cohorts-title"
+                id="welcoming-title"
                 className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight"
               >
-                Three start dates
-                <span className="block italic text-vermillion">a year.</span>
+                Drop in,
+                <span className="block italic text-vermillion">observe.</span>
               </h2>
             </div>
             <div className="col-span-12 md:col-span-6 md:pt-4">
               <p className="text-lg text-foreground/75 leading-relaxed">
-                Beginner cohorts open in February, June, and late September.
-                Cohorts are capacity-limited; once filled, names roll to a
-                waiting list for the next session.
+                Specific upcoming sessions our instructors have marked open to
+                first-timers. Show up a few minutes early, watch from the side,
+                ask questions after. Soonest dates first.
               </p>
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            {BEGINNER_COHORT_DATES.map((c) => (
-              <article
-                key={c.label}
-                className="rounded-xl border border-foreground/10 bg-card p-7"
-              >
-                <div className="flex items-baseline justify-between">
-                  <h3 className="font-display text-2xl tracking-tight">
-                    {c.label}
-                  </h3>
-                  <span
-                    className={`rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-[0.18em] ${
-                      STATUS_TONE[c.status] ?? "border-foreground/15"
-                    }`}
+          {welcoming.length === 0 ? (
+            <div className="rounded-xl border border-foreground/10 bg-card p-7 text-foreground/75">
+              <p>
+                No welcoming sessions are on the calendar right now. Email{" "}
+                <a
+                  href="mailto:info@woodlandstaichi.com"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  info@woodlandstaichi.com
+                </a>{" "}
+                and we&apos;ll let you know when the next one lands.
+              </p>
+            </div>
+          ) : (
+            <ol className="divide-y divide-foreground/10 rounded-xl border border-foreground/10 bg-card">
+              {welcoming.map((s) => {
+                const { day, date } = formatSessionDate(s.session_date);
+                return (
+                  <li
+                    key={s.id}
+                    className="grid grid-cols-12 items-baseline gap-x-6 gap-y-2 px-6 py-5 md:px-7"
                   >
-                    {STATUS_LABEL[c.status] ?? c.status}
-                  </span>
-                </div>
-                <ul className="mt-5 space-y-2 text-base text-foreground/80">
-                  {c.days.map((d) => (
-                    <li key={d} className="flex items-center gap-3">
-                      <span aria-hidden className="text-vermillion text-xs">
-                        ◆
-                      </span>
-                      {d}
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))}
-          </div>
+                    <div className="col-span-12 md:col-span-3">
+                      <p className="text-xs uppercase tracking-[0.25em] text-foreground/55">
+                        {day}
+                      </p>
+                      <p className="mt-1 font-display text-2xl leading-none tracking-tight">
+                        {date}
+                      </p>
+                    </div>
+                    <div className="col-span-12 md:col-span-6 md:pl-2">
+                      <p className="font-medium text-foreground">
+                        {s.classes?.name ?? "—"}
+                      </p>
+                      <p className="mt-1 text-sm text-foreground/60">
+                        {s.classes?.level
+                          ? `${levelLabel(s.classes.level)} · `
+                          : ""}
+                        {s.classes?.location ?? ""}
+                      </p>
+                    </div>
+                    <div className="col-span-12 md:col-span-3 md:text-right">
+                      <p className="font-mono text-sm tabular-nums text-foreground/80">
+                        {formatTimeRange(s.start_time, s.end_time)}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
         </section>
 
         {/* Levels */}
