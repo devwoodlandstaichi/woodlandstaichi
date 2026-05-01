@@ -199,6 +199,56 @@ export async function markInactive(formData: FormData) {
   return setMemberStatus(String(formData.get("id") ?? ""), "inactive");
 }
 
+// Selection-aware bulk operations invoked from the members table's
+// right-click context menu. Status changes are staff-allowed (consistent
+// with the per-row mark* actions); delete is admin-only because there's
+// no undo and it cascades to attendance + registrations.
+
+export async function bulkSetMemberStatus(
+  ids: string[],
+  status: MemberStatus,
+): Promise<{ ok: true; updated: number } | { ok: false; message: string }> {
+  await requireStaff();
+  const cleanIds = ids.filter((id) => typeof id === "string" && id.length > 0);
+  if (cleanIds.length === 0) return { ok: true, updated: 0 };
+  if (!(MEMBER_STATUS_VALUES as readonly string[]).includes(status)) {
+    return { ok: false, message: "Invalid status." };
+  }
+
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("members")
+    .update({ status }, { count: "exact" })
+    .in("id", cleanIds);
+
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath("/admin/members");
+  revalidatePath("/admin/registrations");
+  return { ok: true, updated: count ?? 0 };
+}
+
+export async function deleteMembers(
+  ids: string[],
+): Promise<{ ok: true; deleted: number } | { ok: false; message: string }> {
+  await requireAdmin();
+  const cleanIds = ids.filter((id) => typeof id === "string" && id.length > 0);
+  if (cleanIds.length === 0) return { ok: true, deleted: 0 };
+
+  const admin = createAdminClient();
+  const { error, count } = await admin
+    .from("members")
+    .delete({ count: "exact" })
+    .in("id", cleanIds);
+
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath("/admin/members");
+  revalidatePath("/admin/registrations");
+  revalidatePath("/admin");
+  return { ok: true, deleted: count ?? 0 };
+}
+
 // DESTRUCTIVE — deletes every row in public.members and cascades to
 // public.attendance + public.registrations. Admin-only (instructors cannot
 // invoke). The UI requires the user to type "DELETE" to enable the button,

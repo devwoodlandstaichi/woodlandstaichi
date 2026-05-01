@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Pencil, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
   Badge,
@@ -41,11 +41,44 @@ function asStatus(v: string | undefined): Status {
   return v === "archived" || v === "all" ? v : "active";
 }
 
+// "schedule" sorts by day-of-week then start-time — i.e. the way a
+// student reading the public schedule expects classes ordered. Default
+// (no sort param) keeps the curated display_order admins set manually
+// with archived rows pushed to the bottom.
+const SORT_COLUMNS = ["schedule", "location", "level", "status"] as const;
+type SortColumn = (typeof SORT_COLUMNS)[number];
+type SortDir = "asc" | "desc";
+
+const SORT_LABEL: Record<SortColumn, string> = {
+  schedule: "Class",
+  location: "Where",
+  level: "Level",
+  status: "Status",
+};
+
+const LEVEL_ORDER: Record<string, number> = {
+  beginners: 1,
+  intermediate: 2,
+  advanced: 3,
+  remedial: 4,
+  play_only: 5,
+  combined: 6,
+};
+
+function isSortColumn(v: string | undefined): v is SortColumn {
+  return !!v && (SORT_COLUMNS as readonly string[]).includes(v);
+}
+function isSortDir(v: string | undefined): v is SortDir {
+  return v === "asc" || v === "desc";
+}
+
 type SearchParams = Promise<{
   q?: string;
   level?: string;
   day?: string;
   status?: string;
+  sort?: string;
+  dir?: string;
 }>;
 
 export default async function ClassesPage({
@@ -64,6 +97,8 @@ export default async function ClassesPage({
       ? params.day
       : "";
   const status = asStatus(params.status);
+  const sort: SortColumn | null = isSortColumn(params.sort) ? params.sort : null;
+  const dir: SortDir = isSortDir(params.dir) ? params.dir : "asc";
 
   const supabase = await createClient();
   let query = supabase
@@ -87,16 +122,58 @@ export default async function ClassesPage({
   const { data } = await query.order("display_order", { ascending: true });
   const rows = (data ?? []) as ClassRow[];
 
+  // Default sort (no `sort` param): active rows first, then by curated
+  // display_order, then by day + time. This is the order admins authored
+  // for the public schedule and we want to keep it as the resting state.
+  // Explicit clicks on a column header override with that column's sort.
+  const ascending = dir === "asc";
   const sorted = rows.slice().sort((a, b) => {
-    if (a.active !== b.active) return a.active ? -1 : 1;
-    if (a.display_order !== b.display_order)
-      return a.display_order - b.display_order;
-    const dDiff = dayOrder(a.day_of_week) - dayOrder(b.day_of_week);
-    if (dDiff !== 0) return dDiff;
-    return a.start_time.localeCompare(b.start_time);
+    let cmp = 0;
+    if (sort === "schedule") {
+      cmp =
+        dayOrder(a.day_of_week) - dayOrder(b.day_of_week) ||
+        a.start_time.localeCompare(b.start_time);
+    } else if (sort === "location") {
+      cmp = a.location.localeCompare(b.location);
+    } else if (sort === "level") {
+      cmp = (LEVEL_ORDER[a.level] ?? 99) - (LEVEL_ORDER[b.level] ?? 99);
+    } else if (sort === "status") {
+      // active=true sorts before active=false in asc, after in desc
+      cmp = a.active === b.active ? 0 : a.active ? -1 : 1;
+    } else {
+      // No explicit sort — default ordering.
+      if (a.active !== b.active) return a.active ? -1 : 1;
+      if (a.display_order !== b.display_order)
+        return a.display_order - b.display_order;
+      cmp =
+        dayOrder(a.day_of_week) - dayOrder(b.day_of_week) ||
+        a.start_time.localeCompare(b.start_time);
+      return cmp; // skip the asc/desc flip — default is always ascending
+    }
+    // Tiebreaker so equal categories stay schedule-ordered.
+    if (cmp === 0) {
+      cmp =
+        dayOrder(a.day_of_week) - dayOrder(b.day_of_week) ||
+        a.start_time.localeCompare(b.start_time);
+    }
+    return ascending ? cmp : -cmp;
   });
 
   const filtered = q || level || day || status !== "active";
+
+  function sortHref(column: SortColumn): string {
+    const next = new URLSearchParams();
+    if (q) next.set("q", q);
+    if (level) next.set("level", level);
+    if (day) next.set("day", day);
+    if (status !== "active") next.set("status", status);
+    next.set("sort", column);
+    next.set(
+      "dir",
+      column === sort ? (dir === "asc" ? "desc" : "asc") : "asc",
+    );
+    return `/admin/classes?${next.toString()}`;
+  }
 
   return (
     <>
@@ -135,11 +212,44 @@ export default async function ClassesPage({
               <thead>+z-index bleed-through problem. */}
           <thead className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
             <tr>
-              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Name</th>
-              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">When</th>
-              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Where</th>
-              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Level</th>
-              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Status</th>
+              {SORT_COLUMNS.map((col) => {
+                const active = col === sort;
+                return (
+                  <th
+                    key={col}
+                    scope="col"
+                    aria-sort={
+                      active
+                        ? dir === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "none"
+                    }
+                    className={
+                      col === "schedule"
+                        ? "sticky top-0 z-[5] min-w-[18rem] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]"
+                        : "sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]"
+                    }
+                  >
+                    <a
+                      href={sortHref(col)}
+                      className={
+                        active
+                          ? "inline-flex items-center gap-1 text-foreground hover:text-vermillion"
+                          : "inline-flex items-center gap-1 hover:text-foreground"
+                      }
+                    >
+                      {SORT_LABEL[col]}
+                      {active &&
+                        (dir === "asc" ? (
+                          <ChevronUp size={12} aria-hidden />
+                        ) : (
+                          <ChevronDown size={12} aria-hidden />
+                        ))}
+                    </a>
+                  </th>
+                );
+              })}
               <th className="sticky top-0 z-[5] bg-background px-4 py-3 shadow-[inset_0_-1px_0_var(--border)]" />
             </tr>
           </thead>
@@ -149,13 +259,15 @@ export default async function ClassesPage({
                 key={c.id}
                 className="border-b border-foreground/5 last:border-0"
               >
-                <td className="px-4 py-4 font-medium">{c.name}</td>
-                <td className="px-4 py-4 text-muted-foreground">
-                  {dayLabel(c.day_of_week)}
-                  <br />
-                  <span className="text-foreground">
-                    {formatTimeRange(c.start_time, c.end_time)}
-                  </span>
+                <td className="min-w-[18rem] px-4 py-4">
+                  <p className="font-medium">{c.name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {dayLabel(c.day_of_week)}
+                    <span className="mx-1.5 text-foreground/30">·</span>
+                    <span className="font-mono tabular-nums text-foreground/85">
+                      {formatTimeRange(c.start_time, c.end_time)}
+                    </span>
+                  </p>
                 </td>
                 <td className="px-4 py-4 text-muted-foreground">
                   {c.location}

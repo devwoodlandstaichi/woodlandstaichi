@@ -1,13 +1,8 @@
-import Link from "next/link";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { Card, PageHeader } from "@/components/admin/ui";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, Card, PageHeader } from "@/components/admin/ui";
-import { EmailQrButton } from "./email-qr-button";
 import {
-  MEMBER_LEVEL_LABELS,
   MEMBER_LEVEL_VALUES,
   MEMBER_STATUS_VALUES,
-  memberStatusLabel,
   type MemberLevel,
   type MemberStatus,
 } from "@/lib/format";
@@ -15,33 +10,16 @@ import { MemberFilters } from "./filters";
 import { DangerZoneButton } from "./danger-zone";
 import { BulkIssueQrsButton } from "./bulk-issue-button";
 import { getSessionUser } from "@/lib/auth/dal";
+import {
+  MembersTable,
+  SORT_COLUMNS,
+  type MemberRow,
+  type SortColumn,
+  type SortDir,
+} from "./members-table";
 
 export const metadata = { title: "Members" };
 export const dynamic = "force-dynamic";
-
-type MemberRow = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string | null;
-  level: MemberLevel;
-  status: MemberStatus;
-  qr_token: string | null;
-  created_at: string;
-};
-
-const SORT_COLUMNS = ["last_name", "email", "phone", "level", "status"] as const;
-type SortColumn = (typeof SORT_COLUMNS)[number];
-type SortDir = "asc" | "desc";
-
-const SORT_LABEL: Record<SortColumn, string> = {
-  last_name: "Name",
-  email: "Email",
-  phone: "Phone",
-  level: "Level",
-  status: "Status",
-};
 
 type SearchParams = Promise<{
   q?: string;
@@ -63,19 +41,6 @@ function isSortColumn(v: string | undefined): v is SortColumn {
 function isSortDir(v: string | undefined): v is SortDir {
   return v === "asc" || v === "desc";
 }
-
-const LEVEL_TONE: Record<MemberLevel, "vermillion" | "cobalt" | "jade" | "neutral"> = {
-  instructor: "vermillion",
-  beginners: "neutral",
-  intermediate: "cobalt",
-  advanced: "jade",
-};
-
-const STATUS_TONE: Record<MemberStatus, "jade" | "cobalt" | "muted"> = {
-  active: "jade",
-  waitlist: "cobalt",
-  inactive: "muted",
-};
 
 export default async function MembersPage({
   searchParams,
@@ -133,16 +98,24 @@ export default async function MembersPage({
   const { data } = await query;
   const rows = (data ?? []) as MemberRow[];
 
-  function sortHref(column: SortColumn): string {
-    const next = new URLSearchParams();
-    if (q) next.set("q", q);
-    if (level) next.set("level", level);
-    if (status !== "active") next.set("status", status);
-    next.set("sort", column);
-    // Click the active column to flip direction; click any other to start ascending.
-    next.set("dir", column === sort ? (dir === "asc" ? "desc" : "asc") : "asc");
-    return `/admin/members?${next.toString()}`;
-  }
+  // Precompute the toggle URL for each sortable column so the (client)
+  // table can render header links without needing the helper function.
+  const sortHrefs = SORT_COLUMNS.reduce(
+    (acc, column) => {
+      const next = new URLSearchParams();
+      if (q) next.set("q", q);
+      if (level) next.set("level", level);
+      if (status !== "active") next.set("status", status);
+      next.set("sort", column);
+      next.set(
+        "dir",
+        column === sort ? (dir === "asc" ? "desc" : "asc") : "asc",
+      );
+      acc[column] = `/admin/members?${next.toString()}`;
+      return acc;
+    },
+    {} as Record<SortColumn, string>,
+  );
 
   return (
     <>
@@ -164,96 +137,13 @@ export default async function MembersPage({
           No members match these filters.
         </Card>
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-        <table className="w-full text-left text-sm">
-          {/* Sticky lives on each <th>, not <thead>, because <thead>+z-index
-              doesn't reliably stack above <tbody> rows in tables. */}
-          <thead className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-            <tr>
-              {SORT_COLUMNS.map((col) => {
-                const active = col === sort;
-                return (
-                  <th
-                    key={col}
-                    scope="col"
-                    aria-sort={
-                      active
-                        ? dir === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "none"
-                    }
-                    className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]"
-                  >
-                    <a
-                      href={sortHref(col)}
-                      className={
-                        active
-                          ? "inline-flex items-center gap-1 text-foreground hover:text-vermillion"
-                          : "inline-flex items-center gap-1 hover:text-foreground"
-                      }
-                    >
-                      {SORT_LABEL[col]}
-                      {active &&
-                        (dir === "asc" ? (
-                          <ChevronUp size={12} aria-hidden />
-                        ) : (
-                          <ChevronDown size={12} aria-hidden />
-                        ))}
-                    </a>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((m) => (
-              <tr
-                key={m.id}
-                className="border-b border-foreground/5 last:border-0"
-              >
-                <td className="px-4 py-3 font-medium">
-                  <div className="inline-flex items-center gap-1">
-                    <Link
-                      href={`/admin/members/${m.id}`}
-                      className="hover:text-vermillion"
-                    >
-                      {m.last_name}, {m.first_name}
-                    </Link>
-                    <EmailQrButton
-                      memberId={m.id}
-                      memberName={`${m.first_name} ${m.last_name}`}
-                      email={m.email}
-                      hasQr={!!m.qr_token}
-                    />
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <a
-                    href={`mailto:${m.email}`}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    {m.email}
-                  </a>
-                </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {m.phone ?? "—"}
-                </td>
-                <td className="px-4 py-3">
-                  <Badge tone={LEVEL_TONE[m.level]}>
-                    {MEMBER_LEVEL_LABELS[m.level]}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3">
-                  <Badge tone={STATUS_TONE[m.status]}>
-                    {memberStatusLabel(m.status)}
-                  </Badge>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        </div>
+        <MembersTable
+          rows={rows}
+          sort={sort}
+          dir={dir}
+          sortHrefs={sortHrefs}
+          canDelete={user?.role === "admin"}
+        />
       )}
 
       <div className="-mx-4 shrink-0 border-t border-foreground/10 bg-background px-4 py-3 md:-mx-6 md:px-6">

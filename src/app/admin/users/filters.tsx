@@ -2,20 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
-import {
-  MEMBER_LEVEL_LABELS,
-  MEMBER_LEVEL_VALUES,
-  MEMBER_STATUS_VALUES,
-  memberStatusLabel,
-  type MemberLevel,
-  type MemberStatus,
-} from "@/lib/format";
 
 const TEXT_DEBOUNCE_MS = 400;
 
-// Same pattern as src/app/admin/classes/filters.tsx — direct URL
-// mutation via window.location.href, one tiny helper. Nothing in
-// the navigation path goes through React or the Next router.
+export type RoleFilter = "all" | "admin" | "instructor" | "none";
+export const ROLE_FILTER_VALUES: readonly RoleFilter[] = [
+  "all",
+  "admin",
+  "instructor",
+  "none",
+];
+
+const ROLE_LABEL: Record<RoleFilter, string> = {
+  all: "All roles",
+  admin: "Admin",
+  instructor: "Instructor",
+  none: "No role",
+};
 
 function setParam(key: string, value: string) {
   const url = new URL(window.location.href);
@@ -24,14 +27,12 @@ function setParam(key: string, value: string) {
   window.location.href = url.toString();
 }
 
-export function MemberFilters({
+export function UserFilters({
   q,
-  level,
-  status,
+  role,
 }: {
   q: string;
-  level: MemberLevel | null;
-  status: MemberStatus;
+  role: RoleFilter;
 }) {
   const [text, setText] = useState(q);
 
@@ -42,9 +43,12 @@ export function MemberFilters({
   }
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    },
+    [],
+  );
 
   function onTextChange(value: string) {
     setText(value);
@@ -55,13 +59,13 @@ export function MemberFilters({
     );
   }
 
-  const hasFilter = !!q || !!level || status !== "active";
+  const hasFilter = !!q || role !== "all";
 
   return (
     <div
       className="-mx-4 flex shrink-0 flex-wrap items-center gap-3 border-b border-foreground/10 bg-background px-4 py-4 md:-mx-6 md:px-6"
       role="search"
-      aria-label="Filter members"
+      aria-label="Filter users"
     >
       <div className="relative h-10 min-w-[16rem] flex-1">
         <Search
@@ -81,50 +85,33 @@ export function MemberFilters({
               setParam("q", text.trim());
             }
           }}
-          placeholder="Search by name, nickname, email, or phone"
-          aria-label="Search members"
+          placeholder="Search by email"
+          aria-label="Search users"
           className="h-10 w-full rounded-full border border-input bg-background pl-9 pr-3 text-sm shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         />
       </div>
 
-      <Pill label="Level">
-          <select
-            name="level"
-            value={level ?? ""}
-            onChange={(e) => setParam("level", e.target.value)}
-            className="bg-transparent text-sm focus:outline-none"
-            aria-label="Filter by level"
-          >
-            <option value="">All levels</option>
-            {MEMBER_LEVEL_VALUES.map((v) => (
-              <option key={v} value={v}>
-                {MEMBER_LEVEL_LABELS[v]}
-              </option>
-            ))}
-          </select>
-        </Pill>
-
-        <Pill label="Status">
-          <select
-            name="status"
-            value={status}
-            onChange={(e) => setParam("status", e.target.value)}
-            className="bg-transparent text-sm focus:outline-none"
-            aria-label="Filter by status"
-          >
-            {MEMBER_STATUS_VALUES.map((v) => (
-              <option key={v} value={v}>
-                {memberStatusLabel(v)}
-              </option>
-            ))}
-          </select>
-        </Pill>
+      <Pill label="Role">
+        <select
+          name="role"
+          value={role}
+          onChange={(e) => setParam("role", e.target.value)}
+          className="bg-transparent text-sm focus:outline-none"
+          aria-label="Filter by role"
+        >
+          {ROLE_FILTER_VALUES.map((v) => (
+            <option key={v} value={v}>
+              {ROLE_LABEL[v]}
+            </option>
+          ))}
+        </select>
+      </Pill>
 
       {hasFilter && (
         <button
           type="button"
           onClick={() => {
-            window.location.href = "/admin/members";
+            window.location.href = "/admin/users";
           }}
           className="inline-flex h-10 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground"
         >
