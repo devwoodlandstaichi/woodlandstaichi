@@ -23,11 +23,13 @@ export async function SiteFooter() {
         <div className="grid gap-12 md:grid-cols-12">
           <div className="md:col-span-4">
             <p className="font-display text-3xl tracking-tight">
-              Woodlands <span className="italic text-vermillion-300">Tai Chi</span>
+              Woodlands{" "}
+              <span className="italic text-vermillion-300">Tai Chi</span>
             </p>
             <p className="mt-4 max-w-md text-ink-300 leading-relaxed">
-              Meditation in motion. A community school in The Woodlands, Texas
-              — open to all, free for beginners.
+              Meditation in motion. A community school in The Woodlands, Texas —
+              Free for all who are interested in the health of their minds and
+              body.
             </p>
           </div>
 
@@ -75,7 +77,10 @@ export async function SiteFooter() {
                 </a>
               </li>
               <li>
-                <a href="sms:8323816078" className="hover:text-vermillion-300 transition-colors">
+                <a
+                  href="sms:8323816078"
+                  className="hover:text-vermillion-300 transition-colors"
+                >
                   Text: (832) 381-6078
                 </a>
                 <span className="block text-xs text-ink-300 mt-1">

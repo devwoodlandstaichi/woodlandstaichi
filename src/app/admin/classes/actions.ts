@@ -24,7 +24,7 @@ type ClassInput = {
   start_time: string;
   end_time: string;
   capacity: number | null;
-  cohort_start_date: string | null;
+  class_start_date: string | null;
   description: string | null;
   active: boolean;
   display_order: number;
@@ -41,7 +41,7 @@ export type ClassFormValues = {
   start_time: string;
   end_time: string;
   capacity: string;
-  cohort_start_date: string;
+  class_start_date: string;
   description: string;
   active: boolean;
   display_order: string;
@@ -67,7 +67,7 @@ function valuesFrom(formData: FormData): ClassFormValues {
     start_time: str(formData, "start_time"),
     end_time: str(formData, "end_time"),
     capacity: str(formData, "capacity"),
-    cohort_start_date: str(formData, "cohort_start_date"),
+    class_start_date: str(formData, "class_start_date"),
     description: str(formData, "description"),
     active: formData.get("active") === "on",
     display_order: str(formData, "display_order"),
@@ -92,7 +92,7 @@ function parse(
   const start_time = str(formData, "start_time");
   const end_time = str(formData, "end_time");
   const capacityRaw = str(formData, "capacity");
-  const cohort_start_date = str(formData, "cohort_start_date");
+  const class_start_date = str(formData, "class_start_date");
   const description = str(formData, "description");
   const active = formData.get("active") === "on";
   const displayOrderRaw = str(formData, "display_order");
@@ -116,8 +116,8 @@ function parse(
     else capacity = n;
   }
 
-  if (cohort_start_date && !DATE_RE.test(cohort_start_date))
-    errors.cohort_start_date = "Use YYYY-MM-DD.";
+  if (class_start_date && !DATE_RE.test(class_start_date))
+    errors.class_start_date = "Use YYYY-MM-DD.";
 
   let display_order = 0;
   if (displayOrderRaw) {
@@ -139,7 +139,7 @@ function parse(
       start_time,
       end_time,
       capacity,
-      cohort_start_date: cohort_start_date || null,
+      class_start_date: class_start_date || null,
       description: description || null,
       active,
       display_order,

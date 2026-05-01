@@ -54,7 +54,7 @@ export function Hero() {
               href="/classes/register"
               className="group inline-flex items-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background transition-transform hover:-translate-y-0.5 hover:bg-vermillion-600"
             >
-              Register for a beginner cohort
+              Register for a beginners class
               <span
                 aria-hidden
                 className="inline-block transition-transform group-hover:translate-x-1"

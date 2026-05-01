@@ -64,7 +64,7 @@ export default function AboutPage() {
           eyebrow="About us"
           title="A community"
           italic="of practitioners."
-          intro="Woodlands Tai Chi is a completely voluntary community of seniors and residents of Montgomery and Harris Counties — open to anyone interested in the exercise of mental and physical health. Founded in 2009. Free for beginners. Always."
+          intro="Woodlands Tai Chi is a completely voluntary community of seniors and residents of Montgomery and Harris Counties — open to anyone interested in the exercise of mental and physical health. Founded in 2009. Free for all. Always."
           glyph="和"
         />
 
@@ -99,14 +99,15 @@ export default function AboutPage() {
               <p>
                 Woodlands Tai Chi has been a non-profit cooperative since 2009,
                 sponsored entirely by its members. Our average active roster is{" "}
-                <strong>73 players</strong> across the past four years (2021–2024).
+                <strong>73 players</strong> across the past four years
+                (2021–2024).
               </p>
               <p>
-                We offer seniors and residents a productive and safe activity
-                to help improve their bodies and minds — at no cost. The
-                practice is led by <strong>Sifu Sesco Saegusa</strong> with a
-                team of dedicated volunteer instructors who give their time,
-                care, and presence to every session.
+                We offer seniors and residents a productive and safe activity to
+                help improve their bodies and minds — at no cost. The practice
+                is led by <strong>Sifu Sesco Saegusa</strong> with a team of
+                dedicated volunteer instructors who give their time, care, and
+                presence to every session.
               </p>
               <div className="pt-6 border-t border-foreground/10">
                 <p className="text-sm uppercase tracking-[0.25em] text-foreground/55 mb-4">
@@ -120,7 +121,10 @@ export default function AboutPage() {
                       </span>
                       <span>
                         <span className="font-medium">{p.name}</span>
-                        <span className="text-foreground/60"> — {p.program}</span>
+                        <span className="text-foreground/60">
+                          {" "}
+                          — {p.program}
+                        </span>
                       </span>
                     </li>
                   ))}
@@ -156,11 +160,10 @@ export default function AboutPage() {
                 <p className="text-xl text-background/90 leading-relaxed font-display italic">
                   &ldquo;Tai chi is often described as &lsquo;meditation in
                   motion,&rsquo; but it might well be called &lsquo;medication
-                  in motion.&rsquo; This mind-body practice, which originated
-                  in China as a martial art, has value in treating or
-                  preventing many health problems. And you can get started
-                  even if you aren&apos;t in top shape or the best of
-                  health.&rdquo;
+                  in motion.&rsquo; This mind-body practice, which originated in
+                  China as a martial art, has value in treating or preventing
+                  many health problems. And you can get started even if you
+                  aren&apos;t in top shape or the best of health.&rdquo;
                 </p>
                 <p className="mt-8 text-base text-background/70">
                   The teachings on this site are drawn from the writings and

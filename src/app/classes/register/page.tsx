@@ -27,9 +27,9 @@ export async function generateMetadata({
     };
   }
   return {
-    title: "Register for a beginner cohort",
+    title: "Register for a beginners class",
     description:
-      "Register for the next Woodlands Tai Chi beginner cohort. Free of charge — only the WTC shirt fee is required.",
+      "Register for the next Woodlands Tai Chi beginners class. Free of charge — only the WTC shirt fee is required.",
   };
 }
 

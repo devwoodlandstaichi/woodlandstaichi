@@ -19,7 +19,7 @@ export default async function EditClassPage({
   const { data } = await supabase
     .from("classes")
     .select(
-      "id,name,level,location,location_address,day_of_week,start_time,end_time,capacity,cohort_start_date,description,active,display_order",
+      "id,name,level,location,location_address,day_of_week,start_time,end_time,capacity,class_start_date,description,active,display_order",
     )
     .eq("id", id)
     .maybeSingle();

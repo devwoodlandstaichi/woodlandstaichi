@@ -7,7 +7,7 @@ import { updateProfile, type ProfileFormState } from "./actions";
 
 export type ProfileDefaults = {
   nickname: string | null;
-  phone: string;
+  phone: string | null;
   street: string | null;
   city: string | null;
   state: string | null;

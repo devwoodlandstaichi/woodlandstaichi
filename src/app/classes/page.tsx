@@ -281,7 +281,7 @@ export default async function ClassesPage() {
               href="/classes/register"
               className="inline-flex items-center gap-3 rounded-full bg-vermillion px-7 py-4 text-base font-medium text-background hover:bg-vermillion-600 transition-colors"
             >
-              Register for a beginner cohort
+              Register for a beginners class
               <span aria-hidden>→</span>
             </Link>
             <Link

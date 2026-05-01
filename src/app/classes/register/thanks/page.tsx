@@ -60,7 +60,7 @@ export default async function ThanksPage({
                 <p>
                   Your registration has been recorded. We&apos;ll send a
                   follow-up email shortly with shirt payment instructions and
-                  a confirmation of your cohort and session.
+                  a confirmation of your class and session.
                 </p>
                 <p>
                   You aren&apos;t fully enrolled until payment is received —

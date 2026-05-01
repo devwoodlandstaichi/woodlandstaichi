@@ -7,7 +7,7 @@ import { ContactSection } from "@/components/contact-section";
 export const metadata: Metadata = {
   title: "Beginners — Woodlands Tai Chi",
   description:
-    "What new students should know before joining a Woodlands Tai Chi beginner cohort: the curriculum, attendance commitment, dress code, and dojo courtesies.",
+    "What new students should know before joining a Woodlands Tai Chi beginners class: the curriculum, attendance commitment, dress code, and dojo courtesies.",
 };
 
 export const dynamic = "force-static";
@@ -149,7 +149,7 @@ export default function BeginnersPage() {
           eyebrow="Beginners"
           title="Before"
           italic="you begin."
-          intro="Please read and agree to the following in its entirety. New cohorts open three times a year — and the first four classes set the foundation for everything that follows."
+          intro="Please read and agree to the following in its entirety. New classes open three times a year — and the first four classes set the foundation for everything that follows."
           glyph="始"
         />
 

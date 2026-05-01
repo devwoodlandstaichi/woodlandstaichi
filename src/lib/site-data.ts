@@ -66,8 +66,8 @@ export const CLASS_LEVELS = [
 export const REGISTRATION_STEPS = [
   {
     n: 1,
-    title: "Pick a cohort",
-    body: "Beginners cohorts open in February, June, and late-September each year. Pick the one whose schedule you can fully commit to.",
+    title: "Pick a class",
+    body: "Beginners classes open in February, June, and late-September each year. Pick the one whose schedule you can fully commit to.",
   },
   {
     n: 2,

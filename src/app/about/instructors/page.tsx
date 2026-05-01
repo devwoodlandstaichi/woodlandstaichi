@@ -137,7 +137,7 @@ export default async function InstructorsPage() {
                 ))}
               </div>
               <p className="mt-6 text-sm text-foreground/55 italic">
-                Plus countless hands across every cohort.
+                Plus countless hands across every class.
               </p>
             </div>
           )}

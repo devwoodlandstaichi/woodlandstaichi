@@ -30,7 +30,7 @@ export type ClassFormDefaults = {
   start_time?: string; // "HH:MM:SS" or "HH:MM"
   end_time?: string;
   capacity?: number | null;
-  cohort_start_date?: string | null;
+  class_start_date?: string | null;
   description?: string | null;
   active?: boolean;
   display_order?: number;
@@ -210,16 +210,16 @@ export function ClassForm({
       </div>
 
       <Field
-        label="Cohort start date"
-        htmlFor="cohort_start_date"
-        error={errors.cohort_start_date}
-        hint="Optional — for limited-run beginner cohorts."
+        label="Class start date"
+        htmlFor="class_start_date"
+        error={errors.class_start_date}
+        hint="Optional — for limited-run beginners classes."
       >
         <Input
-          id="cohort_start_date"
-          name="cohort_start_date"
+          id="class_start_date"
+          name="class_start_date"
           type="date"
-          defaultValue={v("cohort_start_date", defaults.cohort_start_date)}
+          defaultValue={v("class_start_date", defaults.class_start_date)}
         />
       </Field>
 

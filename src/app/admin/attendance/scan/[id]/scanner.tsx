@@ -16,6 +16,45 @@ const COOLDOWN_MS = 1500; // ignore the same QR for this long after a scan
 const TOAST_HOLD_MS = 1900; // visible time
 const TOAST_FADE_MS = 380; // exit animation duration
 
+// Synthesised beeps via Web Audio so we don't need to ship an asset.
+// Three distinct tones map to the three toast tones so the room can
+// hear the difference between "in", "already in", and "rejected".
+type BeepTone = "ok" | "warn" | "err";
+const BEEP_PROFILES: Record<BeepTone, { freq: number; dur: number; gain: number }> = {
+  ok: { freq: 880, dur: 0.16, gain: 0.18 }, // bright A5 chime
+  warn: { freq: 520, dur: 0.18, gain: 0.16 }, // mellower mid C5-ish
+  err: { freq: 220, dur: 0.32, gain: 0.2 }, // low buzz
+};
+
+let audioCtx: AudioContext | null = null;
+function playBeep(tone: BeepTone) {
+  if (typeof window === "undefined") return;
+  try {
+    const Ctor =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!Ctor) return;
+    if (!audioCtx) audioCtx = new Ctor();
+    if (audioCtx.state === "suspended") void audioCtx.resume();
+    const { freq, dur, gain } = BEEP_PROFILES[tone];
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = tone === "err" ? "square" : "sine";
+    osc.frequency.value = freq;
+    g.gain.value = 0;
+    // Quick attack, exponential release — softer than a hard click.
+    const t0 = audioCtx.currentTime;
+    g.gain.linearRampToValueAtTime(gain, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g).connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  } catch {
+    // Silent fail — sound is a courtesy, not core functionality.
+  }
+}
+
 export function Scanner({ sessionId }: { sessionId: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [scanning, setScanning] = useState(false);
@@ -101,6 +140,7 @@ export function Scanner({ sessionId }: { sessionId: string }) {
         const result = await recordByToken(sessionId, encoded);
         showResult(result);
       } catch {
+        playBeep("err");
         showToast({
           tone: "err",
           title: "Scan failed.",
@@ -113,6 +153,7 @@ export function Scanner({ sessionId }: { sessionId: string }) {
 
   function showResult(r: RecordResult) {
     if (r.ok) {
+      playBeep(r.duplicate ? "warn" : "ok");
       showToast({
         tone: r.duplicate ? "warn" : "ok",
         title: r.duplicate
@@ -122,6 +163,7 @@ export function Scanner({ sessionId }: { sessionId: string }) {
         visible: true,
       });
     } else {
+      playBeep("err");
       showToast({ tone: "err", title: r.message, visible: true });
     }
   }
