@@ -120,6 +120,15 @@ export function SiteHeaderClient({ signedIn, isStaff }: SiteHeaderClientProps) {
 
         <div className="flex items-center gap-3">
           <FontScaler />
+          {!signedIn && (
+            <Link
+              href="/classes/register"
+              className="hidden md:inline-flex items-center gap-2 rounded-full bg-vermillion px-5 py-2.5 text-sm font-medium text-background hover:bg-vermillion-600 transition-colors"
+            >
+              Register
+              <span aria-hidden>→</span>
+            </Link>
+          )}
           {/* Account dropdown — same hover/focus pattern as the About menu.
               Signed out: just a "Sign in" item. Signed in: Admin (staff
               only), My profile, Sign out. */}
@@ -190,15 +199,6 @@ export function SiteHeaderClient({ signedIn, isStaff }: SiteHeaderClientProps) {
               </div>
             </div>
           </div>
-          {!signedIn && (
-            <Link
-              href="/classes/register"
-              className="hidden md:inline-flex items-center gap-2 rounded-full bg-vermillion px-5 py-2.5 text-sm font-medium text-background hover:bg-vermillion-600 transition-colors"
-            >
-              Register
-              <span aria-hidden>→</span>
-            </Link>
-          )}
           {/* Mobile menu toggle */}
           <button
             type="button"
