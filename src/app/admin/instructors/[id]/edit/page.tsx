@@ -26,14 +26,20 @@ export default async function EditInstructorPage({
 
   return (
     <>
-      <PageHeader title="Edit instructor" description={data.name} />
-      <InstructorForm
-        action={action}
-        defaults={data}
-        submitLabel="Save changes"
-        cancelHref="/admin/instructors"
-        onClearPhoto={data.photo_url ? <ClearPhotoForm id={id} /> : null}
+      <PageHeader
+        title="Edit instructor"
+        description={data.name}
+        back="/admin/instructors"
       />
+      <div className="min-h-0 flex-1 overflow-y-auto pb-12 pt-6">
+        <InstructorForm
+          action={action}
+          defaults={data}
+          submitLabel="Save changes"
+          cancelHref="/admin/instructors"
+          onClearPhoto={data.photo_url ? <ClearPhotoForm id={id} /> : null}
+        />
+      </div>
     </>
   );
 }

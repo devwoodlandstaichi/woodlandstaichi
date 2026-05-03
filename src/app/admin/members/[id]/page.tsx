@@ -11,7 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, Button, Card } from "@/components/admin/ui";
+import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
 import {
   MEMBER_LEVEL_LABELS,
   memberStatusLabel,
@@ -135,8 +135,35 @@ export default async function MemberDetailPage({
     m.expectations && { label: "Expectations", value: m.expectations },
   ].filter(Boolean) as { label: string; value: string }[];
 
+  const headerDescription = m.nickname
+    ? `“${m.nickname}” · Member since ${formatDate(m.created_at.slice(0, 10))}`
+    : `Member since ${formatDate(m.created_at.slice(0, 10))}${
+        cityState ? ` · ${cityState}` : ""
+      }`;
+
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto pb-12">
+    <>
+      <PageHeader
+        title={fullName}
+        description={headerDescription}
+        back="/admin/members"
+        action={
+          <>
+            <Link href={`/admin/members/${m.id}/qr`}>
+              <Button variant="outline" size="sm">
+                <QrCode size={14} aria-hidden /> QR
+              </Button>
+            </Link>
+            <Link href={`/admin/members/${m.id}/edit`}>
+              <Button variant="outline" size="sm">
+                <Pencil size={14} aria-hidden /> Edit
+              </Button>
+            </Link>
+          </>
+        }
+      />
+
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-12">
       {/* HERO */}
       <section
         aria-label="Member overview"
@@ -182,19 +209,6 @@ export default async function MemberDetailPage({
             )}
           </div>
 
-          {/* Action pills bottom-right */}
-          <div className="absolute bottom-4 right-4 z-10 flex gap-2">
-            <Link href={`/admin/members/${m.id}/qr`}>
-              <Button variant="outline" size="sm" className="bg-background/90 backdrop-blur-sm">
-                <QrCode size={14} aria-hidden /> QR
-              </Button>
-            </Link>
-            <Link href={`/admin/members/${m.id}/edit`}>
-              <Button variant="outline" size="sm" className="bg-background/90 backdrop-blur-sm">
-                <Pencil size={14} aria-hidden /> Edit
-              </Button>
-            </Link>
-          </div>
         </div>
 
         {/* identity strip — avatar overlaps banner edge */}
@@ -481,7 +495,8 @@ export default async function MemberDetailPage({
           </div>
         )}
       </section>
-    </div>
+      </div>
+    </>
   );
 }
 

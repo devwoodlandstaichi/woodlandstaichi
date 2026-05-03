@@ -138,7 +138,14 @@ export function RsvpSettingsForm({
         </div>
       </section>
 
-      <div className="flex flex-wrap items-center justify-end gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button
+          type="submit"
+          disabled={pending}
+          className="inline-flex items-center gap-1.5"
+        >
+          <Save size={14} aria-hidden /> {pending ? "Saving…" : "Save settings"}
+        </Button>
         {state && (
           <p
             role={state.ok ? "status" : "alert"}
@@ -147,13 +154,6 @@ export function RsvpSettingsForm({
             {state.message}
           </p>
         )}
-        <Button
-          type="submit"
-          disabled={pending}
-          className="inline-flex items-center gap-1.5"
-        >
-          <Save size={14} aria-hidden /> {pending ? "Saving…" : "Save settings"}
-        </Button>
       </div>
     </form>
   );

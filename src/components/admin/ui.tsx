@@ -1,4 +1,6 @@
 import * as React from "react";
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Lightweight shadcn-style primitives scoped to admin + auth pages.
@@ -158,10 +160,15 @@ export function PageHeader({
   title,
   description,
   action,
+  back,
 }: {
   title: string;
   description?: string;
   action?: React.ReactNode;
+  /** Optional back-link rendered to the left of the title with a thin
+   *  vertical divider. Pass either a string href or `{ href, label }`
+   *  when you want a screen-reader / tooltip label other than "Back". */
+  back?: string | { href: string; label?: string };
 }) {
   // Fixed-height strip that bottom-aligns with the sidebar's brand
   // strip across columns. Lives in flow as the first child of <main>'s
@@ -169,17 +176,34 @@ export function PageHeader({
   // the scrollable middle region overflow:auto, not by making this
   // sticky. `shrink-0` ensures the strip never collapses when the
   // middle content grows.
+  const backHref = typeof back === "string" ? back : back?.href;
+  const backLabel =
+    (typeof back === "object" && back?.label) || "Back to previous page";
   return (
     <header className="-mx-4 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-foreground/10 bg-background px-4 md:-mx-6 md:px-6">
-      <div className="min-w-0">
-        <h1 className="truncate font-display text-xl font-medium leading-tight tracking-tight">
-          {title}
-        </h1>
-        {description && (
-          <p className="truncate text-xs leading-snug text-muted-foreground">
-            {description}
-          </p>
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        {backHref && (
+          <>
+            <Link
+              href={backHref}
+              aria-label={backLabel}
+              className="-ml-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <ChevronLeft size={18} aria-hidden />
+            </Link>
+            <span aria-hidden className="h-8 w-px shrink-0 bg-foreground/15" />
+          </>
         )}
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate font-display text-xl font-medium leading-tight tracking-tight">
+            {title}
+          </h1>
+          {description && (
+            <p className="truncate text-xs leading-snug text-muted-foreground">
+              {description}
+            </p>
+          )}
+        </div>
       </div>
       {action && (
         <div className="flex shrink-0 gap-2">{action}</div>

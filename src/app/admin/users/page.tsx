@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Plus } from "lucide-react";
+import { CalendarPlus, Clock, Plus } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/dal";
@@ -8,28 +8,16 @@ import { formatDate } from "@/lib/format";
 import { UserRowActions } from "./row-actions";
 import {
   ROLE_FILTER_VALUES,
+  SORT_COLUMN_VALUES,
   UserFilters,
   type RoleFilter,
+  type SortColumn,
 } from "./filters";
 
 export const metadata = { title: "Users" };
 export const dynamic = "force-dynamic";
 
-const SORT_COLUMNS = [
-  "email",
-  "role",
-  "created_at",
-  "last_sign_in_at",
-] as const;
-type SortColumn = (typeof SORT_COLUMNS)[number];
 type SortDir = "asc" | "desc";
-
-const SORT_LABEL: Record<SortColumn, string> = {
-  email: "Email",
-  role: "Role",
-  created_at: "Created",
-  last_sign_in_at: "Last sign-in",
-};
 
 // Order roles for the role-column sort: admin first, instructor next,
 // no-role last. Matches the legacy default ordering.
@@ -58,10 +46,17 @@ function isRoleFilter(v: string | undefined): v is RoleFilter {
   return !!v && (ROLE_FILTER_VALUES as readonly string[]).includes(v);
 }
 function isSortColumn(v: string | undefined): v is SortColumn {
-  return !!v && (SORT_COLUMNS as readonly string[]).includes(v);
+  return !!v && (SORT_COLUMN_VALUES as readonly string[]).includes(v);
 }
 function isSortDir(v: string | undefined): v is SortDir {
   return v === "asc" || v === "desc";
+}
+
+function initialsOf(email: string): string {
+  const local = email.split("@")[0] ?? "";
+  const parts = local.split(/[._-]+/).filter(Boolean);
+  if (parts.length === 0) return email[0]?.toUpperCase() ?? "·";
+  return (parts[0][0] + (parts[1]?.[0] ?? "")).toUpperCase();
 }
 
 export default async function UsersPage({
@@ -138,15 +133,6 @@ export default async function UsersPage({
     return ascending ? cmp : -cmp;
   });
 
-  function sortHref(column: SortColumn): string {
-    const next = new URLSearchParams();
-    if (q) next.set("q", q);
-    if (roleFilter !== "all") next.set("role", roleFilter);
-    next.set("sort", column);
-    next.set("dir", column === sort ? (dir === "asc" ? "desc" : "asc") : "asc");
-    return `/admin/users?${next.toString()}`;
-  }
-
   return (
     <>
       <PageHeader
@@ -162,7 +148,7 @@ export default async function UsersPage({
         }
       />
 
-      <UserFilters q={q} role={roleFilter} />
+      <UserFilters q={q} role={roleFilter} sort={sort} dir={dir} />
 
       {error && (
         <Card className="mt-4 border-destructive/30 bg-destructive/5 p-5 text-destructive">
@@ -175,95 +161,17 @@ export default async function UsersPage({
           No users match these filters.
         </Card>
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <table className="w-full text-left text-sm">
-            {/* Sticky lives on each <th>, not <thead>, because <thead>+z-index
-                doesn't reliably stack above <tbody> rows in tables. */}
-            <thead className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-              <tr>
-                {SORT_COLUMNS.map((col) => {
-                  const active = col === sort;
-                  return (
-                    <th
-                      key={col}
-                      scope="col"
-                      aria-sort={
-                        active
-                          ? dir === "asc"
-                            ? "ascending"
-                            : "descending"
-                          : "none"
-                      }
-                      className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]"
-                    >
-                      <a
-                        href={sortHref(col)}
-                        className={
-                          active
-                            ? "inline-flex items-center gap-1 text-foreground hover:text-vermillion"
-                            : "inline-flex items-center gap-1 hover:text-foreground"
-                        }
-                      >
-                        {SORT_LABEL[col]}
-                        {active &&
-                          (dir === "asc" ? (
-                            <ChevronUp size={12} aria-hidden />
-                          ) : (
-                            <ChevronDown size={12} aria-hidden />
-                          ))}
-                      </a>
-                    </th>
-                  );
-                })}
-                <th className="sticky top-0 z-[5] bg-background px-4 py-3 shadow-[inset_0_-1px_0_var(--border)]" />
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((u) => {
-                const isMe = u.id === me.id;
-                return (
-                  <tr
-                    key={u.id}
-                    className="border-b border-foreground/5 last:border-0 align-top"
-                  >
-                    <td className="px-4 py-3 font-medium">
-                      {u.email}
-                      {isMe && (
-                        <span className="ml-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                          (you)
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {u.role === "admin" ? (
-                        <Badge tone="vermillion">Admin</Badge>
-                      ) : u.role === "instructor" ? (
-                        <Badge tone="cobalt">Instructor</Badge>
-                      ) : (
-                        <Badge tone="muted">No role</Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {formatDate(u.created_at.slice(0, 10))}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {u.last_sign_in_at
-                        ? formatDate(u.last_sign_in_at.slice(0, 10))
-                        : "Never"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <UserRowActions
-                        userId={u.id}
-                        email={u.email}
-                        role={u.role}
-                        isSelf={isMe}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="min-h-0 flex-1 overflow-y-auto -mx-1 px-1 py-4">
+          <ul
+            role="list"
+            className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+          >
+            {sorted.map((u) => (
+              <li key={u.id}>
+                <UserCard user={u} isSelf={u.id === me.id} />
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -273,5 +181,100 @@ export default async function UsersPage({
         </p>
       </div>
     </>
+  );
+}
+
+function UserCard({
+  user,
+  isSelf,
+}: {
+  user: {
+    id: string;
+    email: string;
+    role: "admin" | "instructor" | null;
+    created_at: string;
+    last_sign_in_at: string | null;
+  };
+  isSelf: boolean;
+}) {
+  const lastSeen = user.last_sign_in_at
+    ? formatDate(user.last_sign_in_at.slice(0, 10))
+    : "Never";
+  const joined = formatDate(user.created_at.slice(0, 10));
+
+  return (
+    <article
+      className={`group flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-shadow hover:shadow-md ${
+        isSelf ? "border-vermillion/40 ring-1 ring-vermillion/20" : "border-foreground/10"
+      }`}
+    >
+      {/* Identity strip: avatar circle + email + role badge.
+          Top-right "(you)" chip appears on the current admin's own card
+          so a destructive role flip on themselves is harder to do by
+          accident. */}
+      <div className="flex items-start gap-3 px-5 pt-5">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-vermillion/10 font-display text-base font-medium tracking-tight text-vermillion">
+          {initialsOf(user.email)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium" title={user.email}>
+            {user.email}
+          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {user.role === "admin" ? (
+              <Badge tone="vermillion">Admin</Badge>
+            ) : user.role === "instructor" ? (
+              <Badge tone="cobalt">Instructor</Badge>
+            ) : (
+              <Badge tone="muted">No role</Badge>
+            )}
+            {isSelf && (
+              <span className="inline-flex items-center rounded-full border border-vermillion/30 bg-vermillion/5 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-vermillion">
+                you
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Metadata block: Joined / Last seen. Mono digits so the dates
+          line up vertically across cards in the grid. */}
+      <dl className="mt-4 grid grid-cols-2 gap-4 border-t border-foreground/5 bg-secondary/30 px-5 py-4 text-sm">
+        <div>
+          <dt className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+            <CalendarPlus size={12} aria-hidden /> Joined
+          </dt>
+          <dd className="mt-1 font-mono text-xs tabular-nums text-foreground/85">
+            {joined}
+          </dd>
+        </div>
+        <div>
+          <dt className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+            <Clock size={12} aria-hidden /> Last seen
+          </dt>
+          <dd
+            className={`mt-1 font-mono text-xs tabular-nums ${
+              user.last_sign_in_at ? "text-foreground/85" : "text-muted-foreground"
+            }`}
+          >
+            {lastSeen}
+          </dd>
+        </div>
+      </dl>
+
+      {/* Per-card actions. UserRowActions renders inline buttons; sized
+          to fill the bottom strip so the card always ends with a clear
+          action surface even if the metadata above is short. */}
+      <div className="mt-auto border-t border-foreground/5 px-5 py-3">
+        <div className="flex flex-wrap items-center justify-end gap-1.5 [&_button]:h-9 [&_a]:h-9">
+          <UserRowActions
+            userId={user.id}
+            email={user.email}
+            role={user.role}
+            isSelf={isSelf}
+          />
+        </div>
+      </div>
+    </article>
   );
 }

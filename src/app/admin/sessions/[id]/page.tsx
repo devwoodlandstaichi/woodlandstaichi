@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Hourglass, RotateCcw, X } from "lucide-react";
+import { Hourglass, RotateCcw, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
 import {
@@ -189,19 +189,13 @@ export default async function SessionDetailPage({
             ? `${dayLabel}, ${formatDate(s.session_date)} · ${formatTimeRange(
                 s.start_time,
                 s.end_time,
-              )}${cls.location ? ` · ${cls.location}` : ""}`
+              )}`
             : ""
         }
-        action={
-          <Link href="/admin/sessions">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft size={14} aria-hidden /> Back to sessions
-            </Button>
-          </Link>
-        }
+        back="/admin/sessions"
       />
 
-      <div className="min-h-0 flex-1 overflow-y-auto pb-12">
+      <div className="min-h-0 flex-1 overflow-y-auto p-[1em] pb-12">
         {/* Counter strip */}
         <div className="mb-6 grid gap-4 md:grid-cols-3">
           <Card className="p-5">

@@ -6,12 +6,25 @@ import {
   Camera,
   CameraOff,
   Check,
+  CloudOff,
   RotateCw,
   SwitchCamera,
+  Wifi,
 } from "lucide-react";
 import { Button, Card } from "@/components/admin/ui";
 import { cn } from "@/lib/utils";
 import { recordByToken, recordByMember, searchMembers } from "../../actions";
+import {
+  cacheMembers,
+  countQueuedScans,
+  enqueueScan,
+  findMemberByTokenId,
+  getQueuedScans,
+  removeQueuedScan,
+  searchMembersLocal,
+  type CachedMember,
+  type QueuedScan,
+} from "@/lib/scan/cache";
 
 type RecordResult = Awaited<ReturnType<typeof recordByToken>>;
 type Toast =
@@ -64,11 +77,47 @@ function playBeep(tone: BeepTone) {
 
 type FacingMode = "environment" | "user";
 
-export function Scanner({ sessionId }: { sessionId: string }) {
+// A network failure mid-action looks different from a 4xx/5xx server
+// response — the latter we let through as a normal "failed" toast. The
+// former is what we want to interpret as "we're offline, queue it."
+function isNetworkError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message.toLowerCase();
+  return (
+    err.name === "TypeError" ||
+    msg.includes("failed to fetch") ||
+    msg.includes("network") ||
+    msg.includes("offline") ||
+    msg.includes("load failed")
+  );
+}
+
+export function Scanner({
+  sessionId,
+  roster = [],
+}: {
+  sessionId: string;
+  /** Active member roster — used to resolve QR token IDs to names
+   *  while offline. The public /scan/[id] page omits it because it
+   *  has no RLS-readable view of members; the offline fallback there
+   *  just shows "Scan saved" without a name. */
+  roster?: CachedMember[];
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
+
+  // Connectivity / queue state surfaced via the header pill. `online`
+  // tracks navigator.onLine PLUS the result of the last action call —
+  // we don't trust navigator alone (iOS lies in captive portals etc.)
+  // but we do trust it as a coarse signal. `queueCount` mirrors the
+  // IndexedDB queue length so the pill can show "Offline · 3 queued".
+  const [online, setOnline] = useState(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
+  const [queueCount, setQueueCount] = useState(0);
+  const [draining, setDraining] = useState(false);
   // iPads default to the rear camera, but the kiosk often sits with the
   // member facing the screen; let the operator flip to the front-facing
   // ("user") camera. Browser falls back gracefully if the device only
@@ -90,6 +139,169 @@ export function Scanner({ sessionId }: { sessionId: string }) {
 
   // start/stop the underlying zxing reader
   const readerRef = useRef<unknown>(null);
+
+  // Mirror the server-rendered roster into IndexedDB on every page
+  // load. Last-write-wins; we don't bother with diff/merge. Queue
+  // count is read on mount + after every drain cycle.
+  useEffect(() => {
+    void cacheMembers(roster).catch(() => {
+      /* IndexedDB unavailable (private mode etc.) — scanner still
+         works online; offline paths gracefully no-op. */
+    });
+    void countQueuedScans().then(setQueueCount).catch(() => {});
+  }, [roster]);
+
+  // Drain the queue. Each entry is replayed via the same server
+  // action that produced it; the unique (member_id, class_session_id)
+  // constraint on attendance makes retries naturally idempotent.
+  // Network failure during drain pauses (we'll resume on the next
+  // online/visibility event); explicit server errors discard the
+  // entry so the queue can't get stuck on a permanently-bad scan.
+  const drainPending = useRef(false);
+  async function drainQueue() {
+    if (drainPending.current) return;
+    drainPending.current = true;
+    setDraining(true);
+    try {
+      const queued = await getQueuedScans();
+      let synced = 0;
+      let rejected = 0;
+      for (const q of queued) {
+        try {
+          const result = q.encodedToken
+            ? await recordByToken(q.sessionId, q.encodedToken)
+            : q.memberId
+              ? await recordByMember(q.sessionId, q.memberId)
+              : null;
+          if (result === null) {
+            await removeQueuedScan(q.id);
+            continue;
+          }
+          if (result.ok) {
+            synced++;
+            await removeQueuedScan(q.id);
+          } else {
+            rejected++;
+            await removeQueuedScan(q.id);
+          }
+        } catch (err) {
+          if (isNetworkError(err)) {
+            // Still offline — stop draining; we'll retry on the
+            // next online/visibility event.
+            break;
+          }
+          // Auth expiry or other server-side error — surface and
+          // keep the entry so a manual retry / re-auth replays it.
+          rejected++;
+          break;
+        }
+      }
+      const remaining = await countQueuedScans();
+      setQueueCount(remaining);
+      if (synced + rejected > 0 && remaining === 0) {
+        showToast({
+          tone: rejected > 0 ? "warn" : "ok",
+          title:
+            rejected > 0
+              ? `Synced ${synced}, rejected ${rejected}`
+              : `Synced ${synced} pending scan${synced === 1 ? "" : "s"}`,
+          visible: true,
+        });
+      }
+      // If we reached the server at all, we're online.
+      if (synced + rejected > 0) setOnline(true);
+    } finally {
+      drainPending.current = false;
+      setDraining(false);
+    }
+  }
+
+  // Connectivity hooks: drain on online, on visibilitychange, and on
+  // first mount in case the page was reloaded while a queue persisted.
+  useEffect(() => {
+    function onOnline() {
+      setOnline(true);
+      void drainQueue();
+    }
+    function onOffline() {
+      setOnline(false);
+    }
+    function onVisible() {
+      if (document.visibilityState === "visible") {
+        void drainQueue();
+      }
+    }
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    document.addEventListener("visibilitychange", onVisible);
+    void drainQueue();
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function queueOfflineQrScan(encoded: string) {
+    // Resolve a name from the local roster cache so the success
+    // toast feels identical to the online flow. The encoded token
+    // is `<tokenId>.<sig>`; we only need the prefix to look up.
+    const dot = encoded.indexOf(".");
+    const tokenId = dot > 0 ? encoded.slice(0, dot) : encoded;
+    const cached = tokenId ? await findMemberByTokenId(tokenId) : null;
+
+    const memberName = cached
+      ? cached.nickname
+        ? `${cached.first_name} (${cached.nickname})`
+        : `${cached.first_name} ${cached.last_name}`
+      : null;
+
+    const queued: QueuedScan = {
+      id: crypto.randomUUID(),
+      sessionId,
+      scannedAt: new Date().toISOString(),
+      method: "qr",
+      encodedToken: encoded,
+      memberName: memberName ?? undefined,
+    };
+    await enqueueScan(queued);
+    setQueueCount((n) => n + 1);
+    setOnline(false);
+
+    playBeep("ok");
+    showToast({
+      tone: "ok",
+      title: memberName ? `Welcome, ${memberName}` : "Scan saved",
+      subtitle: "Working offline — will sync when you're back online.",
+      visible: true,
+    });
+  }
+
+  function handleToken(encoded: string) {
+    void (async () => {
+      try {
+        const result = await recordByToken(sessionId, encoded);
+        setOnline(true);
+        showResult(result);
+        // Opportunistic drain: if anything was queued earlier this
+        // session and we just proved the network is back, pull it.
+        if (queueCount > 0) void drainQueue();
+      } catch (err) {
+        if (isNetworkError(err)) {
+          await queueOfflineQrScan(encoded);
+          return;
+        }
+        playBeep("err");
+        showToast({
+          tone: "err",
+          title: "Scan failed.",
+          subtitle: "Try again.",
+          visible: true,
+        });
+      }
+    })();
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -149,23 +361,6 @@ export function Scanner({ sessionId }: { sessionId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanning, facingMode]);
 
-  function handleToken(encoded: string) {
-    void (async () => {
-      try {
-        const result = await recordByToken(sessionId, encoded);
-        showResult(result);
-      } catch {
-        playBeep("err");
-        showToast({
-          tone: "err",
-          title: "Scan failed.",
-          subtitle: "Try again.",
-          visible: true,
-        });
-      }
-    })();
-  }
-
   function showResult(r: RecordResult) {
     if (r.ok) {
       playBeep(r.duplicate ? "warn" : "ok");
@@ -202,6 +397,12 @@ export function Scanner({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="grid gap-4">
+      <ConnectivityBanner
+        online={online}
+        queueCount={queueCount}
+        draining={draining}
+        onSyncNow={() => void drainQueue()}
+      />
       <Card className="overflow-hidden">
         <div className="relative aspect-video w-full bg-foreground/95">
           {/* Live preview */}
@@ -335,7 +536,81 @@ export function Scanner({ sessionId }: { sessionId: string }) {
         </div>
       </Card>
 
-      <ManualSearch sessionId={sessionId} onResult={showResult} />
+      <ManualSearch
+        sessionId={sessionId}
+        onResult={showResult}
+        onQueued={(memberName) => {
+          setQueueCount((n) => n + 1);
+          setOnline(false);
+          showResult({
+            ok: true,
+            memberId: "",
+            memberName,
+            method: "manual",
+            duplicate: false,
+          });
+        }}
+      />
+    </div>
+  );
+}
+
+function ConnectivityBanner({
+  online,
+  queueCount,
+  draining,
+  onSyncNow,
+}: {
+  online: boolean;
+  queueCount: number;
+  draining: boolean;
+  onSyncNow: () => void;
+}) {
+  // Hide entirely when fully online with nothing queued — the calm
+  // state shouldn't clutter the room.
+  if (online && queueCount === 0) return null;
+
+  const tone = online
+    ? "border-jade/30 bg-[color-mix(in_oklch,var(--jade-500)_10%,transparent)]"
+    : "border-vermillion/40 bg-vermillion/5";
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={cn(
+        "flex flex-wrap items-center gap-3 rounded-md border px-4 py-3 text-sm",
+        tone,
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
+          online ? "bg-jade/15 text-jade" : "bg-vermillion/15 text-vermillion",
+        )}
+      >
+        {online ? <Wifi size={14} /> : <CloudOff size={14} />}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-medium leading-tight">
+          {online
+            ? draining
+              ? `Syncing ${queueCount} pending scan${queueCount === 1 ? "" : "s"}…`
+              : `${queueCount} pending scan${queueCount === 1 ? "" : "s"} ready to sync`
+            : "Working offline"}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {online
+            ? "We'll upload them automatically — no action needed."
+            : `Scans are saved locally${queueCount > 0 ? ` (${queueCount} queued)` : ""} and will upload when you're back online.`}
+        </p>
+      </div>
+      {online && queueCount > 0 && !draining && (
+        <Button type="button" size="sm" variant="outline" onClick={onSyncNow}>
+          Sync now
+        </Button>
+      )}
     </div>
   );
 }
@@ -343,9 +618,11 @@ export function Scanner({ sessionId }: { sessionId: string }) {
 function ManualSearch({
   sessionId,
   onResult,
+  onQueued,
 }: {
   sessionId: string;
   onResult: (r: RecordResult) => void;
+  onQueued: (memberName: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<
@@ -354,23 +631,63 @@ function ManualSearch({
   const [pending, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  async function searchOffline(
+    value: string,
+  ): Promise<Array<{ id: string; name: string; level: string }>> {
+    const matches = await searchMembersLocal(value);
+    return matches.map((m) => ({
+      id: m.id,
+      name: m.nickname
+        ? `${m.last_name}, ${m.first_name} (${m.nickname})`
+        : `${m.last_name}, ${m.first_name}`,
+      level: m.level ?? "",
+    }));
+  }
+
   function onChange(value: string) {
     setQuery(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       startTransition(async () => {
-        const matches = await searchMembers(value);
-        setResults(matches);
+        try {
+          const matches = await searchMembers(value);
+          setResults(matches);
+        } catch (err) {
+          if (isNetworkError(err)) {
+            setResults(await searchOffline(value));
+            return;
+          }
+          setResults([]);
+        }
       });
     }, 200);
   }
 
-  function pick(memberId: string) {
+  function pick(memberId: string, memberName: string) {
     startTransition(async () => {
-      const r = await recordByMember(sessionId, memberId);
-      onResult(r);
-      setQuery("");
-      setResults([]);
+      try {
+        const r = await recordByMember(sessionId, memberId);
+        onResult(r);
+        setQuery("");
+        setResults([]);
+      } catch (err) {
+        if (isNetworkError(err)) {
+          await enqueueScan({
+            id: crypto.randomUUID(),
+            sessionId,
+            scannedAt: new Date().toISOString(),
+            method: "manual",
+            memberId,
+            memberName,
+          });
+          onQueued(memberName);
+          setQuery("");
+          setResults([]);
+          return;
+        }
+        // Other errors fall through silently; manual flow has no
+        // explicit error toast surface and a re-pick is cheap.
+      }
     });
   }
 
@@ -398,7 +715,7 @@ function ManualSearch({
             <li key={m.id}>
               <button
                 type="button"
-                onClick={() => pick(m.id)}
+                onClick={() => pick(m.id, m.name)}
                 disabled={pending}
                 className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm hover:bg-foreground/[0.03] disabled:opacity-50"
               >

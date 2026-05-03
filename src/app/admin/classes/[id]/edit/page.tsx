@@ -38,30 +38,33 @@ export default async function EditClassPage({
       <PageHeader
         title="Edit class"
         description={defaults.name ?? "Update this recurring class."}
+        back="/admin/classes"
       />
-      <div className="max-w-2xl">
-        <ClassForm
-          action={boundUpdate}
-          defaults={defaults}
-          submitLabel="Save changes"
-          cancelHref="/admin/classes"
-        />
+      <div className="min-h-0 flex-1 overflow-y-auto pb-12 pt-6">
+        <div className="max-w-2xl">
+          <ClassForm
+            action={boundUpdate}
+            defaults={defaults}
+            submitLabel="Save changes"
+            cancelHref="/admin/classes"
+          />
 
-        <div className="mt-12 border-t border-destructive/20 pt-6">
-          <h2 className="text-sm font-medium uppercase tracking-[0.16em] text-destructive">
-            Danger zone
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Permanently removes this class along with its sessions,
-            registrations, and attendance records. To just remove it from the
-            public schedule, archive it instead.
-          </p>
-          <div className="mt-4">
-            <DeleteClassButton
-              id={id}
-              name={defaults.name ?? "this class"}
-              variant="outline"
-            />
+          <div className="mt-12 border-t border-destructive/20 pt-6">
+            <h2 className="text-sm font-medium uppercase tracking-[0.16em] text-destructive">
+              Danger zone
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Permanently removes this class along with its sessions,
+              registrations, and attendance records. To just remove it from the
+              public schedule, archive it instead.
+            </p>
+            <div className="mt-4">
+              <DeleteClassButton
+                id={id}
+                name={defaults.name ?? "this class"}
+                variant="outline"
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -10,12 +10,15 @@ export default function NewPostPage() {
       <PageHeader
         title="New post"
         description="Announcements appear on /news, newest first."
+        back="/admin/news"
       />
-      <NewsForm
-        action={createPost}
-        submitLabel="Publish post"
-        cancelHref="/admin/news"
-      />
+      <div className="min-h-0 flex-1 overflow-y-auto pb-12 pt-6">
+        <NewsForm
+          action={createPost}
+          submitLabel="Publish post"
+          cancelHref="/admin/news"
+        />
+      </div>
     </>
   );
 }

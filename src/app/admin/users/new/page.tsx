@@ -11,8 +11,11 @@ export default async function NewUserPage() {
       <PageHeader
         title="Invite user"
         description="Create a staff account. They'll be able to sign in immediately with the password you set; they can change it via Forgot password."
+        back="/admin/users"
       />
-      <UserForm />
+      <div className="min-h-0 flex-1 overflow-y-auto pb-12 pt-6">
+        <UserForm />
+      </div>
     </>
   );
 }

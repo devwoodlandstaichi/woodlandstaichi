@@ -20,7 +20,7 @@ export default async function AdminLayout({
           a flex-1 child with overflow-y-auto, so the scrollbar lives
           inside the table region only. Mobile collapses to body scroll
           for the simpler stacked layout. */}
-      <div className="mx-auto flex min-h-svh w-full max-w-7xl flex-col gap-0 px-4 py-6 md:h-svh md:min-h-0 md:flex-row md:gap-10 md:overflow-hidden md:px-6 md:py-6">
+      <div className="mx-auto flex min-h-svh w-full max-w-7xl flex-col gap-0 p-0 md:h-svh md:min-h-0 md:flex-row md:gap-10 md:overflow-hidden">
         <AdminSidebar user={user} />
 
         <main id="main" className="flex min-w-0 flex-1 flex-col pt-6 md:min-h-0 md:overflow-hidden md:pt-0">

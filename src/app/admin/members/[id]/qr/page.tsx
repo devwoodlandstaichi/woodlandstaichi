@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
@@ -46,13 +45,10 @@ export default async function MemberQrPage({
       <PageHeader
         title="Attendance QR"
         description={`${m.first_name} ${m.last_name}${m.nickname ? ` (${m.nickname})` : ""}`}
-        action={
-          <Link href={`/admin/members/${m.id}`}>
-            <Button variant="outline" size="sm">Back to member</Button>
-          </Link>
-        }
+        back={`/admin/members/${m.id}`}
       />
 
+      <div className="min-h-0 flex-1 overflow-y-auto pb-12 pt-6">
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="flex flex-col items-center gap-5 p-8">
           {dataUrl ? (
@@ -147,6 +143,7 @@ export default async function MemberQrPage({
             old QR was shared by accident.
           </p>
         </Card>
+      </div>
       </div>
     </>
   );

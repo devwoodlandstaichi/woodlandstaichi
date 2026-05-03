@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin, requireStaff } from "@/lib/auth/dal";
+import { processMemberPhoto } from "@/lib/image/process-photo";
 import {
   MEMBER_LEVEL_VALUES,
   MEMBER_STATUS_VALUES,
@@ -14,6 +15,7 @@ import {
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const PHONE_RE = /^[\d\s().+-]{7,}$/;
+const PHOTO_BUCKET = "member-photos";
 
 type FieldErrors = Record<string, string>;
 
@@ -259,12 +261,27 @@ export async function deleteMembers(
   if (cleanIds.length === 0) return { ok: true, deleted: 0 };
 
   const admin = createAdminClient();
+
+  // Collect any photo paths first so we can purge them from Storage
+  // after the row delete cascades. Storage doesn't have FK cascade.
+  const { data: photos } = await admin
+    .from("members")
+    .select("photo_path")
+    .in("id", cleanIds);
+  const paths = (photos ?? [])
+    .map((r) => r.photo_path as string | null)
+    .filter((p): p is string => !!p);
+
   const { error, count } = await admin
     .from("members")
     .delete({ count: "exact" })
     .in("id", cleanIds);
 
   if (error) return { ok: false, message: error.message };
+
+  if (paths.length > 0) {
+    await admin.storage.from(PHOTO_BUCKET).remove(paths);
+  }
 
   revalidatePath("/admin/members");
   revalidatePath("/admin/registrations");
@@ -294,6 +311,16 @@ export async function clearAllMembers(
   }
 
   const admin = createAdminClient();
+
+  // Drain photo paths first so we can wipe Storage after the row delete.
+  const { data: photos } = await admin
+    .from("members")
+    .select("photo_path")
+    .gte("created_at", "1970-01-01");
+  const paths = (photos ?? [])
+    .map((r) => r.photo_path as string | null)
+    .filter((p): p is string => !!p);
+
   const { count, error } = await admin
     .from("members")
     .delete({ count: "exact" })
@@ -303,9 +330,125 @@ export async function clearAllMembers(
     return { ok: false, message: error.message };
   }
 
+  if (paths.length > 0) {
+    await admin.storage.from(PHOTO_BUCKET).remove(paths);
+  }
+
   revalidatePath("/admin/members");
   revalidatePath("/admin/registrations");
   revalidatePath("/admin");
 
   return { ok: true, deleted: count ?? 0 };
+}
+
+// Photo upload / replace / clear, plus the photo_public visibility
+// toggle. Staff-side gates on requireStaff(); the matching self-serve
+// action lives in /members/me/actions.ts and gates on auth.uid().
+export type PhotoState =
+  | { ok: false; message: string }
+  | { ok: true }
+  | undefined;
+
+export type PhotoVisibilityState =
+  | { ok: false; message: string }
+  | { ok: true; photo_public: boolean }
+  | undefined;
+
+export async function setMemberPhoto(
+  id: string,
+  _prev: PhotoState,
+  formData: FormData,
+): Promise<PhotoState> {
+  await requireStaff();
+  if (!id) return { ok: false, message: "Missing member id." };
+
+  const remove = formData.get("remove_photo") === "1";
+  const file = formData.get("photo");
+
+  const admin = createAdminClient();
+  const { data: existing } = await admin
+    .from("members")
+    .select("photo_path")
+    .eq("id", id)
+    .maybeSingle();
+  const existingPath = (existing?.photo_path as string | null) ?? null;
+
+  // Explicit removal takes precedence over any uploaded file.
+  if (remove) {
+    if (existingPath) {
+      await admin.storage.from(PHOTO_BUCKET).remove([existingPath]);
+    }
+    const { error } = await admin
+      .from("members")
+      .update({ photo_url: null, photo_path: null })
+      .eq("id", id);
+    if (error) return { ok: false, message: error.message };
+    revalidatePath("/admin/members");
+    revalidatePath(`/admin/members/${id}`);
+    revalidatePath(`/admin/members/${id}/edit`);
+    revalidatePath("/members/me");
+    return { ok: true };
+  }
+
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, message: "Pick a photo to upload." };
+  }
+
+  const processed = await processMemberPhoto(file);
+  if (!processed.ok) return { ok: false, message: processed.message };
+
+  const path = `${crypto.randomUUID()}.${processed.ext}`;
+  const { error: uploadErr } = await admin.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, processed.buffer, {
+      contentType: processed.contentType,
+      cacheControl: "31536000",
+      upsert: false,
+    });
+  if (uploadErr) return { ok: false, message: uploadErr.message };
+
+  // Replace previous file only after the new upload succeeds.
+  if (existingPath) {
+    await admin.storage.from(PHOTO_BUCKET).remove([existingPath]);
+  }
+
+  const { data: urlData } = admin.storage
+    .from(PHOTO_BUCKET)
+    .getPublicUrl(path);
+
+  const { error: updateErr } = await admin
+    .from("members")
+    .update({ photo_url: urlData.publicUrl, photo_path: path })
+    .eq("id", id);
+  if (updateErr) return { ok: false, message: updateErr.message };
+
+  revalidatePath("/admin/members");
+  revalidatePath(`/admin/members/${id}`);
+  revalidatePath(`/admin/members/${id}/edit`);
+  revalidatePath("/members/me");
+  return { ok: true };
+}
+
+export async function setMemberPhotoPublic(
+  id: string,
+  _prev: PhotoVisibilityState,
+  formData: FormData,
+): Promise<PhotoVisibilityState> {
+  await requireStaff();
+  if (!id) return { ok: false, message: "Missing member id." };
+
+  const next = formData.get("photo_public") === "1";
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("members")
+    .update({ photo_public: next })
+    .eq("id", id);
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath("/admin/members");
+  revalidatePath(`/admin/members/${id}`);
+  revalidatePath(`/admin/members/${id}/edit`);
+  revalidatePath("/members/me");
+  revalidatePath("/about/instructors");
+  return { ok: true, photo_public: next };
 }

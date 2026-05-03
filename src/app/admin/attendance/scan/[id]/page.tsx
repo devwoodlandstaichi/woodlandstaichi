@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
+import { Badge, Card, PageHeader } from "@/components/admin/ui";
 import { formatDate, formatTimeRange, levelLabel } from "@/lib/format";
 import { Scanner } from "./scanner";
 import { KioskLaunchers } from "./kiosk-launchers";
@@ -36,7 +35,11 @@ export default async function ScanSessionPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [sessionRes, attRes] = await Promise.all([
+  // Pull the active member roster too so the scanner client can mirror
+  // it into IndexedDB. That mirror lets the scanner resolve a token →
+  // name and the manual search box keep working when the venue Wi-Fi
+  // drops mid-class.
+  const [sessionRes, attRes, rosterRes] = await Promise.all([
     supabase
       .from("class_sessions")
       .select(
@@ -51,29 +54,36 @@ export default async function ScanSessionPage({
       )
       .eq("class_session_id", id)
       .order("scanned_at", { ascending: false }),
+    supabase
+      .from("members")
+      .select("id,first_name,last_name,nickname,qr_token,level")
+      .neq("status", "inactive"),
   ]);
 
   const session = sessionRes.data as unknown as SessionDetail | null;
   if (!session) notFound();
   const attendance = (attRes.data ?? []) as unknown as AttendanceRow[];
+  const roster = (rosterRes.data ?? []).map((m) => ({
+    id: m.id as string,
+    first_name: m.first_name as string,
+    last_name: m.last_name as string,
+    nickname: (m.nickname as string | null) ?? null,
+    qr_token: (m.qr_token as string | null) ?? null,
+    level: (m.level as string | null) ?? null,
+  }));
 
   return (
     <>
       <PageHeader
         title="Scan attendance"
         description={`${session.classes?.name ?? "—"} · ${formatDate(session.session_date)} · ${formatTimeRange(session.start_time, session.end_time)}`}
-        action={
-          <div className="flex shrink-0 gap-2">
-            <KioskLaunchers sessionId={session.id} />
-            <Link href="/admin/attendance">
-              <Button variant="outline" size="sm">All sessions</Button>
-            </Link>
-          </div>
-        }
+        back="/admin/attendance"
+        action={<KioskLaunchers sessionId={session.id} />}
       />
 
+      <div className="min-h-0 flex-1 overflow-y-auto pb-12 pt-6">
       <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
-        <Scanner sessionId={session.id} />
+        <Scanner sessionId={session.id} roster={roster} />
 
         <Card className="overflow-hidden">
           <div className="border-b border-foreground/10 px-5 py-4 flex items-baseline justify-between">
@@ -112,6 +122,7 @@ export default async function ScanSessionPage({
             </ul>
           )}
         </Card>
+      </div>
       </div>
     </>
   );

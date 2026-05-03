@@ -152,7 +152,7 @@ export default async function SessionsPage({
           No sessions match these filters.
         </Card>
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
           <table className="w-full text-left text-sm">
             {/* Sticky lives on each <th>, not <thead>, because <thead>+z-index
                 doesn't reliably stack above <tbody> rows in tables. */}
@@ -171,7 +171,7 @@ export default async function SessionsPage({
                             : "descending"
                           : "none"
                       }
-                      className="sticky top-0 z-[5] min-w-[14rem] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]"
+                      className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]"
                     >
                       <a
                         href={sortHref(col)}
@@ -224,7 +224,7 @@ export default async function SessionsPage({
                     key={s.id}
                     className="border-b border-foreground/5 last:border-0"
                   >
-                    <td className="min-w-[14rem] px-4 py-3">
+                    <td className="whitespace-nowrap px-4 py-3">
                       <Link
                         href={`/admin/sessions/${s.id}`}
                         className="block hover:text-vermillion"

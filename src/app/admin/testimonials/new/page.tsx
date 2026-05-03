@@ -10,12 +10,15 @@ export default function NewTestimonialPage() {
       <PageHeader
         title="New testimonial"
         description="Add a member quote. Save as inactive first if you want to preview before publishing."
+        back="/admin/testimonials"
       />
-      <TestimonialForm
-        action={createTestimonial}
-        submitLabel="Create testimonial"
-        cancelHref="/admin/testimonials"
-      />
+      <div className="min-h-0 flex-1 overflow-y-auto pb-12 pt-6">
+        <TestimonialForm
+          action={createTestimonial}
+          submitLabel="Create testimonial"
+          cancelHref="/admin/testimonials"
+        />
+      </div>
     </>
   );
 }

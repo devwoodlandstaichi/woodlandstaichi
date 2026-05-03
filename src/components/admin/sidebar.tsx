@@ -53,20 +53,17 @@ export function AdminSidebar({
   return (
     <aside
       data-collapsed={collapsed || undefined}
-      // Pinned to viewport top so the brand strip aligns with the sticky
-      // PageHeader on the right column. The layout's outer top padding
-      // gives the initial offset; once you scroll past it, both columns
-      // stick flush to the top together.
-      // `max-h-svh` (not `h-svh`) is the key to sticky working: the aside
-      // is content-sized but capped at viewport height. Because the parent
-      // flex container has `min-h-svh`, parent ≥ aside, leaving sticky
-      // travel room. Using fixed `h-svh` here makes aside == parent on
-      // short pages, which kills sticky.
-      //
-      // Overflow stays on the inner nav region (not the aside) so the
-      // brand strip and sign-out remain visible while the nav scrolls.
+      // Desktop: a flex column that fills the parent's bounded height.
+      // The parent layout uses `md:h-svh md:overflow-hidden md:py-6`,
+      // so we use `md:h-full` here (NOT `md:h-svh`) to respect the
+      // 48px of vertical padding — using h-svh would push the sign-out
+      // strip past the bottom of the visible area. The inner nav owns
+      // the scroll region so the brand strip stays pinned at the top
+      // and the sign-out form stays pinned at the bottom regardless of
+      // how much nav content there is. Mobile (no md:) keeps the
+      // natural document flow layout.
       className={cn(
-        "md:sticky md:top-0 md:self-start md:max-h-svh md:shrink-0 md:flex md:flex-col",
+        "md:sticky md:top-0 md:h-full md:shrink-0 md:flex md:flex-col",
         "transition-[width] duration-200 ease-out",
         collapsed ? "md:w-16" : "md:w-56",
       )}
@@ -145,7 +142,7 @@ export function AdminSidebar({
 
       <form
         action={signOut}
-        className="mt-4 md:mt-3 md:pt-3 md:border-t md:border-foreground/8"
+        className="mt-4 md:mt-3 md:pt-3 md:border-t md:border-foreground/8 md:shrink-0"
       >
         <button
           type="submit"

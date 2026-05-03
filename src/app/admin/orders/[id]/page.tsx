@@ -81,16 +81,10 @@ export default async function OrderDetailPage({
       <PageHeader
         title={`Order — ${order.customer_first_name} ${order.customer_last_name}`}
         description={`Submitted ${formatDate(order.created_at.slice(0, 10))}`}
-        action={
-          <Link
-            href="/admin/orders"
-            className="inline-flex h-10 items-center rounded-md border border-input bg-background px-4 text-sm hover:bg-accent/10 hover:border-accent"
-          >
-            ← All orders
-          </Link>
-        }
+        back="/admin/orders"
       />
 
+      <div className="min-h-0 flex-1 overflow-y-auto pb-12 pt-6">
       <div className="grid gap-5 md:grid-cols-3">
         <Card className="md:col-span-2 p-6">
           <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -237,6 +231,7 @@ export default async function OrderDetailPage({
             </form>
           </div>
         </Card>
+      </div>
       </div>
     </>
   );

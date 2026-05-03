@@ -144,6 +144,7 @@ async function loadCounts() {
     pendingTestimonials,
     approvedTestimonials,
     pendingReactivations,
+    pendingRsvps,
   ] = await Promise.all([
     supabase
       .from("classes")
@@ -185,6 +186,10 @@ async function loadCounts() {
       .from("member_reactivation_requests")
       .select("*", { count: "exact", head: true })
       .eq("status", "pending"),
+    supabase
+      .from("session_rsvps")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending"),
   ]);
 
   return {
@@ -198,6 +203,7 @@ async function loadCounts() {
     pendingTestimonials: pendingTestimonials.count ?? 0,
     approvedTestimonials: approvedTestimonials.count ?? 0,
     pendingReactivations: pendingReactivations.count ?? 0,
+    pendingRsvps: pendingRsvps.count ?? 0,
   };
 }
 
@@ -323,6 +329,15 @@ export default async function AdminHome() {
       sub: "Returning players asking to come back.",
       tone: "vermillion",
       accent: counts.pendingReactivations > 0,
+    },
+    {
+      label: "RSVPs awaiting review",
+      value: counts.pendingRsvps,
+      href: "/admin/rsvps",
+      icon: UserPlus,
+      sub: "Members asking to attend specific sessions.",
+      tone: "vermillion",
+      accent: counts.pendingRsvps > 0,
     },
     {
       label: "Active classes",

@@ -27,13 +27,19 @@ export default async function EditPostPage({
 
   return (
     <>
-      <PageHeader title="Edit post" description={data.title} />
-      <NewsForm
-        action={action}
-        defaults={data}
-        submitLabel="Save changes"
-        cancelHref="/admin/news"
+      <PageHeader
+        title="Edit post"
+        description={data.title}
+        back="/admin/news"
       />
+      <div className="min-h-0 flex-1 overflow-y-auto pb-12 pt-6">
+        <NewsForm
+          action={action}
+          defaults={data}
+          submitLabel="Save changes"
+          cancelHref="/admin/news"
+        />
+      </div>
     </>
   );
 }

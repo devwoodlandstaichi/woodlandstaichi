@@ -4,6 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { processMemberPhoto } from "@/lib/image/process-photo";
+import {
+  type PhotoState,
+  type PhotoVisibilityState,
+} from "@/app/admin/members/actions";
+
+const PHOTO_BUCKET = "member-photos";
 
 export type ProfileFormState =
   | undefined
@@ -138,6 +145,128 @@ export async function updateProfile(
   // page too so a freshly-edited bio appears immediately.
   revalidatePath("/about/instructors");
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Self-serve photo upload — same pipeline as the admin setMemberPhoto
+// but the row is keyed off auth.uid() → members.user_id instead of an
+// admin-supplied id. Uses the service-role admin client only because
+// the storage bucket's RLS grants writes to staff; the action's auth
+// gate (must own the matching member row) is the real boundary.
+// ---------------------------------------------------------------------------
+
+export async function setOwnMemberPhoto(
+  _prev: PhotoState,
+  formData: FormData,
+): Promise<PhotoState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "You're signed out." };
+
+  const admin = createAdminClient();
+  const { data: existing } = await admin
+    .from("members")
+    .select("id, photo_path")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!existing) {
+    return {
+      ok: false,
+      message:
+        "We couldn't find your member record yet. Email info@woodlandstaichi.com so we can link it.",
+    };
+  }
+  const memberId = existing.id as string;
+  const existingPath = (existing.photo_path as string | null) ?? null;
+
+  const remove = formData.get("remove_photo") === "1";
+  if (remove) {
+    if (existingPath) {
+      await admin.storage.from(PHOTO_BUCKET).remove([existingPath]);
+    }
+    const { error } = await admin
+      .from("members")
+      .update({ photo_url: null, photo_path: null })
+      .eq("id", memberId);
+    if (error) return { ok: false, message: error.message };
+    revalidatePath("/members/me");
+    revalidatePath("/admin/members");
+    revalidatePath(`/admin/members/${memberId}`);
+    return { ok: true };
+  }
+
+  const file = formData.get("photo");
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, message: "Pick a photo to upload." };
+  }
+
+  const processed = await processMemberPhoto(file);
+  if (!processed.ok) return { ok: false, message: processed.message };
+
+  const path = `${crypto.randomUUID()}.${processed.ext}`;
+  const { error: uploadErr } = await admin.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, processed.buffer, {
+      contentType: processed.contentType,
+      cacheControl: "31536000",
+      upsert: false,
+    });
+  if (uploadErr) return { ok: false, message: uploadErr.message };
+
+  if (existingPath) {
+    await admin.storage.from(PHOTO_BUCKET).remove([existingPath]);
+  }
+
+  const { data: urlData } = admin.storage
+    .from(PHOTO_BUCKET)
+    .getPublicUrl(path);
+
+  const { error: updateErr } = await admin
+    .from("members")
+    .update({ photo_url: urlData.publicUrl, photo_path: path })
+    .eq("id", memberId);
+  if (updateErr) return { ok: false, message: updateErr.message };
+
+  revalidatePath("/members/me");
+  revalidatePath("/admin/members");
+  revalidatePath(`/admin/members/${memberId}`);
+  revalidatePath("/about/instructors");
+  return { ok: true };
+}
+
+export async function setOwnPhotoPublic(
+  _prev: PhotoVisibilityState,
+  formData: FormData,
+): Promise<PhotoVisibilityState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "You're signed out." };
+
+  const next = formData.get("photo_public") === "1";
+  const { data, error } = await supabase
+    .from("members")
+    .update({ photo_public: next })
+    .eq("user_id", user.id)
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, message: error.message };
+  if (!data) {
+    return {
+      ok: false,
+      message:
+        "We couldn't find your member record yet. Email info@woodlandstaichi.com so we can link it.",
+    };
+  }
+
+  revalidatePath("/members/me");
+  revalidatePath("/admin/members");
+  revalidatePath(`/admin/members/${data.id}`);
+  revalidatePath("/about/instructors");
+  return { ok: true, photo_public: next };
 }
 
 // ---------------------------------------------------------------------------

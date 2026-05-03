@@ -264,7 +264,7 @@ export default async function KioskScanPage({
               instructor full transparency on who showed, who didn't,
               and who's here without being on the list. */}
           <aside className="flex flex-col gap-5 self-start">
-            <KioskAutoRefresh />
+            <KioskAutoRefresh sessionId={session.id} />
 
             <RosterCard
               title="Approved roster"

@@ -28,13 +28,16 @@ export default async function EditTestimonialPage({
       <PageHeader
         title="Edit testimonial"
         description={`From ${data.member_name}.`}
+        back="/admin/testimonials"
       />
-      <TestimonialForm
-        action={action}
-        defaults={data}
-        submitLabel="Save changes"
-        cancelHref="/admin/testimonials"
-      />
+      <div className="min-h-0 flex-1 overflow-y-auto pb-12 pt-6">
+        <TestimonialForm
+          action={action}
+          defaults={data}
+          submitLabel="Save changes"
+          cancelHref="/admin/testimonials"
+        />
+      </div>
     </>
   );
 }

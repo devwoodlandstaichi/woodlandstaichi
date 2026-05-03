@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { EmailForm } from "./email-form";
 import { CodeForm } from "./code-form";
+import { PasswordForm } from "./password/password-form";
 
 export const metadata: Metadata = {
   title: "Sign in",
   robots: { index: false, follow: false },
 };
 
-type Step = "email" | "code" | "unknown";
+type Step = "password" | "email" | "code" | "unknown";
 
 type SearchParams = Promise<{
   step?: string;
@@ -17,8 +18,10 @@ type SearchParams = Promise<{
   error?: string;
 }>;
 
-function passwordHref(next: string) {
-  return `/login/password${next && next !== "/admin" ? `?next=${encodeURIComponent(next)}` : ""}`;
+function withNext(href: string, next: string) {
+  return next && next !== "/admin"
+    ? `${href}${href.includes("?") ? "&" : "?"}next=${encodeURIComponent(next)}`
+    : href;
 }
 
 export default async function LoginPage({
@@ -32,7 +35,9 @@ export default async function LoginPage({
       ? "code"
       : params.step === "unknown"
         ? "unknown"
-        : "email";
+        : params.step === "email"
+          ? "email"
+          : "password";
   const email = typeof params.email === "string" ? params.email : "";
   const next = typeof params.next === "string" ? params.next : "";
   const error = typeof params.error === "string" ? params.error : "";
@@ -49,6 +54,7 @@ export default async function LoginPage({
         <span aria-hidden>←</span> Woodlands Tai Chi
       </Link>
 
+      {step === "password" && <PasswordStep next={next} error={error} />}
       {step === "email" && <EmailStep next={next} error={error} />}
       {step === "code" && <CodeStep email={email} next={next} />}
       {step === "unknown" && <UnknownStep email={email} />}
@@ -56,15 +62,57 @@ export default async function LoginPage({
   );
 }
 
-function EmailStep({ next, error }: { next: string; error: string }) {
+function PasswordStep({ next, error }: { next: string; error: string }) {
+  const codeHref = withNext("/login?step=email", next);
   return (
     <>
       <h1 className="font-display text-3xl font-medium tracking-tight">
         Sign in
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Enter your email and we&rsquo;ll send you a one-time sign-in code. No
-        password required.
+        Enter your email and password to sign in.
+      </p>
+
+      {error === "unauthorized" && (
+        <p className="mt-6 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          That account doesn&rsquo;t have admin access.
+        </p>
+      )}
+
+      <div className="mt-8">
+        <PasswordForm next={next} />
+      </div>
+
+      <p className="mt-6 text-sm text-muted-foreground">
+        First time, or haven&rsquo;t set a password yet?{" "}
+        <Link
+          href={codeHref}
+          className="underline-offset-4 hover:text-foreground hover:underline"
+        >
+          Email me a one-time code
+        </Link>
+        .
+      </p>
+    </>
+  );
+}
+
+function EmailStep({ next, error }: { next: string; error: string }) {
+  const passwordHref = withNext("/login", next);
+  return (
+    <>
+      <Link
+        href={passwordHref}
+        className="-mt-6 mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <span aria-hidden>←</span> Sign in with password instead
+      </Link>
+      <h1 className="font-display text-3xl font-medium tracking-tight">
+        Email me a code
+      </h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Enter your email and we&rsquo;ll send a one-time sign-in code. Useful if
+        you haven&rsquo;t set a password yet.
       </p>
 
       {error === "unauthorized" && (
@@ -76,17 +124,6 @@ function EmailStep({ next, error }: { next: string; error: string }) {
       <div className="mt-8">
         <EmailForm next={next} />
       </div>
-
-      <p className="mt-6 text-sm text-muted-foreground">
-        Prefer a password?{" "}
-        <Link
-          href={passwordHref(next)}
-          className="underline-offset-4 hover:text-foreground hover:underline"
-        >
-          Sign in with password
-        </Link>
-        .
-      </p>
     </>
   );
 }
@@ -95,7 +132,7 @@ function CodeStep({ email, next }: { email: string; next: string }) {
   return (
     <>
       <Link
-        href="/login"
+        href={withNext("/login?step=email", next)}
         className="-mt-6 mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
       >
         <span aria-hidden>←</span> Use a different email

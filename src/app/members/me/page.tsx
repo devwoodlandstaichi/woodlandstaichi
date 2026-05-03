@@ -11,7 +11,12 @@ import { PracticeNotes } from "./practice-notes";
 import { type ProfileDefaults } from "./profile-form";
 import { SetPasswordForm } from "./set-password-form";
 import { TestimonialDialog } from "./testimonial-dialog";
-import { linkSelfByEmail } from "./actions";
+import { PhotoForm } from "@/app/admin/members/photo-form";
+import {
+  linkSelfByEmail,
+  setOwnMemberPhoto,
+  setOwnPhotoPublic,
+} from "./actions";
 
 type OwnTestimonial = {
   id: string;
@@ -60,6 +65,7 @@ type Member = ProfileDefaults & {
   user_id: string | null;
   birthday: string | null;
   photo_url: string | null;
+  photo_public: boolean | null;
   created_at: string | null;
   emergency_contact_name: string | null;
   emergency_contact_relationship: string | null;
@@ -84,7 +90,7 @@ async function loadMember(): Promise<{
   const { data } = await supabase
     .from("members")
     .select(
-      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,birthday,bio,photo_url,created_at,emergency_contact_name,emergency_contact_relationship,emergency_phone,physical_limitations,prior_experience,found_us_via,expectations",
+      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,birthday,bio,photo_url,photo_public,created_at,emergency_contact_name,emergency_contact_relationship,emergency_phone,physical_limitations,prior_experience,found_us_via,expectations",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -99,7 +105,7 @@ async function loadMember(): Promise<{
   const { data: linked } = await admin
     .from("members")
     .select(
-      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,birthday,bio,photo_url,created_at,emergency_contact_name,emergency_contact_relationship,emergency_phone,physical_limitations,prior_experience,found_us_via,expectations",
+      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,birthday,bio,photo_url,photo_public,created_at,emergency_contact_name,emergency_contact_relationship,emergency_phone,physical_limitations,prior_experience,found_us_via,expectations",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -227,6 +233,23 @@ export default async function MyProfilePage() {
         emergency_contact_relationship={member.emergency_contact_relationship}
         emergency_phone={member.emergency_phone}
       />
+
+      <section
+        aria-labelledby="photo-title"
+        className="mx-auto max-w-7xl px-6 md:px-10 pb-10"
+      >
+        <h2 id="photo-title" className="sr-only">
+          Profile photo
+        </h2>
+        <PhotoForm
+          action={setOwnMemberPhoto}
+          visibilityAction={setOwnPhotoPublic}
+          memberName={`${member.first_name} ${member.last_name}`}
+          photoUrl={member.photo_url}
+          photoPublic={member.photo_public ?? false}
+          description="A square-ish portrait works best — we'll auto-crop and shrink it for you. JPEG, PNG, WebP, or HEIC up to 12 MB."
+        />
+      </section>
 
       <PracticeNotes
         physical_limitations={member.physical_limitations}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, X } from "lucide-react";
+import { ArrowDownUp, Search, X } from "lucide-react";
 
 const TEXT_DEBOUNCE_MS = 400;
 
@@ -20,6 +20,25 @@ const ROLE_LABEL: Record<RoleFilter, string> = {
   none: "No role",
 };
 
+export type SortColumn =
+  | "email"
+  | "role"
+  | "created_at"
+  | "last_sign_in_at";
+export const SORT_COLUMN_VALUES: readonly SortColumn[] = [
+  "email",
+  "role",
+  "created_at",
+  "last_sign_in_at",
+];
+
+const SORT_LABEL: Record<SortColumn, string> = {
+  email: "Email",
+  role: "Role",
+  created_at: "Joined",
+  last_sign_in_at: "Last seen",
+};
+
 function setParam(key: string, value: string) {
   const url = new URL(window.location.href);
   if (value) url.searchParams.set(key, value);
@@ -30,9 +49,13 @@ function setParam(key: string, value: string) {
 export function UserFilters({
   q,
   role,
+  sort,
+  dir,
 }: {
   q: string;
   role: RoleFilter;
+  sort: SortColumn;
+  dir: "asc" | "desc";
 }) {
   const [text, setText] = useState(q);
 
@@ -59,7 +82,12 @@ export function UserFilters({
     );
   }
 
-  const hasFilter = !!q || role !== "all";
+  const hasFilter =
+    !!q || role !== "all" || sort !== "email" || dir !== "asc";
+
+  function flipDir() {
+    setParam("dir", dir === "asc" ? "desc" : "asc");
+  }
 
   return (
     <div
@@ -106,6 +134,33 @@ export function UserFilters({
           ))}
         </select>
       </Pill>
+
+      <Pill label="Sort">
+        <select
+          name="sort"
+          value={sort}
+          onChange={(e) => setParam("sort", e.target.value)}
+          className="bg-transparent text-sm focus:outline-none"
+          aria-label="Sort by"
+        >
+          {SORT_COLUMN_VALUES.map((v) => (
+            <option key={v} value={v}>
+              {SORT_LABEL[v]}
+            </option>
+          ))}
+        </select>
+      </Pill>
+
+      <button
+        type="button"
+        onClick={flipDir}
+        title={dir === "asc" ? "Sort descending" : "Sort ascending"}
+        aria-label={dir === "asc" ? "Sort descending" : "Sort ascending"}
+        className="inline-flex h-10 items-center gap-1.5 rounded-full border border-input bg-background px-3 text-xs uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground"
+      >
+        <ArrowDownUp size={14} aria-hidden />
+        {dir === "asc" ? "A → Z" : "Z → A"}
+      </button>
 
       {hasFilter && (
         <button
