@@ -30,6 +30,10 @@ type MemberHeroProps = {
   emergency_contact_name?: string | null;
   emergency_contact_relationship?: string | null;
   emergency_phone?: string | null;
+  /** Slot for an interactive portrait component (e.g. PhotoForm).
+   *  When provided, replaces the static PortraitFrame and the left
+   *  column always renders regardless of photo_url. */
+  portrait?: React.ReactNode;
 };
 
 const STATUS_COPY: Record<string, string> = {
@@ -117,47 +121,50 @@ export function MemberHero(props: MemberHeroProps) {
   return (
     <section
       aria-labelledby="member-hero-name"
-      className="relative mx-auto max-w-7xl px-6 pt-8 pb-12 md:px-10 md:pt-12 md:pb-16 overflow-hidden"
+      className="relative mx-auto max-w-7xl px-6 pt-6 pb-8 md:px-10 md:pt-8 md:pb-10 overflow-hidden"
     >
-      <div className="relative grid grid-cols-12 gap-x-6 gap-y-10">
-        {/* Portrait — only when an actual photo is on file. The fallback
-            initials placeholder felt like dead weight, so we drop the
-            whole column when there's nothing to show and let the
-            identity content take the full width. */}
-        {props.photo_url && (
-          <div className="col-span-12 md:col-span-5 lg:col-span-4">
+      <div className="relative grid grid-cols-12 gap-x-6 gap-y-6">
+        {/* Portrait — uses the interactive `portrait` slot (e.g.
+            PhotoForm) when caller supplies one, otherwise falls back to
+            the static PortraitFrame, which only renders when an actual
+            photo is on file (initials placeholder felt like dead
+            weight, so we drop the whole column when there's nothing). */}
+        {props.portrait ? (
+          <div className="col-span-12 md:col-span-4 lg:col-span-3">
+            {props.portrait}
+          </div>
+        ) : props.photo_url ? (
+          <div className="col-span-12 md:col-span-4 lg:col-span-3">
             <PortraitFrame
               photo_url={props.photo_url}
               alt={`Portrait of ${fullName}`}
               initials={initials(props.first_name, props.last_name)}
             />
           </div>
-        )}
+        ) : null}
 
         {/* Identity column */}
         <div
           className={cn(
             "col-span-12 flex flex-col",
-            props.photo_url && "md:col-span-7 lg:col-span-8 md:pl-6 lg:pl-10",
+            (props.portrait || props.photo_url) &&
+              "md:col-span-8 lg:col-span-9 md:pl-5 lg:pl-8",
           )}
         >
-          <p className="rise text-[11px] uppercase tracking-[0.45em] text-foreground/55 mb-6">
+          <p className="rise text-[11px] uppercase tracking-[0.45em] text-foreground/55 mb-3">
             <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
             Welcome, this is
           </p>
 
           <h1
             id="member-hero-name"
-            className="font-display tracking-tight leading-[0.95] text-[clamp(3rem,7.5vw,6rem)]"
+            className="font-display tracking-tight leading-[1] text-[clamp(1.875rem,4vw,3rem)]"
           >
-            <span
-              className="rise block"
-              style={{ animationDelay: "120ms" }}
-            >
+            <span className="rise" style={{ animationDelay: "120ms" }}>
               {props.first_name}
-            </span>
+            </span>{" "}
             <span
-              className="rise block italic text-vermillion"
+              className="rise italic text-vermillion"
               style={{ animationDelay: "240ms" }}
             >
               {props.last_name}.
@@ -165,7 +172,7 @@ export function MemberHero(props: MemberHeroProps) {
           </h1>
 
           <p
-            className="rise mt-6 text-xs uppercase tracking-[0.36em] text-foreground/65"
+            className="rise mt-3 text-xs uppercase tracking-[0.36em] text-foreground/65"
             style={{ animationDelay: "360ms" }}
           >
             {subline}
@@ -173,15 +180,15 @@ export function MemberHero(props: MemberHeroProps) {
 
           {/* Bio or invitation */}
           <div
-            className="rise mt-8 max-w-prose"
+            className="rise mt-5 max-w-prose"
             style={{ animationDelay: "440ms" }}
           >
             {hasBio ? (
-              <p className="text-base text-foreground/80 leading-[1.7]">
+              <p className="text-[0.95rem] text-foreground/80 leading-[1.6]">
                 {props.bio}
               </p>
             ) : (
-              <p className="text-base text-foreground/55 italic leading-[1.7]">
+              <p className="text-sm text-foreground/55 italic leading-[1.6]">
                 You haven&rsquo;t written a bio yet.{" "}
                 <EditDetailsDialog
                   variant="link"
@@ -206,7 +213,7 @@ export function MemberHero(props: MemberHeroProps) {
               fields after the obvious contact ones, so they're in
               this row alongside Born / Phone / Email / Lives in. */}
           <dl
-            className="rise mt-10 grid gap-x-8 gap-y-4 sm:grid-cols-2 max-w-2xl"
+            className="rise mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-2 max-w-2xl"
             style={{ animationDelay: "520ms" }}
           >
             {since && (
@@ -265,7 +272,7 @@ export function MemberHero(props: MemberHeroProps) {
 
           {/* Action chip row */}
           <div
-            className="rise mt-12 flex flex-wrap items-center gap-2 border-t border-foreground/10 pt-6"
+            className="rise mt-7 flex flex-wrap items-center gap-2 border-t border-foreground/10 pt-4"
             style={{ animationDelay: "600ms" }}
           >
             <EditDetailsDialog
@@ -360,7 +367,7 @@ function DetailRow({
         <dt className="text-[10px] uppercase tracking-[0.28em] text-foreground/50 mb-0.5">
           {label}
         </dt>
-        <dd className="text-base text-foreground/85">{children}</dd>
+        <dd className="text-sm text-foreground/85">{children}</dd>
       </div>
     </div>
   );

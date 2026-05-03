@@ -11,7 +11,7 @@ import { PracticeNotes } from "./practice-notes";
 import { type ProfileDefaults } from "./profile-form";
 import { SetPasswordForm } from "./set-password-form";
 import { TestimonialDialog } from "./testimonial-dialog";
-import { PhotoForm } from "@/app/admin/members/photo-form";
+import { PhotoAvatarDialog } from "./photo-avatar-dialog";
 import {
   linkSelfByEmail,
   setOwnMemberPhoto,
@@ -232,24 +232,17 @@ export default async function MyProfilePage() {
         emergency_contact_name={member.emergency_contact_name}
         emergency_contact_relationship={member.emergency_contact_relationship}
         emergency_phone={member.emergency_phone}
+        portrait={
+          <PhotoAvatarDialog
+            action={setOwnMemberPhoto}
+            visibilityAction={setOwnPhotoPublic}
+            memberName={`${member.first_name} ${member.last_name}`}
+            photoUrl={member.photo_url}
+            photoPublic={member.photo_public ?? false}
+            description="A square-ish portrait works best — we'll auto-crop and shrink it for you."
+          />
+        }
       />
-
-      <section
-        aria-labelledby="photo-title"
-        className="mx-auto max-w-7xl px-6 md:px-10 pb-10"
-      >
-        <h2 id="photo-title" className="sr-only">
-          Profile photo
-        </h2>
-        <PhotoForm
-          action={setOwnMemberPhoto}
-          visibilityAction={setOwnPhotoPublic}
-          memberName={`${member.first_name} ${member.last_name}`}
-          photoUrl={member.photo_url}
-          photoPublic={member.photo_public ?? false}
-          description="A square-ish portrait works best — we'll auto-crop and shrink it for you. JPEG, PNG, WebP, or HEIC up to 12 MB."
-        />
-      </section>
 
       <PracticeNotes
         physical_limitations={member.physical_limitations}

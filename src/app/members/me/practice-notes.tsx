@@ -42,41 +42,41 @@ export function PracticeNotes(props: PracticeNotesProps) {
   return (
     <section
       aria-labelledby="practice-notes-title"
-      className="relative mx-auto max-w-7xl px-6 md:px-10 pb-12"
+      className="relative mx-auto max-w-7xl px-6 md:px-10 pb-8"
     >
-      <div className="grid grid-cols-12 gap-x-6 gap-y-8">
+      <div className="grid grid-cols-12 gap-x-6 gap-y-5">
         <div className="col-span-12 md:col-span-4">
-          <p className="text-[11px] uppercase tracking-[0.45em] text-foreground/55 mb-4">
+          <p className="text-[11px] uppercase tracking-[0.45em] text-foreground/55 mb-2">
             <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
             From your registration
           </p>
           <h2
             id="practice-notes-title"
-            className="font-display text-3xl md:text-4xl tracking-tight leading-[1.05]"
+            className="font-display text-2xl md:text-3xl tracking-tight leading-[1.05]"
           >
             About your{" "}
             <span className="italic text-vermillion">practice.</span>
           </h2>
-          <p className="mt-4 text-sm text-foreground/60 leading-relaxed max-w-sm">
+          <p className="mt-2 text-sm text-foreground/60 leading-relaxed max-w-sm">
             What you wrote when you registered. Your instructors read this so
             they can support you well from day one.
           </p>
         </div>
 
-        <dl className="col-span-12 md:col-span-8 grid gap-x-10 gap-y-8 sm:grid-cols-2">
+        <dl className="col-span-12 md:col-span-8 grid gap-x-8 gap-y-5 sm:grid-cols-2">
           {FIELDS.map(({ key, label, fallback }) => {
             const value = props[key]?.trim();
             const isEmpty = !value;
             return (
               <div key={key} className="break-inside-avoid">
-                <dt className="text-[10px] uppercase tracking-[0.32em] text-foreground/55 mb-2">
+                <dt className="text-[10px] uppercase tracking-[0.32em] text-foreground/55 mb-1">
                   {label}
                 </dt>
                 <dd
                   className={
                     isEmpty
                       ? "text-sm text-foreground/40 italic"
-                      : "text-base text-foreground/85 leading-relaxed whitespace-pre-line"
+                      : "text-[0.9rem] text-foreground/85 leading-relaxed whitespace-pre-line"
                   }
                 >
                   {isEmpty ? fallback : value}
