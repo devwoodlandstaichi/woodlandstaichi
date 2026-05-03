@@ -88,7 +88,6 @@ export function InstructorForm({
       action={formAction}
       className="grid gap-5"
       noValidate
-      encType="multipart/form-data"
     >
       <Field label="Name" htmlFor="name" error={errors.name}>
         <Input
