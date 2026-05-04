@@ -12,6 +12,7 @@ import {
   ListChecks,
   MessageSquareQuote,
   Newspaper,
+  PartyPopper,
   ScanLine,
   Settings,
   ShieldCheck,
@@ -81,6 +82,7 @@ const NAV: NavGroup[] = [
         icon: MessageSquareQuote,
       },
       { href: "/admin/news", label: "News", icon: Newspaper },
+      { href: "/admin/wtcd", label: "World Tai Chi Day", icon: PartyPopper },
     ],
   },
   {

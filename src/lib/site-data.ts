@@ -118,61 +118,9 @@ export const WAIVER_PARAGRAPHS = [
   "I have read and fully understood this waiver and release. I understand that by participating, I/we will have waived substantial rights. I have knowingly and voluntarily agreed to this waiver and release.",
 ] as const;
 
-// Annual World Tai Chi Day events. Posters hosted on the legacy WordPress
-// upload directory; CSP + next.config.ts permit `woodlandstaichi.com` image
-// hosts. Migrate these into Supabase Storage when Phase 2 lands.
-export const WTCD_EVENTS = [
-  {
-    year: 2026,
-    date: "April 25, 2026",
-    location: "North Shore Park, The Woodlands, TX",
-    poster:
-      "https://woodlandstaichi.com/wp-content/uploads/2026/04/WTCD_poster_2026_v4-Final-225x300-1.png",
-    upcoming: true,
-  },
-  {
-    year: 2025,
-    date: "April 26, 2025",
-    location: "The Woodlands, TX",
-    poster:
-      "https://woodlandstaichi.com/wp-content/uploads/2025/04/WTCD_poster_2025-1-768x1024.jpg",
-  },
-  {
-    year: 2024,
-    date: "April 27, 2024",
-    location: "The Woodlands, TX",
-    poster:
-      "https://woodlandstaichi.com/wp-content/uploads/2024/04/flyer-wtcd-2024-scaled.jpg",
-  },
-  {
-    year: 2023,
-    date: "April 29, 2023",
-    location: "The Woodlands, TX",
-    poster:
-      "https://woodlandstaichi.com/wp-content/uploads/2023/03/WTCD23-Postcard-copy-768x1140.jpg",
-  },
-  {
-    year: 2022,
-    date: "April 30, 2022",
-    location: "The Woodlands, TX",
-    poster:
-      "https://woodlandstaichi.com/wp-content/uploads/2023/01/WTCD22-Poster6x9.webp",
-  },
-  {
-    year: 2021,
-    date: "April 24, 2021",
-    location: "The Woodlands, TX",
-    poster:
-      "https://woodlandstaichi.com/wp-content/uploads/2023/01/WTCD21fly-front_red.webp",
-  },
-  {
-    year: 2019,
-    date: "April 27, 2019",
-    location: "The Woodlands, TX",
-    poster:
-      "https://woodlandstaichi.com/wp-content/uploads/2023/01/Tai-Chi-Fly2019-postcard.webp",
-  },
-] as const;
+// World Tai Chi Day events moved to public.wtcd_events; see
+// supabase/snippets/seed-wtcd-events.sql for the canonical seed values
+// and /admin/wtcd for the admin CRUD surface.
 
 export const STORE_ITEMS = [
   {
