@@ -15,9 +15,17 @@ export const HOLIDAY_CLOSURES = [
 ] as const;
 
 export const BEGINNER_COHORT_DATES = [
-  { label: "February 2026", days: ["February 4", "February 5"], status: "past" },
+  {
+    label: "February 2026",
+    days: ["February 4", "February 5"],
+    status: "past",
+  },
   { label: "June 2026", days: ["June 3", "June 4"], status: "filling" },
-  { label: "September / October 2026", days: ["September 30", "October 1"], status: "open" },
+  {
+    label: "September / October 2026",
+    days: ["September 30", "October 1"],
+    status: "open",
+  },
 ] as const;
 
 export const CLASS_LEVELS = [
@@ -67,7 +75,7 @@ export const REGISTRATION_STEPS = [
   {
     n: 1,
     title: "Pick a class",
-    body: "Beginners classes open in February, June, and late-September each year. Pick the one whose schedule you can fully commit to.",
+    body: "Beginners classes open in February, June, and October each year. Pick the one whose schedule you can fully commit to.",
   },
   {
     n: 2,
@@ -88,7 +96,7 @@ export const REGISTRATION_STEPS = [
 
 export const COURTESIES = [
   "Arrive on time. If class has begun, please don't enter.",
-  "Wear loose, comfortable clothing. WTC shirt and pants from week 5 onward.",
+  "Loose, comfortable clothing through week 4. WTC shirt and pants from week 5 onward.",
   "Soft, flat-soled shoes. No sneakers, no bare feet — socks are fine.",
   "No lotions or perfumes. Non-smokers only, or change clothes first.",
   "Silence mobile devices.",
@@ -221,7 +229,7 @@ export const STORE_ITEMS = [
     name: "Recommended Shoes",
     tagline: "Reference",
     body: "We don't sell shoes, but we strongly recommend Feiyue (made specifically for Tai Chi, originating from Shanghai in the 1920s) or Fuego dance shoes. Look for: low ankle profile, no or minimal heel, no or limited traction.",
-    priceRange: "Reference",
+    priceRange: "",
     discount: {
       label: "Fuego — 10% off with code WOODLANDSTAICHI10",
       url: "https://fuegodance.com/discount/WOODLANDSTAICHI10",
@@ -286,15 +294,59 @@ export const RESOURCE_LINKS = [
 // Photos in public/photos that are appropriate for the gallery page.
 // HEIC excluded (browser support varies).
 export const GALLERY_PHOTOS = [
-  { src: "/photos/WTCD2023-9.jpg", alt: "World Tai Chi Day 2023 — group practice", aspect: "landscape" },
-  { src: "/photos/WTCD2023-26.jpg", alt: "World Tai Chi Day 2023 — group photo", aspect: "landscape" },
-  { src: "/photos/WTCD2023-8.jpg", alt: "World Tai Chi Day 2023 — outdoor session", aspect: "landscape" },
-  { src: "/photos/FloMKS-WTachiDay2019-10.jpg", alt: "Tai Chi Day 2019 — practice", aspect: "landscape" },
-  { src: "/photos/DSC_7640-XL.jpg", alt: "Group practice", aspect: "landscape" },
-  { src: "/photos/2025-04-26_09-59-53_098.jpeg", alt: "World Tai Chi Day 2025", aspect: "portrait" },
-  { src: "/photos/2025-04-26_10-00-58_416.jpeg", alt: "World Tai Chi Day 2025 — practice", aspect: "portrait" },
-  { src: "/photos/cf0234_00d752fa25d644689737dec821ab9430mv2.webp", alt: "Class group photo", aspect: "landscape" },
-  { src: "/photos/cf0234_2c906e57203745bc81c0b15969df9d81mv2.webp", alt: "Class practice", aspect: "landscape" },
-  { src: "/photos/cf0234_84874345e89645d582b6decf2d412ffamv2.webp", alt: "Class practice", aspect: "landscape" },
-  { src: "/photos/cf0234_e3e8a13c3072448495aac212e22cb0b5mv2.webp", alt: "Class practice", aspect: "landscape" },
+  {
+    src: "/photos/WTCD2023-9.jpg",
+    alt: "World Tai Chi Day 2023 — group practice",
+    aspect: "landscape",
+  },
+  {
+    src: "/photos/WTCD2023-26.jpg",
+    alt: "World Tai Chi Day 2023 — group photo",
+    aspect: "landscape",
+  },
+  {
+    src: "/photos/WTCD2023-8.jpg",
+    alt: "World Tai Chi Day 2023 — outdoor session",
+    aspect: "landscape",
+  },
+  {
+    src: "/photos/FloMKS-WTachiDay2019-10.jpg",
+    alt: "Tai Chi Day 2019 — practice",
+    aspect: "landscape",
+  },
+  {
+    src: "/photos/DSC_7640-XL.jpg",
+    alt: "Group practice",
+    aspect: "landscape",
+  },
+  {
+    src: "/photos/2025-04-26_09-59-53_098.jpeg",
+    alt: "World Tai Chi Day 2025",
+    aspect: "portrait",
+  },
+  {
+    src: "/photos/2025-04-26_10-00-58_416.jpeg",
+    alt: "World Tai Chi Day 2025 — practice",
+    aspect: "portrait",
+  },
+  {
+    src: "/photos/cf0234_00d752fa25d644689737dec821ab9430mv2.webp",
+    alt: "Class group photo",
+    aspect: "landscape",
+  },
+  {
+    src: "/photos/cf0234_2c906e57203745bc81c0b15969df9d81mv2.webp",
+    alt: "Class practice",
+    aspect: "landscape",
+  },
+  {
+    src: "/photos/cf0234_84874345e89645d582b6decf2d412ffamv2.webp",
+    alt: "Class practice",
+    aspect: "landscape",
+  },
+  {
+    src: "/photos/cf0234_e3e8a13c3072448495aac212e22cb0b5mv2.webp",
+    alt: "Class practice",
+    aspect: "landscape",
+  },
 ] as const;

@@ -53,7 +53,7 @@ export async function SiteFooter() {
 
           <div className="md:col-span-3">
             <h3 className="text-xs uppercase tracking-[0.25em] text-ink-300">
-              Visit
+              Venue
             </h3>
             <ul className="mt-4 space-y-3 text-sm">
               <li>The Woodlands Methodist Church</li>

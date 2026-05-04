@@ -20,9 +20,9 @@ const INITIAL: OrderState = { status: "idle" };
 
 export function OrderForm() {
   const [state, formAction, pending] = useActionState(submitOrder, INITIAL);
-  const errors = state.status === "error" ? state.fieldErrors ?? {} : {};
+  const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
   const submitted = useMemo(
-    () => (state.status === "error" ? state.values ?? {} : {}),
+    () => (state.status === "error" ? (state.values ?? {}) : {}),
     [state],
   );
   const v = (key: string) =>
@@ -71,7 +71,10 @@ export function OrderForm() {
   return (
     <form key={formKey} action={formAction} className="grid gap-10" noValidate>
       {/* Honeypot */}
-      <div aria-hidden className="absolute -left-[10000px] h-0 w-0 overflow-hidden">
+      <div
+        aria-hidden
+        className="absolute -left-[10000px] h-0 w-0 overflow-hidden"
+      >
         <label>
           Website
           <input type="text" name="website" tabIndex={-1} autoComplete="off" />
@@ -155,8 +158,8 @@ export function OrderForm() {
         </legend>
         <p className="text-sm text-foreground/65 -mt-1 leading-relaxed">
           Zelle and Apple Cash to{" "}
-          <span className="font-mono">832 381 6078</span>. PayPal/Venmo add a
-          $5 service charge.
+          <span className="font-mono">832 381 6078</span>. PayPal/Venmo add a $5
+          service charge.
         </p>
         <div className="grid gap-2 mt-2">
           {PAYMENT_METHODS.map((m) => (
@@ -213,12 +216,18 @@ export function OrderForm() {
             ))}
             <li className="flex items-baseline justify-between gap-3 pt-2 text-foreground/70">
               <span>Subtotal</span>
-              <span className="font-mono tabular-nums">{formatUsd(subtotal)}</span>
+              <span className="font-mono tabular-nums">
+                {formatUsd(subtotal)}
+              </span>
             </li>
             {serviceFee > 0 && (
               <li className="flex items-baseline justify-between gap-3 text-foreground/70">
-                <span>{method === "paypal" ? "PayPal" : "Venmo"} service charge</span>
-                <span className="font-mono tabular-nums">{formatUsd(serviceFee)}</span>
+                <span>
+                  {method === "paypal" ? "PayPal" : "Venmo"} service charge
+                </span>
+                <span className="font-mono tabular-nums">
+                  {formatUsd(serviceFee)}
+                </span>
               </li>
             )}
             <li className="flex items-baseline justify-between gap-3 pt-2 text-base font-medium border-t border-foreground/15">
@@ -241,8 +250,8 @@ export function OrderForm() {
           {pending ? "Submitting…" : "Submit order"}
         </button>
         <p className="text-xs text-foreground/55">
-          Shirts are special-order — allow up to 4 weeks. You aren&apos;t fully
-          enrolled until payment is received.
+          Shirts / jackets are special order, please pay for it immediately when
+          you enroll – it takes up to four weeks.
         </p>
       </div>
     </form>

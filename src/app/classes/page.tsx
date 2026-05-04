@@ -4,7 +4,6 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
 import { ScheduleSection } from "@/components/schedule-section";
-import { ContactSection } from "@/components/contact-section";
 import { createClient } from "@/lib/supabase/server";
 import { dayShort, formatTimeRange, levelLabel } from "@/lib/format";
 import {
@@ -392,8 +391,6 @@ export default async function ClassesPage() {
             </div>
           </div>
         </section>
-
-        <ContactSection />
       </main>
       <SiteFooter />
     </>
