@@ -4,6 +4,17 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
 import { STORE_ITEMS } from "@/lib/site-data";
+import { CATALOG, formatUsd } from "@/lib/store/catalog";
+
+// Per-size price lookup for items with a length/width chart. Sourced
+// from the canonical CATALOG so the chart never drifts from what the
+// /store/order form actually charges.
+const SHIRT_PRICE_BY_SIZE: Record<string, number> = Object.fromEntries(
+  CATALOG.filter((i) => i.category === "shirt" && i.size).map((i) => [
+    i.size as string,
+    i.price_cents,
+  ]),
+);
 
 export const metadata: Metadata = {
   title: "Store — uniforms, jackets, fans, shoes",
@@ -52,7 +63,7 @@ export default function StorePage() {
                   {"sizes" in item && item.sizes && (
                     <div>
                       <p className="text-xs uppercase tracking-[0.25em] text-foreground/55 mb-3">
-                        Size chart (inches)
+                        Size chart (inches) &amp; pricing
                       </p>
                       <div className="overflow-x-auto rounded-lg border border-foreground/10">
                         <table className="w-full text-sm">
@@ -61,16 +72,29 @@ export default function StorePage() {
                               <th className="text-left p-3 font-medium">Size</th>
                               <th className="text-left p-3 font-medium">Length</th>
                               <th className="text-left p-3 font-medium">Width</th>
+                              <th className="text-right p-3 font-medium">Price</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {item.sizes.map((s) => (
-                              <tr key={s.size} className="border-t border-foreground/8">
-                                <td className="p-3 font-medium">{s.size}</td>
-                                <td className="p-3 tabular-nums">{s.length}″</td>
-                                <td className="p-3 tabular-nums">{s.width}″</td>
-                              </tr>
-                            ))}
+                            {item.sizes.map((s) => {
+                              // Today only the WTC shirt has a size chart;
+                              // if more items grow charts, extend the
+                              // lookup map at the top of the file.
+                              const cents =
+                                item.slug === "shirt"
+                                  ? SHIRT_PRICE_BY_SIZE[s.size]
+                                  : undefined;
+                              return (
+                                <tr key={s.size} className="border-t border-foreground/8">
+                                  <td className="p-3 font-medium">{s.size}</td>
+                                  <td className="p-3 tabular-nums">{s.length}″</td>
+                                  <td className="p-3 tabular-nums">{s.width}″</td>
+                                  <td className="p-3 text-right font-mono tabular-nums text-foreground/80">
+                                    {cents !== undefined ? formatUsd(cents) : "—"}
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>
