@@ -12,6 +12,52 @@ type ClassRow = {
   description: string | null;
 };
 
+type EventSession = {
+  id: string;
+  session_date: string;
+  start_time: string;
+  end_time: string;
+  classes: {
+    name: string;
+    level: string;
+    location: string;
+  } | null;
+};
+
+type EventRow = {
+  id: string;
+  name: string;
+  level: string;
+  location: string;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  is_event: true;
+  session_date: string;
+  date_label: string;
+};
+
+type ScheduleRow = (ClassRow & { is_event?: false }) | EventRow;
+
+const ISO_DAY: Record<number, string> = {
+  0: "sun",
+  1: "mon",
+  2: "tue",
+  3: "wed",
+  4: "thu",
+  5: "fri",
+  6: "sat",
+};
+
+function eventDateLabel(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 // The schedule renders inside an inverted (ink-bg) section, so the
 // badge text must be readable on near-black. Use the -300 shades
 // (defined in globals.css) and lift the bg/border opacities slightly.
@@ -26,18 +72,59 @@ const LEVEL_TONE: Record<string, string> = {
 
 export async function ScheduleSection() {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("classes")
-    .select(
-      "id,name,level,location,day_of_week,start_time,end_time,description",
-    )
-    .eq("active", true)
-    .order("display_order", { ascending: true });
+  const todayIso = new Date().toISOString().slice(0, 10);
 
-  const rows: ClassRow[] = data ?? [];
+  const [classesRes, eventsRes] = await Promise.all([
+    supabase
+      .from("classes")
+      .select(
+        "id,name,level,location,day_of_week,start_time,end_time,description",
+      )
+      .eq("active", true)
+      // One-off events live as is_one_off classes; the recurring grid
+      // shows them via the upcoming-events query below instead.
+      .eq("is_one_off", false)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("class_sessions")
+      .select(
+        "id,session_date,start_time,end_time,classes!inner(name,level,location,is_one_off)",
+      )
+      .eq("classes.is_one_off", true)
+      .gte("session_date", todayIso)
+      .order("session_date", { ascending: true })
+      .limit(12),
+  ]);
 
-  // Group by day for the layout
-  const byDay = rows.reduce<Record<string, ClassRow[]>>((acc, r) => {
+  const error = classesRes.error;
+  const recurring: ClassRow[] = classesRes.data ?? [];
+  const events = ((eventsRes.data ?? []) as unknown as EventSession[])
+    .map<EventRow | null>((s) => {
+      const cls = Array.isArray(s.classes) ? s.classes[0] : s.classes;
+      if (!cls) return null;
+      const day = ISO_DAY[new Date(`${s.session_date}T00:00:00Z`).getUTCDay()];
+      return {
+        id: s.id,
+        name: cls.name,
+        level: cls.level,
+        location: cls.location,
+        day_of_week: day,
+        start_time: s.start_time,
+        end_time: s.end_time,
+        is_event: true,
+        session_date: s.session_date,
+        date_label: eventDateLabel(s.session_date),
+      };
+    })
+    .filter((x): x is EventRow => x !== null);
+
+  // Group by day for the layout. Recurring rows + upcoming events
+  // share the same column so the calendar reader's eye still finds
+  // their day; events are tagged so the renderer styles them with
+  // a vermillion "Event" badge and the specific date.
+  const byDay = [...recurring, ...events].reduce<
+    Record<string, ScheduleRow[]>
+  >((acc, r) => {
     (acc[r.day_of_week] ||= []).push(r);
     return acc;
   }, {});
@@ -103,7 +190,13 @@ export async function ScheduleSection() {
               <ul className="space-y-5">
                 {byDay[day]
                   .slice()
-                  .sort((a, b) => a.start_time.localeCompare(b.start_time))
+                  .sort((a, b) => {
+                    // Recurring rows first, events after, both sorted by time.
+                    if (!!a.is_event !== !!b.is_event) {
+                      return a.is_event ? 1 : -1;
+                    }
+                    return a.start_time.localeCompare(b.start_time);
+                  })
                   .map((c) => (
                     <li key={c.id} className="group">
                       <div className="flex items-start justify-between gap-4">
@@ -118,14 +211,21 @@ export async function ScheduleSection() {
                             {c.location}
                           </p>
                         </div>
-                        <span
-                          className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-[0.18em] ${
-                            LEVEL_TONE[c.level] ??
-                            "border-background/20 text-background/70"
-                          }`}
-                        >
-                          {levelLabel(c.level)}
-                        </span>
+                        <div className="flex shrink-0 flex-col items-end gap-1.5">
+                          {c.is_event && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-vermillion/40 bg-vermillion/15 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.18em] text-vermillion-300">
+                              Event · {c.date_label}
+                            </span>
+                          )}
+                          <span
+                            className={`rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-[0.18em] ${
+                              LEVEL_TONE[c.level] ??
+                              "border-background/20 text-background/70"
+                            }`}
+                          >
+                            {levelLabel(c.level)}
+                          </span>
+                        </div>
                       </div>
                       <p className="mt-2 font-mono text-sm tabular-nums text-background/85">
                         {formatTimeRange(c.start_time, c.end_time)}

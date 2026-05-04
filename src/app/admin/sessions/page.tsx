@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { CalendarPlus, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
 import {
@@ -44,6 +44,7 @@ type SessionRow = {
     level: ClassLevel;
     location: string;
     capacity: number | null;
+    is_one_off: boolean;
   } | null;
   attendance: { count: number }[] | null;
 };
@@ -96,7 +97,7 @@ export default async function SessionsPage({
   let query = supabase
     .from("class_sessions")
     .select(
-      "id,session_date,start_time,end_time,newcomer_friendly,capacity,classes!inner(name,level,location,capacity),attendance(count)",
+      "id,session_date,start_time,end_time,newcomer_friendly,capacity,classes!inner(name,level,location,capacity,is_one_off),attendance(count)",
     );
 
   if (period === "upcoming") query = query.gte("session_date", todayIso);
@@ -139,6 +140,12 @@ export default async function SessionsPage({
         description="Specific class occurrences on a date. Attendance writes against these rows."
         action={
           <>
+            <Link href="/admin/sessions/new">
+              <Button variant="outline" size="sm" className="inline-flex items-center gap-1.5">
+                <CalendarPlus size={14} aria-hidden />
+                New event
+              </Button>
+            </Link>
             <GenerateTermButton />
             {me?.role === "admin" && <BulkDeleteButton />}
           </>
@@ -196,9 +203,6 @@ export default async function SessionsPage({
                   Class
                 </th>
                 <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">
-                  Where
-                </th>
-                <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">
                   Level
                 </th>
                 <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">
@@ -237,9 +241,16 @@ export default async function SessionsPage({
                         </p>
                       </Link>
                     </td>
-                    <td className="px-4 py-3">{s.classes?.name ?? "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {s.classes?.location ?? "—"}
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <p className="flex items-center gap-1.5 font-medium">
+                        {s.classes?.name ?? "—"}
+                        {s.classes?.is_one_off && (
+                          <Badge tone="vermillion">Event</Badge>
+                        )}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {s.classes?.location ?? "—"}
+                      </p>
                     </td>
                     <td className="px-4 py-3">
                       {s.classes?.level && (

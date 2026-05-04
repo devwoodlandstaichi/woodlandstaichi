@@ -105,7 +105,11 @@ export default async function ClassesPage({
     .from("classes")
     .select(
       "id,name,level,location,day_of_week,start_time,end_time,capacity,active,display_order",
-    );
+    )
+    // Hide one-off "classes" — they're parents of single-occurrence
+    // events created via /admin/sessions/new and shouldn't clutter
+    // the recurring-class roster.
+    .eq("is_one_off", false);
 
   if (status === "active") query = query.eq("active", true);
   else if (status === "archived") query = query.eq("active", false);

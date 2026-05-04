@@ -64,7 +64,8 @@ export async function generateTerm(
   const { data: classes, error: classErr } = await supabase
     .from("classes")
     .select("id,day_of_week,start_time,end_time,active")
-    .eq("active", true);
+    .eq("active", true)
+    .eq("is_one_off", false);
 
   if (classErr) return { ok: false, message: classErr.message };
 
@@ -130,7 +131,9 @@ export type DeleteResult =
   | { ok: false; message: string };
 
 /** Delete a single session by id. Cascades any attendance rows on it
- * via the FK declared in the initial schema. */
+ * via the FK declared in the initial schema. If the session belongs to
+ * a one-off event class (1:1 by construction), the parent classes row
+ * is removed too so we don't accumulate orphan one-off classes. */
 export async function deleteSession(sessionId: string): Promise<DeleteResult> {
   await requireStaff();
   if (!sessionId) return { ok: false, message: "Missing session id." };
@@ -142,12 +145,34 @@ export async function deleteSession(sessionId: string): Promise<DeleteResult> {
     .select("*", { count: "exact", head: true })
     .eq("class_session_id", sessionId);
 
+  // Check if this session belongs to a one-off event class so we can
+  // also tidy up the parent.
+  const { data: parent } = await supabase
+    .from("class_sessions")
+    .select("class_id, classes!inner(id, is_one_off)")
+    .eq("id", sessionId)
+    .maybeSingle();
+  const parentClass = parent?.classes
+    ? Array.isArray(parent.classes)
+      ? parent.classes[0]
+      : parent.classes
+    : null;
+  const oneOffClassId =
+    parentClass && (parentClass as { is_one_off?: boolean }).is_one_off
+      ? (parentClass as { id: string }).id
+      : null;
+
   const { error } = await supabase
     .from("class_sessions")
     .delete()
     .eq("id", sessionId);
 
   if (error) return { ok: false, message: error.message };
+
+  if (oneOffClassId) {
+    const admin = createAdminClient();
+    await admin.from("classes").delete().eq("id", oneOffClassId);
+  }
 
   revalidatePath("/admin/sessions");
   revalidatePath("/admin/attendance");
@@ -254,6 +279,205 @@ export async function setSessionCapacity(formData: FormData) {
     .update({ capacity })
     .eq("id", id);
   revalidatePath("/admin/sessions");
+}
+
+// ---------------------------------------------------------------------------
+// One-off events. Each event is a parent classes row flagged
+// is_one_off=true plus a single class_sessions row carrying the date.
+// The pair is created in two writes; we rollback the class row if the
+// session insert fails so we don't accumulate orphan classes.
+// ---------------------------------------------------------------------------
+
+const TIME_RE = /^\d{2}:\d{2}(:\d{2})?$/;
+const CLASS_LEVELS = [
+  "beginners",
+  "intermediate",
+  "advanced",
+  "remedial",
+  "play_only",
+  "combined",
+] as const;
+type ClassLevel = (typeof CLASS_LEVELS)[number];
+
+function isClassLevel(v: unknown): v is ClassLevel {
+  return typeof v === "string" && (CLASS_LEVELS as readonly string[]).includes(v);
+}
+
+const ISO_DAY: Record<number, DayOfWeek> = {
+  0: "sun",
+  1: "mon",
+  2: "tue",
+  3: "wed",
+  4: "thu",
+  5: "fri",
+  6: "sat",
+};
+
+export type CreateEventState =
+  | { ok: true; sessionId: string }
+  | {
+      ok: false;
+      message: string;
+      values?: Record<string, string>;
+      fieldErrors?: Record<string, string>;
+    }
+  | undefined;
+
+// Snapshot every string entry in the form so we can echo it back in
+// the error response. React 19 wipes uncontrolled inputs after a
+// server-action call; the client re-keys the form and reads these
+// values as `defaultValue` / `defaultChecked`.
+//
+// Checkboxes are special: an unchecked checkbox sends *nothing*, so
+// `formData.entries()` can't tell "user unchecked it" from "the
+// checkbox was never on the form". We list expected checkbox names
+// and stamp an explicit "on" / "off" so the form's defaultChecked
+// re-applies the user's actual choice.
+function snapshotValues(
+  formData: FormData,
+  checkboxes: readonly string[] = [],
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of formData.entries()) {
+    if (typeof v === "string") out[k] = v;
+  }
+  for (const name of checkboxes) {
+    out[name] = formData.has(name) ? "on" : "off";
+  }
+  return out;
+}
+
+/** Create a one-off event: a hidden parent classes row + a single
+ * class_sessions row. Returns the new session id on success so the
+ * client can redirect into /admin/sessions/[id] for review. */
+export async function createOneOffSession(
+  _prev: CreateEventState,
+  formData: FormData,
+): Promise<CreateEventState> {
+  await requireStaff();
+
+  const v = snapshotValues(formData, [
+    "newcomer_friendly",
+    "accepting_rsvps",
+  ]);
+  const fieldErrors: Record<string, string> = {};
+
+  const name = (v.name ?? "").trim();
+  if (!name) fieldErrors.name = "Required.";
+  else if (name.length > 200) fieldErrors.name = "Too long (200 max).";
+
+  const level = (v.level ?? "").trim();
+  if (!isClassLevel(level)) fieldErrors.level = "Pick a level.";
+
+  const location = (v.location ?? "").trim();
+  if (!location) fieldErrors.location = "Required.";
+
+  const session_date = (v.session_date ?? "").trim();
+  if (!DATE_RE.test(session_date))
+    fieldErrors.session_date = "Use YYYY-MM-DD.";
+
+  const start_time = (v.start_time ?? "").trim();
+  const end_time = (v.end_time ?? "").trim();
+  if (!TIME_RE.test(start_time)) fieldErrors.start_time = "Use HH:MM.";
+  if (!TIME_RE.test(end_time)) fieldErrors.end_time = "Use HH:MM.";
+  if (
+    TIME_RE.test(start_time) &&
+    TIME_RE.test(end_time) &&
+    end_time <= start_time
+  ) {
+    fieldErrors.end_time = "Must be after start.";
+  }
+
+  const capacityRaw = (v.capacity ?? "").trim();
+  let capacity: number | null = null;
+  if (capacityRaw !== "") {
+    const n = Number.parseInt(capacityRaw, 10);
+    if (!Number.isFinite(n) || n < 0)
+      fieldErrors.capacity = "Whole number ≥ 0 (or leave blank).";
+    else capacity = n;
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return {
+      ok: false,
+      message: "Fix the highlighted fields.",
+      values: v,
+      fieldErrors,
+    };
+  }
+
+  const location_address = (v.location_address ?? "").trim() || null;
+  const description = (v.description ?? "").trim() || null;
+  const newcomer_friendly = v.newcomer_friendly === "on";
+  const accepting_rsvps = v.accepting_rsvps !== "off";
+
+  // Day-of-week is derived from the actual session date so the parent
+  // class row has a sensible value even though it's never used for
+  // recurring scheduling.
+  const dateUtc = new Date(`${session_date}T00:00:00Z`);
+  const day_of_week = ISO_DAY[dateUtc.getUTCDay()];
+
+  const admin = createAdminClient();
+
+  // Step 1 — parent class row, hidden from recurring-class lists.
+  const { data: classRow, error: classErr } = await admin
+    .from("classes")
+    .insert({
+      name,
+      level: level as ClassLevel,
+      location,
+      location_address,
+      day_of_week,
+      start_time,
+      end_time,
+      capacity,
+      description,
+      active: true,
+      is_one_off: true,
+      display_order: 0,
+    })
+    .select("id")
+    .single();
+
+  if (classErr || !classRow?.id) {
+    return {
+      ok: false,
+      message: classErr?.message ?? "Failed to create event.",
+      values: v,
+    };
+  }
+
+  // Step 2 — the single session row. If this fails we roll back the
+  // class row so we don't accumulate orphan one-off classes.
+  const { data: sessionRow, error: sessionErr } = await admin
+    .from("class_sessions")
+    .insert({
+      class_id: classRow.id,
+      session_date,
+      start_time,
+      end_time,
+      capacity,
+      newcomer_friendly,
+      accepting_rsvps,
+    })
+    .select("id")
+    .single();
+
+  if (sessionErr || !sessionRow?.id) {
+    await admin.from("classes").delete().eq("id", classRow.id);
+    return {
+      ok: false,
+      message: sessionErr?.message ?? "Failed to create session.",
+      values: v,
+    };
+  }
+
+  revalidatePath("/admin/sessions");
+  revalidatePath("/admin");
+  revalidatePath("/classes");
+  revalidatePath("/classes/register");
+
+  return { ok: true, sessionId: sessionRow.id };
 }
 
 export async function toggleNewcomerFriendly(formData: FormData) {
