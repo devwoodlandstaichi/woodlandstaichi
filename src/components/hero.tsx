@@ -15,7 +15,7 @@ export function Hero() {
             the headline column. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 hidden md:block font-display leading-none select-none text-foreground/[0.12] text-[clamp(18rem,30vw,33rem)] tracking-tighter md:right-10"
+          className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 hidden md:block font-display leading-none select-none text-foreground/[0.12] text-[clamp(16.2rem,27vw,29.7rem)] tracking-tighter md:right-10"
         >
           靜
         </span>

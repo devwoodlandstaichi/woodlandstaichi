@@ -17,7 +17,7 @@ export function ContactSection({
             since this glyph lives inside a card, not full-bleed. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute right-0 md:right-4 top-1/2 -translate-y-1/2 hidden md:block font-display leading-none select-none text-foreground/[0.12] text-[clamp(10rem,16vw,18rem)] tracking-tighter"
+          className="pointer-events-none absolute right-0 md:right-4 top-1/2 -translate-y-1/2 hidden md:block font-display leading-none select-none text-foreground/[0.12] text-[clamp(9rem,14.4vw,16.2rem)] tracking-tighter"
         >
           歡
         </span>

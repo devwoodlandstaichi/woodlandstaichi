@@ -17,17 +17,23 @@ export function PageHeader({
       className="relative overflow-hidden"
     >
       {/* CJK glyph as a background watermark. Anchored to the right
-          edge of the section (right-0 md:right-6) and vertically
-          centred — at this size the left edge of the character
-          extends into the title area, which is the intended overlap.
-          Title sits at z-10 above it so it remains readable. */}
+          edge of the *inner content column* — same max-w-7xl + px
+          rhythm as the title block — so on wide viewports the glyph
+          tracks the page content instead of drifting to the viewport
+          edge. Vertically centred; at this size the left edge of the
+          character extends into the title area, which is the
+          intended overlap. Title sits at z-10 above it. */}
       {glyph && (
-        <span
+        <div
           aria-hidden
-          className="pointer-events-none absolute right-0 md:right-6 top-1/2 -translate-y-1/2 hidden md:block font-display leading-none select-none text-foreground/[0.12] text-[clamp(18rem,30vw,33rem)] tracking-tighter"
+          className="pointer-events-none absolute inset-0 hidden md:block"
         >
-          {glyph}
-        </span>
+          <div className="relative mx-auto h-full max-w-7xl px-6 md:px-10">
+            <span className="absolute right-0 top-1/2 -translate-y-1/2 font-display leading-none select-none text-foreground/[0.12] text-[clamp(16.2rem,27vw,29.7rem)] tracking-tighter">
+              {glyph}
+            </span>
+          </div>
+        </div>
       )}
 
       <div className="relative z-10 mx-auto max-w-7xl px-6 pt-7 pb-8 md:px-10 md:pt-10 md:pb-12">
