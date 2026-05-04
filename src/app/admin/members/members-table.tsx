@@ -399,7 +399,7 @@ export function MembersTable({
                         href={`/admin/members/${m.id}`}
                         className="hover:text-vermillion"
                       >
-                        {m.last_name}, {m.first_name}
+                        {m.first_name} {m.last_name}
                       </Link>
                       <EmailQrButton
                         memberId={m.id}
