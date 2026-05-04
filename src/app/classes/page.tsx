@@ -26,11 +26,15 @@ type WelcomingSession = {
   session_date: string;
   start_time: string;
   end_time: string;
+  capacity: number | null;
   classes: {
     name: string;
     level: string;
     location: string;
+    capacity: number | null;
   } | null;
+  approved_count: number;
+  effective_capacity: number | null;
 };
 
 function formatSessionDate(iso: string): { day: string; date: string } {
@@ -50,19 +54,58 @@ export default async function ClassesPage() {
 
   // Public schedule of newcomer-welcome sessions — instructors flip
   // class_sessions.newcomer_friendly per occurrence. Sorted soonest
-  // first; capped so the section stays scannable.
-  const { data } = await supabase
+  // first. We fetch a few extras so we can drop at-capacity sessions
+  // and still land on a filled section.
+  const { data: rawSessions } = await supabase
     .from("class_sessions")
     .select(
-      "id,session_date,start_time,end_time,classes!inner(name,level,location)",
+      "id,session_date,start_time,end_time,capacity,classes!inner(name,level,location,capacity)",
     )
     .eq("newcomer_friendly", true)
     .gte("session_date", todayIso)
     .order("session_date", { ascending: true })
     .order("start_time", { ascending: true })
-    .limit(9);
+    .limit(20);
 
-  const welcoming = (data ?? []) as unknown as WelcomingSession[];
+  type RawSession = Omit<WelcomingSession, "approved_count" | "effective_capacity">;
+  const sessions = (rawSessions ?? []) as unknown as RawSession[];
+
+  // Pull approved-RSVP counts via the public RPC so we can drop sessions
+  // that have already filled. Anon can't read session_rsvps directly;
+  // the RPC is security-definer and returns just (session_id, count).
+  const sessionIds = sessions.map((s) => s.id);
+  const approvedByMap = new Map<string, number>();
+  if (sessionIds.length > 0) {
+    const { data: counts } = await supabase.rpc(
+      "count_approved_rsvps_by_session",
+      { session_ids: sessionIds },
+    );
+    for (const r of (counts ?? []) as {
+      class_session_id: string;
+      approved: number;
+    }[]) {
+      approvedByMap.set(r.class_session_id, Number(r.approved));
+    }
+  }
+
+  const welcoming: WelcomingSession[] = sessions
+    .map((s) => {
+      const cap = s.capacity ?? s.classes?.capacity ?? null;
+      const approved = approvedByMap.get(s.id) ?? 0;
+      return {
+        ...s,
+        approved_count: approved,
+        effective_capacity: cap,
+      } as WelcomingSession;
+    })
+    // Drop sessions that are already full — first-timers can't land
+    // there anyway. Sessions with no capacity set stay visible.
+    .filter(
+      (s) =>
+        s.effective_capacity === null ||
+        s.approved_count < s.effective_capacity,
+    )
+    .slice(0, 9);
   return (
     <>
       <SiteHeader />
@@ -148,6 +191,18 @@ export default async function ClassesPage() {
                       <p className="font-mono text-sm tabular-nums text-foreground/80">
                         {formatTimeRange(s.start_time, s.end_time)}
                       </p>
+                      {s.effective_capacity !== null && (
+                        <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-foreground/55">
+                          <span className="font-mono tabular-nums text-foreground/80">
+                            {s.approved_count}
+                          </span>
+                          <span className="mx-1 text-foreground/40">/</span>
+                          <span className="font-mono tabular-nums text-foreground/80">
+                            {s.effective_capacity}
+                          </span>{" "}
+                          spots
+                        </p>
+                      )}
                     </div>
                   </li>
                 );

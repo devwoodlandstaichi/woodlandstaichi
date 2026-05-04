@@ -56,25 +56,63 @@ export default async function RegisterPage({
     const { data } = await supabase
       .from("class_sessions")
       .select(
-        "id,session_date,start_time,end_time,classes!inner(name,location)",
+        "id,session_date,start_time,end_time,capacity,classes!inner(name,location,capacity)",
       )
       .eq("newcomer_friendly", true)
       .gte("session_date", todayIso)
       .order("session_date", { ascending: true })
       .order("start_time", { ascending: true })
-      .limit(20);
+      .limit(40);
 
-    sessions = ((data ?? []) as unknown as Array<{
+    type Raw = {
       id: string;
       session_date: string;
       start_time: string;
       end_time: string;
-      classes: { name: string; location: string } | null;
-    }>).map((s) => ({
-      value: s.id,
-      label: `${formatDate(s.session_date)} · ${formatTimeRange(s.start_time, s.end_time)}`,
-      sub: s.classes?.location ?? undefined,
-    }));
+      capacity: number | null;
+      classes: { name: string; location: string; capacity: number | null } | null;
+    };
+    const raw = (data ?? []) as unknown as Raw[];
+
+    // Approved-RSVP counts via the public RPC so we can drop sessions
+    // that have already filled. Anon can't read session_rsvps directly.
+    const approvedByMap = new Map<string, number>();
+    if (raw.length > 0) {
+      const { data: counts } = await supabase.rpc(
+        "count_approved_rsvps_by_session",
+        { session_ids: raw.map((s) => s.id) },
+      );
+      for (const r of (counts ?? []) as {
+        class_session_id: string;
+        approved: number;
+      }[]) {
+        approvedByMap.set(r.class_session_id, Number(r.approved));
+      }
+    }
+
+    sessions = raw
+      .map((s) => {
+        const cap = s.capacity ?? s.classes?.capacity ?? null;
+        const approved = approvedByMap.get(s.id) ?? 0;
+        const remaining = cap !== null ? Math.max(cap - approved, 0) : null;
+        const locationLine = s.classes?.location ?? "";
+        const spotsLine =
+          cap !== null ? `${remaining} of ${cap} spots open` : null;
+        return {
+          id: s.id,
+          option: {
+            value: s.id,
+            label: `${formatDate(s.session_date)} · ${formatTimeRange(s.start_time, s.end_time)}`,
+            sub: [locationLine, spotsLine].filter(Boolean).join(" · "),
+          } satisfies SessionOption,
+          atCapacity: cap !== null && approved >= cap,
+        };
+      })
+      // Drop full sessions — first-timers shouldn't pick a date that
+      // already maxed out.
+      .filter((s) => !s.atCapacity)
+      .map((s) => s.option)
+      .slice(0, 20);
   }
   // Returning mode no longer asks about classes — it submits a
   // reactivation request that staff approve. The sessions list stays
