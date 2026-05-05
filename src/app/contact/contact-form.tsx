@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { Mail, Send } from "lucide-react";
+import Link from "next/link";
+import { Send } from "lucide-react";
 import { Field, Textarea } from "@/components/form-fields";
 import { submitContactForm, type ContactFormState } from "./actions";
 
@@ -13,25 +14,47 @@ export function ContactForm() {
 
   if (state && state.ok === true) {
     return (
-      <div className="rounded-2xl border border-jade/30 bg-jade/5 p-7 md:p-9">
-        <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-jade/15 text-jade">
-          <Mail size={20} aria-hidden />
-        </span>
-        <h2 className="mt-5 font-display text-3xl md:text-4xl tracking-tight leading-[1.1]">
-          Message sent.
-          <span className="block italic text-vermillion">Thank you.</span>
-        </h2>
-        <p className="mt-4 text-base text-foreground/75 leading-relaxed max-w-lg">
-          We&apos;ll reply by email shortly. If it&apos;s urgent, you can also
-          email{" "}
+      <div className="rounded-xl border border-foreground/10 bg-card px-7 py-12 md:px-12 md:py-16 shadow-sm">
+        <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6 rise">
+          <span className="inline-block h-px w-8 align-middle bg-jade mr-3" />
+          Sealed &amp; sent
+        </p>
+        <h3
+          className="font-display text-4xl md:text-5xl tracking-tight leading-[1.05] rise"
+          style={{ animationDelay: "120ms" }}
+        >
+          Your letter is
+          <span className="block italic text-vermillion">on its way.</span>
+        </h3>
+        <p
+          className="mt-7 max-w-lg text-lg text-foreground/75 leading-relaxed rise"
+          style={{ animationDelay: "240ms" }}
+        >
+          We&apos;ll reply by email shortly. If it&apos;s urgent, you can
+          also write directly to{" "}
           <a
             href="mailto:info@woodlandstaichi.com"
-            className="underline decoration-vermillion underline-offset-4"
+            className="underline decoration-vermillion underline-offset-4 hover:text-vermillion transition-colors"
           >
             info@woodlandstaichi.com
-          </a>{" "}
-          directly.
+          </a>
+          .
         </p>
+        <div
+          className="mt-10 flex items-center gap-5 fade"
+          style={{ animationDelay: "360ms" }}
+        >
+          <span className="rule w-24" />
+          <span aria-hidden className="text-vermillion text-xs">
+            ◆
+          </span>
+          <Link
+            href="/classes"
+            className="font-mono text-xs uppercase tracking-[0.32em] text-foreground/65 hover:text-vermillion transition-colors"
+          >
+            Browse the schedule →
+          </Link>
+        </div>
       </div>
     );
   }
@@ -46,72 +69,101 @@ export function ContactForm() {
       key={formKey}
       action={formAction}
       noValidate
-      className="grid gap-5 rounded-2xl border border-foreground/10 bg-card p-6 md:p-8"
+      className="rounded-xl border border-foreground/10 bg-card px-6 py-7 md:px-10 md:py-10 shadow-sm"
     >
       {banner && (
         <p
           role="alert"
-          className="rounded-md border border-vermillion/30 bg-vermillion/5 px-3 py-2 text-sm text-vermillion"
+          className="mb-6 rounded-md border border-vermillion/30 bg-vermillion/5 px-3 py-2 text-sm text-vermillion"
         >
           {banner}
         </p>
       )}
 
       {/* Honeypot — hidden from real users via CSS, bots fill it. */}
-      <div aria-hidden className="absolute -left-[10000px] h-0 w-0 overflow-hidden">
+      <div
+        aria-hidden
+        className="absolute -left-[10000px] h-0 w-0 overflow-hidden"
+      >
         <label>
           Website
-          <input
-            type="text"
-            name="website"
-            tabIndex={-1}
-            autoComplete="off"
-          />
+          <input type="text" name="website" tabIndex={-1} autoComplete="off" />
         </label>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div
+        className="grid gap-5 rise"
+        style={{ animationDelay: "120ms" }}
+      >
+        <header className="flex items-baseline gap-3 flex-wrap">
+          <span className="font-mono text-xs tabular-nums text-vermillion">
+            01 / 02
+          </span>
+          <h3 className="font-display text-2xl tracking-tight">About you</h3>
+        </header>
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field
+            name="name"
+            label="Your name"
+            required
+            autoComplete="name"
+            defaultValue={values.name}
+            error={errors.name}
+          />
+          <Field
+            name="email"
+            label="Email"
+            type="email"
+            required
+            inputMode="email"
+            autoComplete="email"
+            defaultValue={values.email}
+            error={errors.email}
+          />
+        </div>
         <Field
-          name="name"
-          label="Your name"
-          required
-          autoComplete="name"
-          defaultValue={values.name}
-          error={errors.name}
-        />
-        <Field
-          name="email"
-          label="Email"
-          type="email"
-          required
-          inputMode="email"
-          autoComplete="email"
-          defaultValue={values.email}
-          error={errors.email}
+          name="phone"
+          label="Phone (optional)"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          defaultValue={values.phone}
+          error={errors.phone}
         />
       </div>
 
-      <Field
-        name="phone"
-        label="Phone (optional)"
-        type="tel"
-        inputMode="tel"
-        autoComplete="tel"
-        defaultValue={values.phone}
-        error={errors.phone}
-      />
+      {/* Section divider — fading rule, no diamond at this scale */}
+      <div className="my-9 rule" aria-hidden />
 
-      <Textarea
-        name="message"
-        label="Message"
-        required
-        rows={7}
-        hint="Questions about classes, registration, or anything else — we'd love to hear from you."
-        defaultValue={values.message}
-        error={errors.message}
-      />
+      <div
+        className="grid gap-5 rise"
+        style={{ animationDelay: "240ms" }}
+      >
+        <header className="flex items-baseline gap-3 flex-wrap">
+          <span className="font-mono text-xs tabular-nums text-vermillion">
+            02 / 02
+          </span>
+          <h3 className="font-display text-2xl tracking-tight">Your message</h3>
+          <p className="basis-full text-sm text-foreground/65 leading-relaxed">
+            Questions about classes, registration, or anything else — we&apos;d
+            love to hear from you.
+          </p>
+        </header>
 
-      <div className="flex flex-wrap items-center gap-4 pt-1">
+        <Textarea
+          name="message"
+          label="Message"
+          required
+          rows={8}
+          defaultValue={values.message}
+          error={errors.message}
+        />
+      </div>
+
+      <div
+        className="mt-9 flex flex-wrap items-center gap-5 rise"
+        style={{ animationDelay: "360ms" }}
+      >
         <button
           type="submit"
           disabled={pending}
@@ -125,7 +177,7 @@ export function ContactForm() {
             </>
           )}
         </button>
-        <p className="text-xs text-foreground/55">
+        <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-foreground/50">
           We don&apos;t share your information.
         </p>
       </div>
