@@ -1,8 +1,18 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV !== "production";
+
+// Local Supabase Storage / API runs at http://127.0.0.1:54321. We allow it
+// in CSP only in dev, otherwise the prod browser console exposes a localhost
+// origin that has no business being there.
+const localSupabase = isDev ? " http://127.0.0.1:54321" : "";
+
 const securityHeaders = [
   { key: "X-DNS-Prefetch-Control", value: "on" },
-  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -17,14 +27,10 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      // Local Supabase Storage serves over http://127.0.0.1:54321 — without
-      // an explicit allow-listed entry the CSP `img-src https:` clause
-      // blocks it. Production URLs are https://*.supabase.co so they match
-      // the https: keyword.
-      "img-src 'self' data: blob: https: http://127.0.0.1:54321",
-      "media-src 'self' blob: http://127.0.0.1:54321 https://*.supabase.co",
+      `img-src 'self' data: blob: https:${localSupabase}`,
+      `media-src 'self' blob: https://*.supabase.co${localSupabase}`,
       "font-src 'self' data:",
-      "connect-src 'self' http://127.0.0.1:54321 https://*.supabase.co wss://*.supabase.co",
+      `connect-src 'self' https://*.supabase.co wss://*.supabase.co${localSupabase}`,
       "frame-ancestors 'self'",
       "form-action 'self'",
       "base-uri 'self'",
@@ -40,11 +46,7 @@ const nextConfig: NextConfig = {
   // one it bound to. We bind to localhost but tend to hit 127.0.0.1 (and
   // sometimes the LAN IP for phone testing) — whitelist them so HMR,
   // RSC payloads, and dev fonts load. Production is unaffected.
-  allowedDevOrigins: [
-    "127.0.0.1",
-    "localhost",
-    "192.168.16.123",
-  ],
+  allowedDevOrigins: ["127.0.0.1", "localhost", "192.168.16.123"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
