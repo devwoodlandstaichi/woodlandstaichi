@@ -59,16 +59,21 @@ export async function signOut() {
 // ---------------------------------------------------------------------------
 // Password reset via email OTP
 //
-// Step 1: requestPasswordReset — calls supabase.auth.resetPasswordForEmail,
-//   which emails a numeric token. The custom recovery template renders
-//   {{ .Token }} only (no magic link). We always redirect to
-//   /login/verify so the response doesn't leak whether the email exists.
-//   Token length is whatever the Supabase project is configured to send
-//   (defaults vary by project / plan); we accept 6–10 digits.
+// Two real-world cases the form has to absorb:
 //
-// Step 2: verifyAndReset — verifies the OTP via verifyOtp({ type: "recovery" }),
-//   which creates a recovery session, then immediately calls updateUser to
-//   set the new password.
+//   A. Existing auth user (admin/instructor, or a member who signed in once
+//      via OTP). resetPasswordForEmail mints a recovery OTP → verify with
+//      type: "recovery" → updateUser sets the new password.
+//
+//   B. Member-only — exists in public.members but never in auth.users. The
+//      bulk CSV import populates ~140 of these. resetPasswordForEmail
+//      silently no-ops on these (anti-enumeration), no email gets sent,
+//      Resend never sees a request. Detect this and fall back to
+//      signInWithOtp({ shouldCreateUser: true }), which creates the auth
+//      row AND emails an OTP. Verify in that case uses type: "email".
+//
+// /login/verify tries recovery first, email second, so the same form
+// handles both. We don't tell the user which path they're on.
 // ---------------------------------------------------------------------------
 
 export type ForgotState =
@@ -86,10 +91,28 @@ export async function requestPasswordReset(
     return { ok: false, message: "Enter your email." };
   }
 
+  // Look the email up in public.members. A member row with no user_id
+  // means they were imported but have never signed in — resetPasswordForEmail
+  // would silently no-op for them, so we bootstrap via signInWithOtp.
+  // For everyone else (existing auth users, or unknown emails),
+  // resetPasswordForEmail behaves correctly: sends a recovery OTP if
+  // the user exists, silently no-ops otherwise.
+  const admin = createAdminClient();
+  const { data: member } = await admin
+    .from("members")
+    .select("id, user_id")
+    .eq("email", email)
+    .maybeSingle();
+
   const supabase = await createClient();
-  // Fire-and-forget — we deliberately don't surface "user not found"
-  // errors to the client, to avoid revealing which emails exist.
-  await supabase.auth.resetPasswordForEmail(email);
+  if (member && !member.user_id) {
+    await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
+  } else {
+    await supabase.auth.resetPasswordForEmail(email);
+  }
 
   redirect(`/login/verify?email=${encodeURIComponent(email)}`);
 }
@@ -144,11 +167,17 @@ export async function verifyAndReset(
   }
 
   const supabase = await createClient();
-  const { error: verifyErr } = await supabase.auth.verifyOtp({
-    email,
-    token,
-    type: "recovery",
-  });
+  // Try recovery first (existing auth user, normal reset). If that fails,
+  // try email — this is the member-first-signin path where we used
+  // signInWithOtp to create the auth row.
+  let verifyErr = (
+    await supabase.auth.verifyOtp({ email, token, type: "recovery" })
+  ).error;
+  if (verifyErr) {
+    verifyErr = (
+      await supabase.auth.verifyOtp({ email, token, type: "email" })
+    ).error;
+  }
   if (verifyErr) {
     return {
       ok: false,
@@ -157,12 +186,37 @@ export async function verifyAndReset(
     };
   }
 
-  const { error: updateErr } = await supabase.auth.updateUser({ password });
+  // Set the password and flag user_metadata.password_set so /members/me
+  // doesn't gate them on first-time setup again.
+  const { error: updateErr } = await supabase.auth.updateUser({
+    password,
+    data: { password_set: true },
+  });
   if (updateErr) {
     return { ok: false, message: updateErr.message, values: { token } };
   }
 
-  redirect("/admin");
+  // Auto-link auth.users → public.members by email so /members/me works
+  // on first visit. Same pattern as verifyCode above.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user?.email) {
+    const admin = createAdminClient();
+    const { data: row } = await admin
+      .from("members")
+      .select("id, user_id")
+      .eq("email", user.email)
+      .maybeSingle();
+    if (row && !row.user_id) {
+      await admin.from("members").update({ user_id: user.id }).eq("id", row.id);
+    }
+  }
+
+  // Role-aware redirect — members go to /members/me, staff to /admin.
+  const session = await getSessionUser();
+  const isStaff = session?.role === "admin" || session?.role === "instructor";
+  redirect(isStaff ? "/admin" : "/members/me");
 }
 
 // ---------------------------------------------------------------------------
