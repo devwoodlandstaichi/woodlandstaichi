@@ -9,6 +9,10 @@ import {
   memberRequestAck,
 } from "@/lib/email/reactivation";
 import {
+  adminRegistrationNotice,
+  memberRegistrationAck,
+} from "@/lib/email/registration";
+import {
   reactivationRequestSchema,
   registrationSchema,
 } from "./schema";
@@ -172,7 +176,7 @@ export async function submitRegistration(
 
   // Insert registration (idempotent if user re-submits same class)
   const notes = `Session: ${sessionLabel}. Waiver signed by: ${data.waiver_signature}.`;
-  const { error: regError } = await supabase
+  const { data: regRow, error: regError } = await supabase
     .from("registrations")
     .upsert(
       {
@@ -188,9 +192,11 @@ export async function submitRegistration(
         notes,
       },
       { onConflict: "member_id,class_id" },
-    );
+    )
+    .select("id")
+    .single();
 
-  if (regError) {
+  if (regError || !regRow) {
     return {
       status: "error",
       message:
@@ -198,6 +204,28 @@ export async function submitRegistration(
       values: snapshotValues(formData),
     };
   }
+
+  // Best-effort confirmation emails — don't block registration on
+  // delivery failure. Admin notice keeps the founder in the loop;
+  // member ack closes the "did my form go through?" loop.
+  const memberName = data.nickname
+    ? `${data.first_name} (${data.nickname})`
+    : data.first_name;
+  const ack = memberRegistrationAck({
+    memberName,
+    memberEmail: data.email,
+    classLabel: sessionLabel,
+    paymentMethod: data.payment_method,
+  });
+  const adminNotice = adminRegistrationNotice({
+    memberName: `${data.first_name} ${data.last_name}`,
+    memberEmail: data.email,
+    classLabel: sessionLabel,
+    paymentMethod: data.payment_method,
+    shirtSize: data.shirt_size,
+    registrationId: regRow.id,
+  });
+  await Promise.all([sendEmail(ack), sendEmail(adminNotice)]).catch(() => {});
 
   redirect(`/classes/register/thanks?id=${memberId}`);
 }

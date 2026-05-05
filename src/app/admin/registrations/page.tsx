@@ -2,13 +2,27 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Button, PageHeader } from "@/components/admin/ui";
 import { dayLabel, formatDate, formatTimeRange, levelLabel } from "@/lib/format";
-import { markPaid, markPending, markRefunded, markWaived } from "./actions";
-import { RegistrationFilters, type PaymentStatus } from "./filters";
+import {
+  markDemoted,
+  markDenied,
+  markPaid,
+  markPending,
+  markRefunded,
+  markUndenied,
+  markWaived,
+} from "./actions";
+import { RegistrationFilters, type RegistrationView, type PaymentStatus } from "./filters";
 
 export const metadata = { title: "Registrations" };
 export const dynamic = "force-dynamic";
 
-const PAYMENT_OPTIONS = ["pending", "paid", "waived", "refunded"] as const;
+const VIEW_OPTIONS = [
+  "pending",
+  "paid",
+  "waived",
+  "refunded",
+  "denied",
+] as const;
 
 const PAYMENT_TONE: Record<PaymentStatus, "vermillion" | "jade" | "cobalt" | "muted"> = {
   pending: "vermillion",
@@ -25,6 +39,8 @@ type Row = {
   payment_received_at: string | null;
   registered_at: string;
   notes: string | null;
+  denied_at: string | null;
+  denial_reason: string | null;
   members: {
     id: string;
     first_name: string;
@@ -44,8 +60,8 @@ type Row = {
 
 type SearchParams = Promise<{ status?: string }>;
 
-function isStatus(v: string | undefined): v is PaymentStatus {
-  return !!v && (PAYMENT_OPTIONS as readonly string[]).includes(v);
+function isView(v: string | undefined): v is RegistrationView {
+  return !!v && (VIEW_OPTIONS as readonly string[]).includes(v);
 }
 
 export default async function RegistrationsPage({
@@ -54,17 +70,26 @@ export default async function RegistrationsPage({
   searchParams: SearchParams;
 }) {
   const params = await searchParams;
-  const status = isStatus(params.status) ? params.status : "pending";
+  const status = isView(params.status) ? params.status : "pending";
 
   const supabase = await createClient();
-  const { data } = await supabase
+  let query = supabase
     .from("registrations")
     .select(
-      "id,shirt_size,payment_method,payment_status,payment_received_at,registered_at,notes,members(id,first_name,last_name,email,status),classes(name,level,location,day_of_week,start_time,end_time)",
+      "id,shirt_size,payment_method,payment_status,payment_received_at,registered_at,notes,denied_at,denial_reason,members(id,first_name,last_name,email,status),classes(name,level,location,day_of_week,start_time,end_time)",
     )
-    .eq("payment_status", status)
     .order("registered_at", { ascending: false });
 
+  if (status === "denied") {
+    query = query.not("denied_at", "is", null);
+  } else {
+    // Hide denied rows from the financial views — they're surfaced in
+    // their own tab. Stops a denied registration from cluttering the
+    // pending queue while still being inspectable.
+    query = query.eq("payment_status", status).is("denied_at", null);
+  }
+
+  const { data } = await query;
   const rows = (data ?? []) as unknown as Row[];
 
   return (
@@ -152,9 +177,28 @@ export default async function RegistrationsPage({
                       {formatDate(r.payment_received_at.slice(0, 10))}
                     </p>
                   )}
+                  {r.denied_at && (
+                    <p className="mt-1">
+                      <Badge tone="muted">denied</Badge>
+                    </p>
+                  )}
+                  {r.denial_reason && (
+                    <p
+                      className="mt-1 text-xs italic text-muted-foreground"
+                      title={r.denial_reason}
+                    >
+                      &ldquo;{r.denial_reason.slice(0, 60)}
+                      {r.denial_reason.length > 60 ? "…" : ""}&rdquo;
+                    </p>
+                  )}
                 </td>
                 <td className="px-4 py-3">
-                  <ActionButtons id={r.id} status={r.payment_status} />
+                  <ActionButtons
+                    id={r.id}
+                    status={r.payment_status}
+                    denied={!!r.denied_at}
+                    memberStatus={r.members?.status ?? null}
+                  />
                 </td>
               </tr>
             ))}
@@ -178,7 +222,7 @@ export default async function RegistrationsPage({
 // gets a distinct line so the founder gets a quiet wink rather
 // than the same generic "No X registrations" four ways.
 const EMPTY_COPY: Record<
-  PaymentStatus,
+  RegistrationView,
   { headline: string; italic: string; sub: string }
 > = {
   pending: {
@@ -201,9 +245,14 @@ const EMPTY_COPY: Record<
     italic: "money flowed the right way.",
     sub: "Refunds are rare. That's the goal.",
   },
+  denied: {
+    headline: "Nothing turned away,",
+    italic: "the door is open.",
+    sub: "Denied registrations are kept here for the audit trail. Empty is the right state.",
+  },
 };
 
-function EmptyRegistrations({ status }: { status: PaymentStatus }) {
+function EmptyRegistrations({ status }: { status: RegistrationView }) {
   const copy = EMPTY_COPY[status];
   return (
     <div className="px-6 py-20 md:py-28">
@@ -223,10 +272,30 @@ function EmptyRegistrations({ status }: { status: PaymentStatus }) {
 function ActionButtons({
   id,
   status,
+  denied,
+  memberStatus,
 }: {
   id: string;
   status: PaymentStatus;
+  denied: boolean;
+  memberStatus: string | null;
 }) {
+  // A denied registration shouldn't pretend to be approvable — collapse
+  // to "Reverse denial" until the admin un-denies. Keeps the surface
+  // small and unambiguous.
+  if (denied) {
+    return (
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <form action={markUndenied}>
+          <input type="hidden" name="id" value={id} />
+          <Button type="submit" variant="outline" size="sm">
+            Reverse denial
+          </Button>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
       {status !== "paid" && (
@@ -261,6 +330,29 @@ function ActionButtons({
           </Button>
         </form>
       )}
+      {memberStatus === "active" && (
+        <form action={markDemoted}>
+          <input type="hidden" name="id" value={id} />
+          <Button type="submit" variant="ghost" size="sm">
+            Demote to waitlist
+          </Button>
+        </form>
+      )}
+      {/* Deny — small inline form so the founder can include a short
+          reason. Reason is optional; submitting with the field blank
+          still records the denial and emails the member. */}
+      <form action={markDenied} className="flex items-center gap-2">
+        <input type="hidden" name="id" value={id} />
+        <input
+          name="reason"
+          placeholder="Reason (optional)"
+          aria-label="Denial reason"
+          className="h-8 w-44 rounded-md border border-input bg-background px-2 text-xs"
+        />
+        <Button type="submit" variant="ghost" size="sm">
+          Deny
+        </Button>
+      </form>
     </div>
   );
 }
