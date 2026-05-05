@@ -25,15 +25,15 @@ export function CodeForm({ email, next }: { email: string; next: string }) {
         <input type="hidden" name="email" value={email} />
         <input type="hidden" name="next" value={next} />
 
-        <Field label="6-digit code" htmlFor="token">
+        <Field label="Sign-in code" htmlFor="token">
           <Input
             id="token"
             name="token"
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
-            pattern="\d{6}"
-            maxLength={6}
+            pattern="\d{6,10}"
+            maxLength={10}
             required
             autoFocus
             defaultValue={

@@ -141,7 +141,7 @@ function CodeStep({ email, next }: { email: string; next: string }) {
         Enter your code
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        We sent a 6-digit code to{" "}
+        We sent a code to{" "}
         <span className="font-medium text-foreground">{email}</span>. Enter it
         below to sign in.
       </p>

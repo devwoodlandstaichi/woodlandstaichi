@@ -57,12 +57,14 @@ export async function signOut() {
 }
 
 // ---------------------------------------------------------------------------
-// Password reset via 6-digit email OTP
+// Password reset via email OTP
 //
 // Step 1: requestPasswordReset — calls supabase.auth.resetPasswordForEmail,
-//   which emails a 6-digit token. The custom recovery template renders
+//   which emails a numeric token. The custom recovery template renders
 //   {{ .Token }} only (no magic link). We always redirect to
 //   /login/verify so the response doesn't leak whether the email exists.
+//   Token length is whatever the Supabase project is configured to send
+//   (defaults vary by project / plan); we accept 6–10 digits.
 //
 // Step 2: verifyAndReset — verifies the OTP via verifyOtp({ type: "recovery" }),
 //   which creates a recovery session, then immediately calls updateUser to
@@ -123,10 +125,10 @@ export async function verifyAndReset(
   if (!email) {
     return { ok: false, message: "Missing email — start over from /login/forgot." };
   }
-  if (!/^\d{6}$/.test(token)) {
+  if (!/^\d{6,10}$/.test(token)) {
     return {
       ok: false,
-      message: "Enter the 6-digit code from your email.",
+      message: "Enter the code from your email.",
       values: { token },
     };
   }
@@ -171,7 +173,7 @@ export async function verifyAndReset(
 // them into /members/me we offer a passwordless flow:
 //
 //   Step 1 (lookupAndSendCode): user types email → we look it up in
-//     public.members. If found, fire signInWithOtp (GoTrue mints a 6-digit
+//     public.members. If found, fire signInWithOtp (GoTrue mints a numeric
 //     OTP, emails it via Resend SMTP, creates auth.users row if missing).
 //     The custom magic_link template renders {{ .Token }} only — we
 //     deliberately don't send the magic-link URL to keep the flow OTP-only
@@ -272,10 +274,10 @@ export async function verifyCode(
   if (!email) {
     return { ok: false, message: "Missing email — go back to step 1." };
   }
-  if (!/^\d{6}$/.test(token)) {
+  if (!/^\d{6,10}$/.test(token)) {
     return {
       ok: false,
-      message: "Enter the 6-digit code from your email.",
+      message: "Enter the code from your email.",
       values: { token },
     };
   }

@@ -22,7 +22,7 @@ export function VerifyForm({ email }: { email: string }) {
       <input type="hidden" name="email" value={email} />
 
       <Field
-        label="6-digit code"
+        label="Verification code"
         htmlFor="token"
         hint="Check your email — including spam. Code expires in about an hour."
       >
@@ -31,8 +31,8 @@ export function VerifyForm({ email }: { email: string }) {
           name="token"
           inputMode="numeric"
           autoComplete="one-time-code"
-          pattern="[0-9]{6}"
-          maxLength={6}
+          pattern="[0-9]{6,10}"
+          maxLength={10}
           required
           defaultValue={submitted?.token ?? ""}
           className="font-mono tracking-[0.4em]"
