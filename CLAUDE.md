@@ -40,7 +40,7 @@ This repo is a ground-up rebuild of <https://woodlandstaichi.com> (currently Wor
 | **4.0 — Store/orders** | Public order form for shirts/uniforms; admin queue + payment status | ✅ Done (still informational — no Stripe) |
 | **5.0 — Member portal** | `/members/me` self-service: profile, photo, bio (admin/instructor public bio), QR regen | 🟡 Started (`/members/me` exists) |
 | **5.1 — Self-submitted testimonials** | Members submit → admin approval queue → publish to `/about` | ⏳ Designed (see §13) |
-| **6.0 — Production cutover** | Cloudflare Pages deploy + hosted Supabase + DNS repoint | ⏳ Pending founder sign-off |
+| **6.0 — Production cutover** | Vercel deploy + hosted Supabase + DNS repoint from Hostinger | 🟡 Deployed at `woodlandstaichi.vercel.app`; DNS swap pending founder sign-off |
 
 **Critical principle:** the schema is already designed for every shipping phase. **Don't hardcode anything that lives in Supabase** — classes, sessions, testimonials, news, instructors, orders, registrations all flow through the DB. The public `ScheduleSection` (home + `/classes`), `TestimonialsSection` (`/about`), `/news`, `/about/instructors`, and `/classes/register` are reference patterns.
 
@@ -52,13 +52,15 @@ This repo is a ground-up rebuild of <https://woodlandstaichi.com> (currently Wor
 - **Tailwind CSS v4** (CSS-first config in `globals.css`, no `tailwind.config`)
 - **shadcn/ui** (style: `new-york`, base: `stone`, icons: `lucide-react`)
 - **Supabase** (Postgres + Auth + Storage + `pg_cron` + Edge Functions)
-- **Cloudflare Pages** (target host — free tier, no commercial restriction)
+- **Vercel** (production host at `woodlandstaichi.vercel.app`; Hobby tier)
 - **Resend** (transactional email — Phase 3+)
 - **Colima** (local Docker runtime — Docker Desktop not used; user preference for free + CLI-only)
 
 **Stack pin: read the local docs first.** Next.js 16 + React 19 + Tailwind v4 diverge from older training data (App Router defaults, async `cookies()`/`headers()`, Tailwind v4 CSS-first config, Turbopack). Before modifying Next/React/Tailwind code, consult `node_modules/next/dist/docs/` for the actually-installed version. Heed deprecation notices in build output.
 
-**Why this stack (for a future Claude that might want to reconsider):** Cloudflare Pages over Vercel because Vercel Hobby's commercial restriction is gray-area for a non-profit. Supabase over a custom Express+Postgres stack because we get RLS, Auth, pg_cron, and Studio for free with no extra services. **Everything must remain free-tier** — this is a non-profit; don't suggest paid services without explicit permission.
+**Why this stack (for a future Claude that might want to reconsider):** Vercel was originally ruled out in favor of Cloudflare Pages because Hobby's commercial restriction is gray-area for a non-profit; the founder accepted the risk and we're on Vercel Hobby. Supabase over a custom Express+Postgres stack because we get RLS, Auth, pg_cron, and Studio for free with no extra services. **Everything must remain free-tier** — this is a non-profit; don't suggest paid services without explicit permission.
+
+**Production env vars live in Vercel** (Project → Settings → Environment Variables, Production scope): `NEXT_PUBLIC_SUPABASE_URL` (cloud project URL), `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `QR_TOKEN_SECRET`. Local `.env.local` and Vercel env are independent — when adding a new env var, set it in *both*.
 
 ---
 
@@ -132,7 +134,7 @@ Bucket creation + RLS lives inside the migration that introduces the feature (se
 
 ### QR attendance design constraint (Phase 3)
 
-Tokens stored in `members.qr_token` are opaque IDs; signing/verification happens in app code with `QR_TOKEN_SECRET` (HMAC via `jose`). Camera scanning uses `@zxing/browser` against `getUserMedia` — requires HTTPS in production (Cloudflare Pages provides it). The `Permissions-Policy` header in `next.config.ts` already grants `camera=(self)`; do not widen it. Backup flow: type-to-search by name when QR fails.
+Tokens stored in `members.qr_token` are opaque IDs; signing/verification happens in app code with `QR_TOKEN_SECRET` (HMAC via `jose`). Camera scanning uses `@zxing/browser` against `getUserMedia` — requires HTTPS in production (Vercel provides it). The `Permissions-Policy` header in `next.config.ts` already grants `camera=(self)`; do not widen it. Backup flow: type-to-search by name when QR fails.
 
 ### Security headers + CSP
 
