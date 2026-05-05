@@ -77,6 +77,14 @@ otp_expiry = 3600
 subject = "Reset your Woodlands Tai Chi password"
 content_path = "./supabase/templates/recovery.html"
 
+# Same treatment for the email-OTP login flow (signInWithOtp). The
+# default template embeds a {{ .ConfirmationURL }} magic link; we ship
+# OTP-only to avoid same-device PKCE pitfalls and the cross-device
+# confusion of "tap link on phone, sign in on laptop."
+[auth.email.template.magic_link]
+subject = "Your Woodlands Tai Chi sign-in code"
+content_path = "./supabase/templates/magic_link.html"
+
 # Send all auth emails (password recovery, magic links, signup
 # confirmations) through Resend SMTP. When this block is enabled, local
 # Inbucket no longer catches these messages — Resend delivers real mail.

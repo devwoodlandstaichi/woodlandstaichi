@@ -1,23 +1,9 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSessionUser } from "@/lib/auth/dal";
-
-/** Build the magic-link callback URL from the incoming request so it
- * works in dev (http://127.0.0.1:3000) and prod (whatever host the
- * site is served from) without an env var. */
-async function buildCallbackUrl(next: string): Promise<string> {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "127.0.0.1:3000";
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  const params = new URLSearchParams();
-  if (next) params.set("next", next);
-  const qs = params.toString();
-  return `${proto}://${host}/login/callback${qs ? `?${qs}` : ""}`;
-}
 
 export type LoginState =
   | { ok: false; message: string }
@@ -74,9 +60,9 @@ export async function signOut() {
 // Password reset via 6-digit email OTP
 //
 // Step 1: requestPasswordReset — calls supabase.auth.resetPasswordForEmail,
-//   which emails a 6-digit token (and a magic link, which we ignore). We
-//   always redirect to /login/verify so the response doesn't leak whether
-//   the email exists.
+//   which emails a 6-digit token. The custom recovery template renders
+//   {{ .Token }} only (no magic link). We always redirect to
+//   /login/verify so the response doesn't leak whether the email exists.
 //
 // Step 2: verifyAndReset — verifies the OTP via verifyOtp({ type: "recovery" }),
 //   which creates a recovery session, then immediately calls updateUser to
@@ -178,7 +164,7 @@ export async function verifyAndReset(
 }
 
 // ---------------------------------------------------------------------------
-// Magic-link / email-OTP sign-in
+// Email-OTP sign-in
 //
 // Most members on our roster never set a password — they registered for a
 // class via /classes/register, which writes only to public.members. To let
@@ -187,6 +173,9 @@ export async function verifyAndReset(
 //   Step 1 (lookupAndSendCode): user types email → we look it up in
 //     public.members. If found, fire signInWithOtp (GoTrue mints a 6-digit
 //     OTP, emails it via Resend SMTP, creates auth.users row if missing).
+//     The custom magic_link template renders {{ .Token }} only — we
+//     deliberately don't send the magic-link URL to keep the flow OTP-only
+//     (avoids same-device PKCE pitfalls and cross-device confusion).
 //     If not found, route to a "register for a class" CTA — we deliberately
 //     leak existence here because the school is small and the UX win
 //     outweighs the enumeration risk.
@@ -226,12 +215,9 @@ export async function lookupAndSendCode(
   }
 
   const supabase = await createClient();
-  const emailRedirectTo = await buildCallbackUrl(
-    next === "/admin" ? "" : next,
-  );
   await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true, emailRedirectTo },
+    options: { shouldCreateUser: true },
   });
 
   const params = new URLSearchParams({ step: "code", email });
@@ -260,10 +246,9 @@ export async function resendCode(
     return { ok: false, message: "Missing or invalid email." };
   }
   const supabase = await createClient();
-  const emailRedirectTo = await buildCallbackUrl("");
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true, emailRedirectTo },
+    options: { shouldCreateUser: true },
   });
   if (error) {
     return {

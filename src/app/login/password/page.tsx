@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 type SearchParams = Promise<{ next?: string; error?: string }>;
 
 // Password sign-in is the default at /login now. Keep this route as a
-// redirect so older bookmarks and the auth callback still resolve to a
-// sensible page.
+// redirect so older bookmarks still resolve to a sensible page.
 export default async function LegacyPasswordRedirect({
   searchParams,
 }: {

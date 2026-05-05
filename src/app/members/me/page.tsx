@@ -122,7 +122,7 @@ async function userHasPasswordSet(): Promise<boolean> {
     data: { user },
   } = await supabase.auth.getUser();
   // We track a `password_set` boolean in user_metadata. GoTrue stamps a
-  // placeholder bcrypt on magic-link signups, so encrypted_password is
+  // placeholder bcrypt on email-OTP signups, so encrypted_password is
   // always populated and useless as a signal. Anything truthy here means
   // the user explicitly set their password via /members/me.
   return user?.user_metadata?.password_set === true;
@@ -133,9 +133,9 @@ export default async function MyProfilePage() {
 
   if (!email) redirect("/login?next=/members/me");
 
-  // Members who signed in via magic-link OTP have no password they
-  // chose yet. Block the rest of the page until they set one so they
-  // can sign in normally next time without waiting on email.
+  // Members who signed in via email OTP have no password they chose
+  // yet. Block the rest of the page until they set one so they can sign
+  // in normally next time without waiting on email.
   const hasPassword = await userHasPasswordSet();
   if (member && !hasPassword) {
     return (

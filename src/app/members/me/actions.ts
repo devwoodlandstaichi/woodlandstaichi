@@ -356,7 +356,7 @@ export async function submitTestimonial(
 
 // ---------------------------------------------------------------------------
 // First-time password setup
-// Members who signed in via magic-link OTP have an auth.users row but no
+// Members who signed in via email-OTP have an auth.users row but no
 // password. /members/me gates everything else on having one set so they
 // can sign in normally next time without going through email each visit.
 // ---------------------------------------------------------------------------
@@ -392,7 +392,7 @@ export async function setInitialPassword(
   // Set the password AND flag user_metadata.password_set so the gate
   // knows this was a deliberate user choice. We can't trust
   // auth.users.encrypted_password to detect "real password" — GoTrue
-  // assigns a placeholder hash to magic-link users so the column is
+  // assigns a placeholder hash to email-OTP users so the column is
   // always populated.
   const { error } = await supabase.auth.updateUser({
     password,
