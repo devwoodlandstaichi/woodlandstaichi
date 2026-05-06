@@ -91,6 +91,14 @@ export async function emailQrToMember(
 
   if (!result.ok) return result;
 
+  // Stamp delivery so the bulk-unsent action skips this member next
+  // time. Best-effort — the email already left, so we don't surface
+  // failures here.
+  await supabase
+    .from("members")
+    .update({ qr_emailed_at: new Date().toISOString() })
+    .eq("id", memberId);
+
   revalidatePath("/admin/members");
   revalidatePath(`/admin/members/${memberId}`);
   revalidatePath(`/admin/members/${memberId}/qr`);

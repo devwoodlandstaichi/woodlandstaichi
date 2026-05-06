@@ -9,6 +9,7 @@ import {
 import { MemberFilters } from "./filters";
 import { DangerZoneButton } from "./danger-zone";
 import { BulkIssueQrsButton } from "./bulk-issue-button";
+import { BulkEmailQrsButton } from "./bulk-email-qrs-button";
 import { getSessionUser } from "@/lib/auth/dal";
 import { MembersTable } from "./members-table";
 import {
@@ -20,6 +21,11 @@ import {
 
 export const metadata = { title: "Members" };
 export const dynamic = "force-dynamic";
+
+// Bump the timeout for server actions invoked from this page —
+// bulk QR email serializes ~50 sends at ~600ms each. Vercel Hobby
+// caps at 60s; we pin to that.
+export const maxDuration = 60;
 
 type SearchParams = Promise<{
   q?: string;
@@ -98,6 +104,17 @@ export default async function MembersPage({
   const { data } = await query;
   const rows = (data ?? []) as MemberRow[];
 
+  // Count of members eligible for the bulk-email-unsent action so the
+  // button can render the queue size in its label and hide entirely
+  // when there's nothing to do.
+  const { count: unsentQrs } = await supabase
+    .from("members")
+    .select("id", { count: "exact", head: true })
+    .not("qr_token", "is", null)
+    .is("qr_emailed_at", null)
+    .neq("status", "inactive")
+    .not("email", "is", null);
+
   // Precompute the toggle URL for each sortable column so the (client)
   // table can render header links without needing the helper function.
   const sortHrefs = SORT_COLUMNS.reduce(
@@ -125,6 +142,7 @@ export default async function MembersPage({
         action={
           <>
             <BulkIssueQrsButton />
+            <BulkEmailQrsButton unsentCount={unsentQrs ?? 0} />
             {user?.role === "admin" && <DangerZoneButton />}
           </>
         }

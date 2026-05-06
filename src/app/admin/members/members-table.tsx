@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
   GraduationCap,
+  Mail,
   Pencil,
   Trash2,
   UserCheck,
@@ -31,6 +32,7 @@ import {
   bulkSetMemberStatus,
   deleteMembers,
 } from "./actions";
+import { bulkEmailQrToIds } from "./bulk-email-qrs";
 import {
   MEMBER_LEVEL_LABELS,
   MEMBER_LEVEL_VALUES,
@@ -85,7 +87,9 @@ export function MembersTable({
   const router = useRouter();
   const { toast } = useToast();
   const deleteDialog = useConfirmDialog();
+  const emailQrDialog = useConfirmDialog();
   const [pending, startTransition] = useTransition();
+  const [pendingEmailQrIds, setPendingEmailQrIds] = useState<string[]>([]);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [anchor, setAnchor] = useState<string | null>(null);
@@ -270,6 +274,31 @@ export function MembersTable({
     deleteDialog.show();
   }
 
+  function askEmailQrs(ids: string[]) {
+    setMenu(null);
+    setPendingEmailQrIds(ids);
+    emailQrDialog.show();
+  }
+
+  function confirmEmailQrs() {
+    const ids = pendingEmailQrIds;
+    if (ids.length === 0) return;
+    startTransition(async () => {
+      const r = await bulkEmailQrToIds(ids);
+      emailQrDialog.close();
+      setPendingEmailQrIds([]);
+      toast({
+        tone: r.sent > 0 ? "ok" : r.failed > 0 ? "err" : "info",
+        title:
+          r.sent > 0
+            ? `Sent ${r.sent} QR${r.sent === 1 ? "" : "s"}`
+            : "No QRs sent",
+        description: r.message,
+      });
+      router.refresh();
+    });
+  }
+
   function confirmDelete() {
     const ids = pendingDeleteIds;
     if (ids.length === 0) return;
@@ -441,6 +470,7 @@ export function MembersTable({
           pending={pending}
           onStatus={(s) => applyStatus(menu.ids, s)}
           onLevel={(l) => applyLevel(menu.ids, l)}
+          onEmailQrs={() => askEmailQrs(menu.ids)}
           onDelete={() => askDelete(menu.ids)}
         />
       )}
@@ -491,6 +521,42 @@ export function MembersTable({
         pending={pending}
         onConfirm={confirmDelete}
       />
+
+      <ConfirmDialog
+        open={emailQrDialog.open}
+        onOpenChange={(o) => {
+          emailQrDialog.onOpenChange(o);
+          if (!o) setPendingEmailQrIds([]);
+        }}
+        title={
+          pendingEmailQrIds.length === 1
+            ? "Email QR to this member?"
+            : `Email QR to ${pendingEmailQrIds.length} members?`
+        }
+        description={
+          <>
+            <p>
+              {pendingEmailQrIds.length === 1
+                ? "We'll mint a fresh QR if needed and email it to them."
+                : `We'll mint a fresh QR for anyone missing one and email all ${pendingEmailQrIds.length} their attendance badge.`}
+            </p>
+            <p className="mt-2 text-foreground/60">
+              Members without an email on file are skipped. We send up to
+              50 per click — click again to send the next batch if more
+              are queued.
+            </p>
+          </>
+        }
+        confirmLabel={
+          pendingEmailQrIds.length === 1
+            ? "Send QR"
+            : `Send ${Math.min(pendingEmailQrIds.length, 50)} QR${
+                Math.min(pendingEmailQrIds.length, 50) === 1 ? "" : "s"
+              }`
+        }
+        pending={pending}
+        onConfirm={confirmEmailQrs}
+      />
     </>
   );
 }
@@ -503,6 +569,7 @@ function ContextMenu({
   pending,
   onStatus,
   onLevel,
+  onEmailQrs,
   onDelete,
 }: {
   x: number;
@@ -512,6 +579,7 @@ function ContextMenu({
   pending: boolean;
   onStatus: (status: MemberStatus) => void;
   onLevel: (level: MemberLevel) => void;
+  onEmailQrs: () => void;
   onDelete: () => void;
 }) {
   const single = ids.length === 1 ? ids[0] : null;
@@ -577,6 +645,15 @@ function ContextMenu({
           {MEMBER_LEVEL_LABELS[lvl]}
         </MenuItem>
       ))}
+
+      <div className="my-1 h-px bg-foreground/5" />
+      <MenuItem
+        icon={<Mail size={14} aria-hidden />}
+        onClick={onEmailQrs}
+        disabled={pending}
+      >
+        {ids.length === 1 ? "Email QR" : `Email QR to ${ids.length} members`}
+      </MenuItem>
 
       {canDelete && (
         <>
