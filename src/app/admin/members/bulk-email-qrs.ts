@@ -44,60 +44,83 @@ type Member = {
   qr_token: string | null;
 };
 
-/** The actual per-member send. Returns true if Resend accepted; false
- * otherwise. Always stamps qr_emailed_at on success. Mints a token if
- * the member doesn't have one yet. */
+type SendOneResult = { ok: true } | { ok: false; reason: string };
+
+/** The actual per-member send. Mints a token if the member doesn't have
+ * one yet. Stamps qr_emailed_at on success. Returns a structured
+ * result so the caller can surface the first failure to the admin. */
 async function sendOne(
   supabase: Awaited<ReturnType<typeof createClient>>,
   member: Member,
-): Promise<boolean> {
-  if (!member.email) return false;
+): Promise<SendOneResult> {
+  if (!member.email) return { ok: false, reason: "no email on file" };
 
-  let tokenId = member.qr_token;
-  if (!tokenId) {
-    const issued = issueQrToken();
-    tokenId = issued.tokenId;
-    const { error } = await supabase
-      .from("members")
-      .update({
-        qr_token: tokenId,
-        qr_issued_at: new Date().toISOString(),
-        qr_revoked_at: null,
-      })
-      .eq("id", member.id);
-    if (error) return false;
+  if (!process.env.QR_TOKEN_SECRET) {
+    return {
+      ok: false,
+      reason: "QR_TOKEN_SECRET is not set on the server",
+    };
   }
 
-  const sig = createHmac("sha256", process.env.QR_TOKEN_SECRET ?? "")
-    .update(tokenId)
-    .digest("base64url");
-  const encoded = `${tokenId}.${sig}`;
+  try {
+    let tokenId = member.qr_token;
+    if (!tokenId) {
+      const issued = issueQrToken();
+      tokenId = issued.tokenId;
+      const { error } = await supabase
+        .from("members")
+        .update({
+          qr_token: tokenId,
+          qr_issued_at: new Date().toISOString(),
+          qr_revoked_at: null,
+        })
+        .eq("id", member.id);
+      if (error) return { ok: false, reason: `mint token: ${error.message}` };
+    }
 
-  const memberName = `${member.first_name} ${member.last_name}`;
-  const png = await qrLabeledPngBuffer(encoded, memberName);
+    const sig = createHmac("sha256", process.env.QR_TOKEN_SECRET)
+      .update(tokenId)
+      .digest("base64url");
+    const encoded = `${tokenId}.${sig}`;
 
-  const result = await sendEmail({
-    to: member.email,
-    subject: "Your Woodlands Tai Chi attendance QR",
-    html: qrEmailHtml({ firstName: member.first_name }),
-    text: qrEmailText(member.first_name),
-    attachments: [
-      {
-        filename: `wtc-qr-${member.last_name}-${member.first_name}.png`,
-        content: png,
-        contentId: QR_EMAIL_CID,
-      },
-    ],
-  });
+    const memberName = `${member.first_name} ${member.last_name}`;
+    const png = await qrLabeledPngBuffer(encoded, memberName);
 
-  if (!result.ok) return false;
+    const result = await sendEmail({
+      to: member.email,
+      subject: "Your Woodlands Tai Chi attendance QR",
+      html: qrEmailHtml({ firstName: member.first_name }),
+      text: qrEmailText(member.first_name),
+      attachments: [
+        {
+          filename: `wtc-qr-${member.last_name}-${member.first_name}.png`,
+          content: png,
+          contentId: QR_EMAIL_CID,
+        },
+      ],
+    });
 
-  await supabase
-    .from("members")
-    .update({ qr_emailed_at: new Date().toISOString() })
-    .eq("id", member.id);
+    if (!result.ok) {
+      console.error(
+        `[bulk-email-qrs] send failed for ${member.email}: ${result.message}`,
+      );
+      return { ok: false, reason: result.message };
+    }
 
-  return true;
+    await supabase
+      .from("members")
+      .update({ qr_emailed_at: new Date().toISOString() })
+      .eq("id", member.id);
+
+    return { ok: true };
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    console.error(
+      `[bulk-email-qrs] threw for ${member.email}: ${reason}`,
+      err,
+    );
+    return { ok: false, reason };
+  }
 }
 
 /** Email QR to a specific list of member ids (selection-aware). Skips
@@ -139,28 +162,16 @@ export async function bulkEmailQrToIds(
   const batch = members.slice(0, PER_INVOCATION_CAP);
   const more = members.length > PER_INVOCATION_CAP;
 
-  let sent = 0;
-  let skipped = 0;
-  let failed = 0;
-  for (const m of batch) {
-    if (!m.email) {
-      skipped++;
-      continue;
-    }
-    const ok = await sendOne(supabase, m);
-    if (ok) sent++;
-    else failed++;
-  }
-
+  const counts = await runBatch(supabase, batch);
   revalidatePath("/admin/members");
 
   return {
-    sent,
-    skipped,
-    failed,
+    sent: counts.sent,
+    skipped: counts.skipped,
+    failed: counts.failed,
     more,
     scope,
-    message: summarize({ sent, skipped, failed, more, scope }),
+    message: summarize({ ...counts, more, scope }),
   };
 }
 
@@ -195,29 +206,45 @@ export async function bulkEmailQrUnsent(): Promise<BulkEmailQrResult> {
   const batch = members.slice(0, PER_INVOCATION_CAP);
   const more = members.length > PER_INVOCATION_CAP;
 
+  const counts = await runBatch(supabase, batch);
+  revalidatePath("/admin/members");
+
+  return {
+    sent: counts.sent,
+    skipped: counts.skipped,
+    failed: counts.failed,
+    more,
+    scope,
+    message: summarize({ ...counts, more, scope }),
+  };
+}
+
+async function runBatch(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  batch: Member[],
+): Promise<{
+  sent: number;
+  skipped: number;
+  failed: number;
+  firstError: string | null;
+}> {
   let sent = 0;
   let skipped = 0;
   let failed = 0;
+  let firstError: string | null = null;
   for (const m of batch) {
     if (!m.email) {
       skipped++;
       continue;
     }
-    const ok = await sendOne(supabase, m);
-    if (ok) sent++;
-    else failed++;
+    const r = await sendOne(supabase, m);
+    if (r.ok) sent++;
+    else {
+      failed++;
+      if (!firstError) firstError = `${m.first_name}: ${r.reason}`;
+    }
   }
-
-  revalidatePath("/admin/members");
-
-  return {
-    sent,
-    skipped,
-    failed,
-    more,
-    scope,
-    message: summarize({ sent, skipped, failed, more, scope }),
-  };
+  return { sent, skipped, failed, firstError };
 }
 
 function summarize(r: {
@@ -226,11 +253,15 @@ function summarize(r: {
   failed: number;
   more: boolean;
   scope: number;
+  firstError?: string | null;
 }): string {
   if (r.scope === 0) return "Nobody to email — every active member with a QR has already received theirs.";
   const parts = [`Sent ${r.sent} QR${r.sent === 1 ? "" : "s"}`];
   if (r.skipped > 0) parts.push(`${r.skipped} skipped (no email)`);
-  if (r.failed > 0) parts.push(`${r.failed} failed`);
+  if (r.failed > 0) {
+    parts.push(`${r.failed} failed`);
+    if (r.firstError) parts.push(`first error: ${r.firstError}`);
+  }
   if (r.more) parts.push(`${r.scope - r.sent - r.skipped - r.failed} still queued — click again`);
   return parts.join(" · ") + ".";
 }
