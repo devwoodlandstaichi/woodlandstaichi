@@ -27,6 +27,7 @@ import {
   markInactive,
   markWaitlist,
 } from "../actions";
+import { EmailQrButton } from "../email-qr-button";
 
 export const metadata = { title: "Member detail" };
 export const dynamic = "force-dynamic";
@@ -68,6 +69,7 @@ type Member = {
   emergency_phone: string | null;
   waiver_signed_at: string | null;
   created_at: string;
+  qr_token: string | null;
 };
 
 type Registration = {
@@ -169,6 +171,13 @@ export default async function MemberDetailPage({
         back="/admin/members"
         action={
           <>
+            <EmailQrButton
+              memberId={m.id}
+              memberName={fullName}
+              email={m.email}
+              hasQr={!!m.qr_token}
+              variant="labeled"
+            />
             <Link href={`/admin/members/${m.id}/qr`}>
               <Button variant="outline" size="sm">
                 <QrCode size={14} aria-hidden /> QR

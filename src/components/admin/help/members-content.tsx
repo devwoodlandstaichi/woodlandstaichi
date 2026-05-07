@@ -93,13 +93,19 @@ export function MembersHelpContent() {
         <Steps>
           <Step n={1}>Open the member&rsquo;s profile.</Step>
           <Step n={2}>
-            Click the <Pill>Email QR</Pill> button. We make a fresh QR
-            if needed and email it to them with instructions.
+            Click the <Pill>Send QR</Pill> button at the top of the
+            page (it reads <Pill>Issue &amp; send QR</Pill> when the
+            member doesn&rsquo;t have a code yet — clicking still
+            works, we&rsquo;ll create one for them).
           </Step>
+          <Step n={3}>Confirm. The button flashes &ldquo;Sent&rdquo; on success.</Step>
         </Steps>
         <p>
-          A green check mark appears on the row once we&rsquo;ve emailed
-          their QR. So you can see at a glance who still needs theirs.
+          You can also do this straight from the members list: each row
+          has a small QR icon next to the name; click it for the same
+          confirm-then-send flow without opening the profile. A green
+          check mark appears on the row once we&rsquo;ve emailed their
+          QR — so you can see at a glance who still needs theirs.
         </p>
       </Section>
 
