@@ -409,6 +409,35 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
         />
       </FormSection>
 
+      <FormSection
+        number={7}
+        title="Church waiver"
+        description="A separate waiver, completed on the church's site."
+      >
+        <div className="rounded-md border border-foreground/15 bg-secondary p-5 text-sm text-foreground/80 leading-relaxed space-y-3">
+          <p>
+            We meet at <strong>The Woodlands Methodist Church</strong> for
+            most sessions. The church requires every fitness-program
+            participant to complete its own waiver — separate from the one
+            above — before using their facility.
+          </p>
+          <p className="text-foreground/65">
+            Please open the link below and complete the church&rsquo;s waiver
+            before your first class. It only takes a minute and is good for
+            the year.
+          </p>
+        </div>
+        <a
+          href="https://thewoodlandsmethodist.org/fitness"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 rounded-full border border-foreground/15 bg-background px-5 py-3 text-sm font-medium text-foreground hover:bg-foreground/5 hover:border-foreground/30 transition-colors w-fit"
+        >
+          Open the church waiver
+          <span aria-hidden>↗</span>
+        </a>
+      </FormSection>
+
       <div className="flex flex-col gap-4 border-t border-foreground/10 pt-8">
         <p className="text-sm text-foreground/60">
           You aren&apos;t enrolled until payment is received. We&apos;ll email

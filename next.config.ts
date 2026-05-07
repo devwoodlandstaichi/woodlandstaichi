@@ -39,6 +39,23 @@ const securityHeaders = [
   },
 ];
 
+// 308 (permanent) redirects from the legacy WordPress URL structure to
+// the new sitemap. Sponsor sites, calendar apps, printed flyers, and
+// search-engine results still link to the old paths; without these
+// they'd 404 after the DNS cutover. Each old URL gets two entries —
+// with and without trailing slash — because the WordPress site
+// historically served both.
+const LEGACY_REDIRECTS = [
+  ["/registration", "/classes/register"],
+  ["/about-tai-chi", "/about"],
+  ["/about-tai-chi/why-tai-chi", "/about/why"],
+  ["/about-us", "/about"],
+  ["/about-us/members", "/about/instructors"],
+  ["/about-us/contact", "/contact"],
+  ["/about-us/testimonial", "/about#testimonials"],
+  ["/mission", "/about"],
+] as const;
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -49,6 +66,12 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1", "localhost", "192.168.16.123"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
+  },
+  async redirects() {
+    return LEGACY_REDIRECTS.flatMap(([source, destination]) => [
+      { source, destination, permanent: true },
+      { source: `${source}/`, destination, permanent: true },
+    ]);
   },
   images: {
     remotePatterns: [
