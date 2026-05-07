@@ -43,7 +43,10 @@ const FALLBACK_MATRIX: Record<string, string[]> = {
   beginners: ["beginners", "remedial", "combined"],
 };
 
-const VISIBLE_DAYS = 14;
+// How far ahead we search for the member's next session. Longer than
+// the previous 14-day window so a slow week doesn't leave the page
+// empty — but we only ever surface the single soonest match.
+const LOOKAHEAD_DAYS = 60;
 
 type SessionRow = {
   id: string;
@@ -124,10 +127,11 @@ export default async function MemberSessionsPage() {
     FALLBACK_MATRIX;
   const allowedClassLevels = matrix[member.level] ?? FALLBACK_MATRIX.beginners;
 
-  // Window: today through today + 14 days, anchored to the school's
-  // local calendar so the boundaries don't drift around UTC midnight.
+  // Window: today through today + LOOKAHEAD_DAYS days, anchored to
+  // the school's local calendar so boundaries don't drift around UTC
+  // midnight.
   const todayIso = todayIsoInSchoolTz();
-  const endIso = addDaysIso(todayIso, VISIBLE_DAYS);
+  const endIso = addDaysIso(todayIso, LOOKAHEAD_DAYS);
 
   const { data: sessionsData } = await supabase
     .from("class_sessions")
@@ -149,7 +153,7 @@ export default async function MemberSessionsPage() {
   const cutoffMs = cutoffMinutes * 60 * 1000;
   // eslint-disable-next-line react-hooks/purity
   const nowMs = Date.now();
-  const visible = sessions.filter((s) => {
+  const eligible = sessions.filter((s) => {
     if (!s.classes) return false;
     const allowed =
       allowedClassLevels.includes(s.classes.level) || s.newcomer_friendly;
@@ -158,24 +162,30 @@ export default async function MemberSessionsPage() {
     return startMs - nowMs >= cutoffMs;
   });
 
-  // Per-session approved counts + member's own RSVP status, plus the
-  // member's full RSVP history (for the "Past requests" collapsible
-  // beneath the visible window).
-  const sessionIds = visible.map((s) => s.id);
+  // We only render the single soonest eligible session — the member
+  // sees one card at a time, takes the action, then comes back. Keeps
+  // the page focused for the older audience.
+  const next = eligible[0] ?? null;
+
+  // Per-session approved count + member's own RSVP for the next
+  // session, plus the member's RSVP history. History excludes any
+  // session that's still in the eligible window so an upcoming
+  // request doesn't appear as "past".
+  const eligibleIds = new Set(eligible.map((s) => s.id));
   const [approvedRes, ownRes, historyRes] = await Promise.all([
-    sessionIds.length > 0
+    next
       ? supabase
           .from("session_rsvps")
           .select("class_session_id")
           .eq("status", "approved")
-          .in("class_session_id", sessionIds)
+          .eq("class_session_id", next.id)
       : Promise.resolve({ data: [] as { class_session_id: string }[] }),
-    sessionIds.length > 0
+    next
       ? supabase
           .from("session_rsvps")
           .select("id, class_session_id, status, reviewer_note")
           .eq("member_id", member.id)
-          .in("class_session_id", sessionIds)
+          .eq("class_session_id", next.id)
       : Promise.resolve({ data: [] as OwnRsvp[] }),
     supabase
       .from("session_rsvps")
@@ -187,21 +197,12 @@ export default async function MemberSessionsPage() {
       .limit(50),
   ]);
 
-  const approvedByMap = new Map<string, number>();
-  for (const r of (approvedRes.data ?? []) as { class_session_id: string }[]) {
-    approvedByMap.set(
-      r.class_session_id,
-      (approvedByMap.get(r.class_session_id) ?? 0) + 1,
-    );
-  }
-  const ownByMap = new Map<string, OwnRsvp>();
-  for (const r of (ownRes.data ?? []) as OwnRsvp[]) {
-    ownByMap.set(r.class_session_id, r);
-  }
+  const approvedCount = (approvedRes.data ?? []).length;
+  const ownRsvp = ((ownRes.data ?? []) as OwnRsvp[])[0] ?? null;
 
   // History: any RSVP whose underlying session isn't in the currently
-  // visible list. Includes past dates and rejected/cancelled rows that
-  // rolled out of the window.
+  // eligible window. Includes past dates and rejected/cancelled rows
+  // that rolled out of the window.
   type HistoryRow = {
     id: string;
     status: OwnRsvp["status"];
@@ -218,9 +219,8 @@ export default async function MemberSessionsPage() {
         | null;
     } | null;
   };
-  const visibleIds = new Set(sessionIds);
   const history = ((historyRes.data ?? []) as unknown as HistoryRow[]).filter(
-    (h) => !visibleIds.has(h.class_session_id),
+    (h) => !eligibleIds.has(h.class_session_id),
   );
 
   return (
@@ -230,44 +230,41 @@ export default async function MemberSessionsPage() {
       <section className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-12">
         <p className="text-[11px] uppercase tracking-[0.45em] text-foreground/55 mb-4">
           <span className="mr-3 inline-block h-px w-8 align-middle bg-vermillion" />
-          Next two weeks
+          Up next
         </p>
         <h1 className="font-display text-4xl leading-[1.05] tracking-tight md:text-5xl">
-          Sessions you can{" "}
-          <span className="italic text-vermillion">request.</span>
+          Your next{" "}
+          <span className="italic text-vermillion">session.</span>
         </h1>
         <p className="mt-4 max-w-prose text-base leading-relaxed text-foreground/70">
-          Pick the dates you can come. We&rsquo;ll review and email everyone
-          for the session at once. Requests close{" "}
+          Pick this date if you can come. Requests close{" "}
           {Math.round(cutoffMinutes / 60)} hour
-          {cutoffMinutes === 60 ? "" : "s"} before the start time.
+          {cutoffMinutes === 60 ? "" : "s"} before the start time. After
+          you&rsquo;ve responded, the next one will appear here.
         </p>
 
-        {visible.length === 0 ? (
+        {next === null ? (
           <p className="mt-12 max-w-prose rounded-2xl border border-foreground/10 bg-card p-8 text-center text-sm text-muted-foreground">
             Nothing open right now. Check back tomorrow — new dates appear as
             instructors set the term schedule.
           </p>
         ) : (
-          <ul className="mt-10 grid gap-4">
-            {visible.map((s) => {
-              const c = s.classes;
-              const cap = s.capacity ?? c?.capacity ?? null;
-              const approved = approvedByMap.get(s.id) ?? 0;
-              const isFull = cap !== null && approved >= cap;
-              const own = ownByMap.get(s.id) ?? null;
-              return (
+          (() => {
+            const c = next.classes;
+            const cap = next.capacity ?? c?.capacity ?? null;
+            const isFull = cap !== null && approvedCount >= cap;
+            return (
+              <ul className="mt-10 grid gap-4">
                 <SessionCard
-                  key={s.id}
-                  s={s}
+                  s={next}
                   cap={cap}
-                  approved={approved}
+                  approved={approvedCount}
                   isFull={isFull}
-                  own={own}
+                  own={ownRsvp}
                 />
-              );
-            })}
-          </ul>
+              </ul>
+            );
+          })()
         )}
 
         {history.length > 0 && (
