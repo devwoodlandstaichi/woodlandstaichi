@@ -96,7 +96,7 @@ export default async function MemberDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [memberRes, registrationsRes] = await Promise.all([
+  const [memberRes, registrationsRes, attendanceRes] = await Promise.all([
     supabase
       .from("members")
       .select("*")
@@ -109,11 +109,31 @@ export default async function MemberDetailPage({
       )
       .eq("member_id", id)
       .order("registered_at", { ascending: false }),
+    supabase
+      .from("attendance")
+      .select(
+        "id,scanned_at,method,class_sessions(session_date,start_time,end_time,classes(name,level,location))",
+      )
+      .eq("member_id", id)
+      .order("scanned_at", { ascending: false })
+      .limit(200),
   ]);
 
   const m = memberRes.data as Member | null;
   if (!m) notFound();
   const registrations = (registrationsRes.data ?? []) as unknown as Registration[];
+  type AttendanceRow = {
+    id: string;
+    scanned_at: string;
+    method: "qr" | "manual";
+    class_sessions: {
+      session_date: string;
+      start_time: string;
+      end_time: string;
+      classes: { name: string; level: string; location: string } | null;
+    } | null;
+  };
+  const attendance = (attendanceRes.data ?? []) as unknown as AttendanceRow[];
 
   const fullName = `${m.first_name} ${m.last_name}`.trim();
   const initials = `${m.first_name[0] ?? ""}${m.last_name[0] ?? ""}`.toUpperCase();
@@ -493,6 +513,65 @@ export default async function MemberDetailPage({
               );
             })}
           </div>
+        )}
+      </section>
+
+      {/* ATTENDANCE */}
+      <section id="attendance" className="mt-8 scroll-mt-20">
+        <SectionHeading
+          eyebrow={`Attendance · ${attendance.length}${attendance.length === 200 ? "+" : ""}`}
+          title="Sessions they've scanned into."
+        />
+        {attendance.length === 0 ? (
+          <Card className="mt-4 p-8 text-center text-sm text-muted-foreground">
+            No attendance recorded yet.
+          </Card>
+        ) : (
+          <Card className="mt-4 overflow-hidden">
+            <ul className="divide-y divide-foreground/5">
+              {attendance.map((a) => {
+                const s = a.class_sessions;
+                const c = s?.classes;
+                return (
+                  <li
+                    key={a.id}
+                    className="grid grid-cols-12 items-baseline gap-x-4 gap-y-1 px-5 py-3"
+                  >
+                    <div className="col-span-12 sm:col-span-3">
+                      <p className="font-medium">
+                        {s?.session_date ? formatDate(s.session_date) : "—"}
+                      </p>
+                      <p className="font-mono text-xs tabular-nums text-muted-foreground">
+                        {s?.start_time && s?.end_time
+                          ? formatTimeRange(s.start_time, s.end_time)
+                          : "—"}
+                      </p>
+                    </div>
+                    <div className="col-span-12 sm:col-span-6">
+                      <p className="text-sm">{c?.name ?? "—"}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {c?.location ?? ""}
+                      </p>
+                    </div>
+                    <div className="col-span-12 flex flex-wrap items-center gap-2 sm:col-span-3 sm:justify-end">
+                      {c?.level && (
+                        <Badge tone="cobalt">{levelLabel(c.level)}</Badge>
+                      )}
+                      <span
+                        className={`inline-flex h-6 items-center rounded-full border px-2 text-[10px] uppercase tracking-[0.18em] ${
+                          a.method === "qr"
+                            ? "border-jade/30 bg-jade/5 text-jade"
+                            : "border-foreground/15 bg-secondary text-foreground/65"
+                        }`}
+                      >
+                        {a.method}
+                      </span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
         )}
       </section>
       </div>

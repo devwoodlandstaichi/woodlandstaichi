@@ -27,12 +27,66 @@ type SessionRow = {
   attendance: { count: number }[] | null;
 };
 
-export default async function AttendanceLanding() {
+const VIEWS = ["upcoming", "past"] as const;
+type View = (typeof VIEWS)[number];
+function isView(v: string | undefined): v is View {
+  return !!v && (VIEWS as readonly string[]).includes(v);
+}
+
+type SearchParams = Promise<{ view?: string }>;
+
+export default async function AttendanceLanding({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const params = await searchParams;
+  const view: View = isView(params.view) ? params.view : "upcoming";
+
   const supabase = await createClient();
   const now = new Date();
   const todayIso = isoInSchoolTz(now);
 
-  // Sessions in the next ~14 days, plus today.
+  if (view === "past") {
+    // Last ~60 days of past sessions (newest first). Cap is loose —
+    // realistic class roster is ~30 sessions/month so 60 days lands
+    // around ~60 rows max.
+    const sixtyAgo = new Date(now.getTime() - 60 * 86400_000)
+      .toISOString()
+      .slice(0, 10);
+
+    const { data } = await supabase
+      .from("class_sessions")
+      .select(
+        "id,session_date,start_time,end_time,classes(name,level,location,day_of_week),attendance(count)",
+      )
+      .gte("session_date", sixtyAgo)
+      .lt("session_date", todayIso)
+      .order("session_date", { ascending: false })
+      .order("start_time", { ascending: false });
+
+    const past = (data ?? []) as unknown as SessionRow[];
+
+    return (
+      <>
+        <PageHeader
+          title="Attendance"
+          description="Click a session to see who scanned in. Past 60 days, newest first."
+          helpTopic="attendance"
+        />
+        <ViewTabs current="past" />
+        <div className="min-h-0 flex-1 overflow-y-auto pt-4">
+          <SessionList
+            title="Past sessions"
+            rows={past}
+            emptyHint="No sessions in the last 60 days."
+          />
+        </div>
+      </>
+    );
+  }
+
+  // Default upcoming view: today + next 14 days.
   const fourteen = new Date(now.getTime() + 14 * 86400_000)
     .toISOString()
     .slice(0, 10);
@@ -58,6 +112,7 @@ export default async function AttendanceLanding() {
         description="Pick a session to start scanning."
         helpTopic="attendance"
       />
+      <ViewTabs current="upcoming" />
 
       <div className="min-h-0 flex-1 overflow-y-auto pt-4">
         <SessionList
@@ -75,6 +130,36 @@ export default async function AttendanceLanding() {
         </div>
       </div>
     </>
+  );
+}
+
+function ViewTabs({ current }: { current: View }) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Attendance view"
+      className="-mx-4 mt-2 flex shrink-0 items-center gap-1 border-b border-foreground/10 bg-background px-4 md:-mx-6 md:px-6"
+    >
+      {VIEWS.map((v) => {
+        const active = v === current;
+        const label = v === "upcoming" ? "Upcoming" : "Past";
+        return (
+          <Link
+            key={v}
+            role="tab"
+            aria-selected={active}
+            href={v === "upcoming" ? "/admin/attendance" : `/admin/attendance?view=${v}`}
+            className={`-mb-px inline-flex items-center px-4 py-3 text-sm tracking-wide transition-colors ${
+              active
+                ? "border-b-2 border-vermillion text-foreground"
+                : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {label}
+          </Link>
+        );
+      })}
+    </div>
   );
 }
 

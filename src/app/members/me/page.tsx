@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatTimeRange } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
 import { signOut } from "@/app/login/actions";
 import { MemberHero } from "./member-hero";
@@ -252,6 +253,14 @@ export default async function MyProfilePage() {
       />
 
       <section
+        id="attendance"
+        aria-labelledby="attendance-title"
+        className="relative mx-auto max-w-7xl px-6 md:px-10 pb-12 scroll-mt-24"
+      >
+        <AttendancePanel memberId={member.id} />
+      </section>
+
+      <section
         id="share-story"
         aria-labelledby="share-story-title"
         className="relative mx-auto max-w-7xl px-6 md:px-10 pb-20 scroll-mt-24"
@@ -260,6 +269,105 @@ export default async function MyProfilePage() {
       </section>
     </>
   );
+}
+
+async function AttendancePanel({ memberId }: { memberId: string }) {
+  // RLS allows the signed-in member to read their own rows via the
+  // "members read own attendance" policy. Use the user-scoped client
+  // (not service role) so the policy enforces the boundary.
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("attendance")
+    .select(
+      "id,scanned_at,method,class_sessions(session_date,start_time,end_time,classes(name,level,location))",
+    )
+    .eq("member_id", memberId)
+    .order("scanned_at", { ascending: false })
+    .limit(60);
+
+  type AttendanceRow = {
+    id: string;
+    scanned_at: string;
+    method: "qr" | "manual";
+    class_sessions: {
+      session_date: string;
+      start_time: string;
+      end_time: string;
+      classes: { name: string; level: string; location: string } | null;
+    } | null;
+  };
+  const rows = (data ?? []) as unknown as AttendanceRow[];
+
+  return (
+    <div className="rounded-2xl border border-foreground/10 bg-card p-6 md:p-8">
+      <h2
+        id="attendance-title"
+        className="font-display text-2xl tracking-tight mb-2"
+      >
+        Your attendance
+      </h2>
+      <p className="text-sm text-foreground/60 mb-6 leading-relaxed">
+        {rows.length === 0
+          ? "Once you scan in at class, your visits show up here."
+          : `Last ${rows.length} scan${rows.length === 1 ? "" : "s"}, newest first.`}
+      </p>
+
+      {rows.length > 0 && (
+        <ul className="divide-y divide-foreground/8">
+          {rows.map((a) => {
+            const s = a.class_sessions;
+            const c = s?.classes;
+            return (
+              <li
+                key={a.id}
+                className="grid grid-cols-12 items-baseline gap-x-4 gap-y-1 py-3"
+              >
+                <div className="col-span-12 sm:col-span-4">
+                  <p className="font-medium text-sm">
+                    {s?.session_date ? formatLongDate(s.session_date) : "—"}
+                  </p>
+                  <p className="font-mono text-xs tabular-nums text-foreground/55">
+                    {s?.start_time && s?.end_time
+                      ? formatTimeRange(s.start_time, s.end_time)
+                      : ""}
+                  </p>
+                </div>
+                <div className="col-span-12 sm:col-span-6">
+                  <p className="text-sm text-foreground/85">{c?.name ?? "—"}</p>
+                  {c?.location && (
+                    <p className="mt-0.5 text-xs text-foreground/55">
+                      {c.location}
+                    </p>
+                  )}
+                </div>
+                <div className="col-span-12 sm:col-span-2 sm:text-right">
+                  <span
+                    className={`inline-flex h-6 items-center rounded-full border px-2 text-[10px] uppercase tracking-[0.18em] ${
+                      a.method === "qr"
+                        ? "border-jade/30 bg-jade/5 text-jade"
+                        : "border-foreground/15 bg-secondary text-foreground/65"
+                    }`}
+                  >
+                    {a.method}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function formatLongDate(iso: string): string {
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 async function TestimonialPanel({ memberId }: { memberId: string }) {
