@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
-import { dayLabel, dayOrder, levelLabel, formatTimeRange } from "@/lib/format";
+import {
+  dayLabel,
+  dayOrder,
+  formatTimeRange,
+  levelLabel,
+  todayIsoInSchoolTz,
+} from "@/lib/format";
 
 type ClassRow = {
   id: string;
@@ -72,7 +78,7 @@ const LEVEL_TONE: Record<string, string> = {
 
 export async function ScheduleSection() {
   const supabase = await createClient();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = todayIsoInSchoolTz();
 
   const [classesRes, eventsRes] = await Promise.all([
     supabase

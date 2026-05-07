@@ -5,7 +5,12 @@ import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
 import { ScheduleSection } from "@/components/schedule-section";
 import { createClient } from "@/lib/supabase/server";
-import { dayShort, formatTimeRange, levelLabel } from "@/lib/format";
+import {
+  dayShort,
+  formatTimeRange,
+  levelLabel,
+  todayIsoInSchoolTz,
+} from "@/lib/format";
 import {
   CLASS_LEVELS,
   HOLIDAY_CLOSURES,
@@ -50,7 +55,7 @@ function formatSessionDate(iso: string): { day: string; date: string } {
 
 export default async function ClassesPage() {
   const supabase = await createClient();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = todayIsoInSchoolTz();
 
   // Public schedule of newcomer-welcome sessions — instructors flip
   // class_sessions.newcomer_friendly per occurrence. Sorted soonest

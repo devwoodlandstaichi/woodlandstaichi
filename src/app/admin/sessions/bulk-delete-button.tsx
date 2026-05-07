@@ -8,14 +8,14 @@ import {
   type BulkDeleteState,
 } from "./actions";
 
+import { addDaysIso, todayIsoInSchoolTz } from "@/lib/format";
+
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return todayIsoInSchoolTz();
 }
 
 function plus(weeks: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + weeks * 7);
-  return d.toISOString().slice(0, 10);
+  return addDaysIso(todayIsoInSchoolTz(), weeks * 7);
 }
 
 export function BulkDeleteButton() {

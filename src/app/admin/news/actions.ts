@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireStaff } from "@/lib/auth/dal";
+import { todayIsoInSchoolTz } from "@/lib/format";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -173,7 +174,7 @@ function parse(formData: FormData): { data: Patch } | { errors: FieldErrors } {
 
   let posted_at = v.posted_at;
   if (!posted_at) {
-    posted_at = new Date().toISOString().slice(0, 10);
+    posted_at = todayIsoInSchoolTz();
   } else if (!DATE_RE.test(posted_at)) {
     errors.posted_at = "Use YYYY-MM-DD.";
   }

@@ -3,7 +3,11 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
 import { createClient } from "@/lib/supabase/server";
-import { formatDate, formatTimeRange } from "@/lib/format";
+import {
+  formatDate,
+  formatTimeRange,
+  todayIsoInSchoolTz,
+} from "@/lib/format";
 import { RegistrationForm, type SessionOption } from "./registration-form";
 import { ReturningRegistrationForm } from "./returning-form";
 
@@ -44,7 +48,7 @@ export default async function RegisterPage({
   const mode: Mode = params.mode === "returning" ? "returning" : "new";
 
   const supabase = await createClient();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = todayIsoInSchoolTz();
 
   // New-mode: surface upcoming class_sessions staff have flagged
   // newcomer_friendly so first-timers pick a specific welcoming

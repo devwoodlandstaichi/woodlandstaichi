@@ -6,6 +6,7 @@ import {
   formatDate,
   formatTimeRange,
   levelLabel,
+  todayIsoInSchoolTz,
   type DayOfWeek,
 } from "@/lib/format";
 
@@ -75,7 +76,7 @@ export default async function GlobalRsvpQueue({
   })();
 
   const supabase = await createClient();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = todayIsoInSchoolTz();
 
   let query = supabase
     .from("session_rsvps")

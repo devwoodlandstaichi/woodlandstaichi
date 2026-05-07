@@ -2,7 +2,13 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, PageHeader } from "@/components/admin/ui";
-import { dayLabel, formatDate, formatTimeRange, levelLabel } from "@/lib/format";
+import {
+  dayLabel,
+  formatDate,
+  formatTimeRange,
+  isoInSchoolTz,
+  levelLabel,
+} from "@/lib/format";
 
 export const metadata = { title: "Attendance" };
 export const dynamic = "force-dynamic";
@@ -24,7 +30,7 @@ type SessionRow = {
 export default async function AttendanceLanding() {
   const supabase = await createClient();
   const now = new Date();
-  const todayIso = now.toISOString().slice(0, 10);
+  const todayIso = isoInSchoolTz(now);
 
   // Sessions in the next ~14 days, plus today.
   const fourteen = new Date(now.getTime() + 14 * 86400_000)

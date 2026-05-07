@@ -4,9 +4,11 @@ import { Calendar, MapPin, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/admin/ui";
 import {
+  addDaysIso,
   formatDate,
   formatTimeRange,
   levelLabel,
+  todayIsoInSchoolTz,
   type DayOfWeek,
 } from "@/lib/format";
 import { MemberTabs } from "../tab-nav";
@@ -122,11 +124,10 @@ export default async function MemberSessionsPage() {
     FALLBACK_MATRIX;
   const allowedClassLevels = matrix[member.level] ?? FALLBACK_MATRIX.beginners;
 
-  // Window: today through today + 14 days.
-  const todayIso = new Date().toISOString().slice(0, 10);
-  const endDate = new Date();
-  endDate.setUTCDate(endDate.getUTCDate() + VISIBLE_DAYS);
-  const endIso = endDate.toISOString().slice(0, 10);
+  // Window: today through today + 14 days, anchored to the school's
+  // local calendar so the boundaries don't drift around UTC midnight.
+  const todayIso = todayIsoInSchoolTz();
+  const endIso = addDaysIso(todayIso, VISIBLE_DAYS);
 
   const { data: sessionsData } = await supabase
     .from("class_sessions")

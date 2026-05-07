@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
 import { createClient } from "@/lib/supabase/server";
+import { todayIsoInSchoolTz } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "World Tai Chi Day — annual gathering",
@@ -43,7 +44,7 @@ function formatMonthDay(iso: string): string {
 
 export default async function WorldTaiChiDayPage() {
   const supabase = await createClient();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = todayIsoInSchoolTz();
 
   const { data } = await supabase
     .from("wtcd_events")

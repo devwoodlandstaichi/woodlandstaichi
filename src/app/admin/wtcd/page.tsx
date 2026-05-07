@@ -3,7 +3,7 @@ import Image from "next/image";
 import { ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
-import { formatDate } from "@/lib/format";
+import { formatDate, todayIsoInSchoolTz } from "@/lib/format";
 import {
   activateEvent,
   deactivateEvent,
@@ -34,7 +34,7 @@ export default async function WtcdAdminPage() {
     .order("event_date", { ascending: false });
 
   const rows = (data ?? []) as EventRow[];
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = todayIsoInSchoolTz();
 
   return (
     <>

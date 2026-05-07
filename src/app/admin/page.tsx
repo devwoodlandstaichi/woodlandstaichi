@@ -12,7 +12,12 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, PageHeader } from "@/components/admin/ui";
-import { dayLabel, formatTimeRange } from "@/lib/format";
+import {
+  addDaysIso,
+  dayLabel,
+  formatTimeRange,
+  todayIsoInSchoolTz,
+} from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
   AttendanceChart,
@@ -87,11 +92,8 @@ type SessionRow = {
 
 async function loadAttendanceWindow(): Promise<AttendancePoint[]> {
   const supabase = await createClient();
-  const today = new Date();
-  const todayIso = today.toISOString().slice(0, 10);
-  const thirtyDaysAgo = new Date(today);
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const fromIso = thirtyDaysAgo.toISOString().slice(0, 10);
+  const todayIso = todayIsoInSchoolTz();
+  const fromIso = addDaysIso(todayIso, -30);
 
   const [sessionsRes, attendanceRes] = await Promise.all([
     supabase
@@ -131,7 +133,7 @@ async function loadAttendanceWindow(): Promise<AttendancePoint[]> {
 
 async function loadCounts() {
   const supabase = await createClient();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = todayIsoInSchoolTz();
 
   const [
     activeClasses,
@@ -221,7 +223,7 @@ type TodaySession = {
 
 async function loadTodaySessions(): Promise<TodaySession[]> {
   const supabase = await createClient();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = todayIsoInSchoolTz();
 
   const { data: sessions } = await supabase
     .from("class_sessions")

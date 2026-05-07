@@ -12,6 +12,7 @@ import {
   adminRegistrationNotice,
   memberRegistrationAck,
 } from "@/lib/email/registration";
+import { todayIsoInSchoolTz } from "@/lib/format";
 import {
   reactivationRequestSchema,
   registrationSchema,
@@ -67,7 +68,7 @@ export async function submitRegistration(
   // newcomer-friendly, and still belongs to an active class. Guards
   // against a stale form pointing at a session that staff archived,
   // unflagged, or that's now in the past.
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = todayIsoInSchoolTz();
   const { data: sessionRow, error: sessionError } = await supabase
     .from("class_sessions")
     .select(

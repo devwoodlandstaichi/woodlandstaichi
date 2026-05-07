@@ -7,6 +7,7 @@ import {
   formatDate,
   formatTimeRange,
   levelLabel,
+  todayIsoInSchoolTz,
   type ClassLevel,
 } from "@/lib/format";
 import { GenerateTermButton } from "./generate-term-button";
@@ -90,7 +91,7 @@ export default async function SessionsPage({
 
   const me = await getSessionUser();
   const supabase = await createClient();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = todayIsoInSchoolTz();
 
   // !inner on classes turns the embed into an inner join so filters on
   // classes.* propagate as constraints, not column-visibility filters.
