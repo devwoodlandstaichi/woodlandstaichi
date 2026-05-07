@@ -72,7 +72,10 @@ export default async function ClassesPage() {
     .order("start_time", { ascending: true })
     .limit(20);
 
-  type RawSession = Omit<WelcomingSession, "approved_count" | "effective_capacity">;
+  type RawSession = Omit<
+    WelcomingSession,
+    "approved_count" | "effective_capacity"
+  >;
   const sessions = (rawSessions ?? []) as unknown as RawSession[];
 
   // Pull approved-RSVP counts via the public RPC so we can drop sessions
@@ -117,8 +120,8 @@ export default async function ClassesPage() {
       <main id="main">
         <PageHeader
           eyebrow="Classes"
-          title="Show up,"
-          italic="and we'll meet you."
+          title="Enroll, in"
+          italic="Beginner Class"
           intro="Beginner classes are free of charge and open to anyone — no prior fitness or martial-arts background required. The Yang 8-step form is the foundation of every form that follows."
           glyph="課"
         />
@@ -241,7 +244,10 @@ export default async function ClassesPage() {
                     <ul className="space-y-2 text-base text-background/75">
                       {level.requirements.map((r) => (
                         <li key={r} className="flex items-start gap-3">
-                          <span aria-hidden className="text-vermillion-300 mt-2">
+                          <span
+                            aria-hidden
+                            className="text-vermillion-300 mt-2"
+                          >
                             —
                           </span>
                           <span>{r}</span>
@@ -279,14 +285,13 @@ export default async function ClassesPage() {
             </div>
             <div className="col-span-12 md:col-span-7 md:pt-4">
               <p className="text-lg text-foreground/75 leading-relaxed">
-                Class is free. The WTC shirt — required for all members — is
-                the only fee, paid at registration via Zelle, Venmo, Apple
-                Pay, or PayPal. You aren&apos;t enrolled until payment is
-                received.
+                Class is free. The WTC shirt — required for all members — is the
+                only fee, paid at registration via Zelle, Venmo, Apple Pay, or
+                PayPal. You aren&apos;t enrolled until payment is received.
               </p>
               <p className="mt-3 text-sm text-foreground/55 italic">
-                If paying for the shirt is a hardship, tell us — we&apos;ll
-                work it out.
+                If paying for the shirt is a hardship, tell us — we&apos;ll work
+                it out.
               </p>
             </div>
           </div>
@@ -364,7 +369,9 @@ export default async function ClassesPage() {
                   className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight"
                 >
                   Holiday
-                  <span className="block italic text-vermillion">closures.</span>
+                  <span className="block italic text-vermillion">
+                    closures.
+                  </span>
                 </h2>
               </div>
               <div className="col-span-12 md:col-span-7">
@@ -402,11 +409,13 @@ export default async function ClassesPage() {
                 className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight"
               >
                 A few
-                <span className="block italic text-vermillion">courtesies.</span>
+                <span className="block italic text-vermillion">
+                  courtesies.
+                </span>
               </h2>
               <p className="mt-6 text-lg text-foreground/75 leading-relaxed max-w-md">
-                The form asks for the same care from all of us. These are
-                small habits that make the room work.
+                The form asks for the same care from all of us. These are small
+                habits that make the room work.
               </p>
             </div>
             <div className="col-span-12 md:col-span-7 md:pl-8">
