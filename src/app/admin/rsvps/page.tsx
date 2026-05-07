@@ -111,6 +111,7 @@ export default async function GlobalRsvpQueue({
       <PageHeader
         title="RSVPs awaiting review"
         description="Members across every upcoming session asking to attend. Open a session to approve or reject inline."
+        helpTopic="rsvps"
       />
 
       <div className="-mx-4 flex shrink-0 flex-wrap items-center gap-3 border-b border-foreground/10 bg-background px-4 py-4 md:-mx-6 md:px-6">

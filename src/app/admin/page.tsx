@@ -370,6 +370,7 @@ export default async function AdminHome() {
       <PageHeader
         title="Overview"
         description="A quick read on the school's current state."
+        helpTopic="overview"
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto pt-4">

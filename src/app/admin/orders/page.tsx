@@ -78,6 +78,7 @@ export default async function AdminOrdersPage({
       <PageHeader
         title="Orders"
         description="Submissions from the public store form. Mark paid once funds clear."
+        helpTopic="orders"
       />
 
       <OrderFilters q={q} status={status as OrderStatusFilter} />

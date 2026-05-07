@@ -138,6 +138,7 @@ export default async function SessionsPage({
       <PageHeader
         title="Sessions"
         description="Specific class occurrences on a date. Attendance writes against these rows."
+        helpTopic="sessions"
         action={
           <>
             <Link href="/admin/sessions/new">

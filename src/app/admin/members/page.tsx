@@ -139,6 +139,7 @@ export default async function MembersPage({
       <PageHeader
         title="Members"
         description="Roster. Click a name to view details, edit, or change status."
+        helpTopic="members"
         action={
           <>
             <BulkIssueQrsButton />

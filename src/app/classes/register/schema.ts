@@ -2,11 +2,11 @@ import { z } from "zod";
 
 // New-beginner registration now picks a specific upcoming session
 // (class_session row) that staff have marked newcomer_friendly. Old
-// flow asked for a recurring class + a hand-picked cohort label;
-// the cohort concept was admin-curated, brittle to edit, and didn't
-// reflect the school's actual onboarding rhythm. With sessions
-// instead, instructors flag specific drop-in dates and the form
-// surfaces those automatically.
+// flow asked for a recurring class + a hand-picked class-start label;
+// that admin-curated approach was brittle to edit and didn't reflect
+// the school's actual onboarding rhythm. With sessions instead,
+// instructors flag specific drop-in dates and the form surfaces those
+// automatically.
 
 export const SHIRT_SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL"] as const;
 

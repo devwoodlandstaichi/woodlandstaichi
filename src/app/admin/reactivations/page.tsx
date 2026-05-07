@@ -70,6 +70,7 @@ export default async function ReactivationsPage({
     <>
       <PageHeader
         title="Reactivation requests"
+        helpTopic="reactivations"
         description={
           status === "pending"
             ? "Returning players asking to come back. Approve to flip them to active and email them the news."

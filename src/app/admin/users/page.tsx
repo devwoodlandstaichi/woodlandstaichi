@@ -138,6 +138,7 @@ export default async function UsersPage({
       <PageHeader
         title="Users"
         description="Staff accounts that can sign in to /admin. Members don't appear here."
+        helpTopic="users"
         action={
           <Link
             href="/admin/users/new"

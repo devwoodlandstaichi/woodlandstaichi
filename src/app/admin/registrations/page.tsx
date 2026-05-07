@@ -97,6 +97,7 @@ export default async function RegistrationsPage({
       <PageHeader
         title="Registrations"
         description="Pending payments are the queue you work daily — mark paid once funds land and the member auto-activates."
+        helpTopic="registrations"
       />
 
       <RegistrationFilters status={status} />

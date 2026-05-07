@@ -115,6 +115,7 @@ export default async function InstructorsAdminPage({
       <PageHeader
         title="Instructors"
         description="Volunteer instructor roster shown on the public Instructors page."
+        helpTopic="instructors"
         action={
           <Link
             href="/admin/instructors/new"

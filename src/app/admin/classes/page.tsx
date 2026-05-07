@@ -184,6 +184,7 @@ export default async function ClassesPage({
       <PageHeader
         title="Classes"
         description="Recurring class definitions. Edits show on the public schedule immediately."
+        helpTopic="classes"
         action={
           <Link
             href="/admin/classes/new"

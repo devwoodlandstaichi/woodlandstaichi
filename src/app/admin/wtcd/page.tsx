@@ -41,6 +41,7 @@ export default async function WtcdAdminPage() {
       <PageHeader
         title="World Tai Chi Day"
         description="One row per year. The public /world-tai-chi-day page reads from this list and auto-rolls the upcoming hero based on event date."
+        helpTopic="wtcd"
         action={
           <Link
             href="/admin/wtcd/new"

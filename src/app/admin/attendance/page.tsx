@@ -50,6 +50,7 @@ export default async function AttendanceLanding() {
       <PageHeader
         title="Attendance"
         description="Pick a session to start scanning."
+        helpTopic="attendance"
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto pt-4">

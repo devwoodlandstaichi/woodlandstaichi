@@ -42,6 +42,7 @@ export default async function RsvpSettingsPage() {
       <PageHeader
         title="RSVP rules"
         description="Cutoff window and the level matrix that controls which class levels each member tier can see in their Sessions tab."
+        helpTopic="settings-rsvps"
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto pb-12">

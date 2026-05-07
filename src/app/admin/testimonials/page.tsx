@@ -77,6 +77,7 @@ export default async function TestimonialsPage({
     <>
       <PageHeader
         title="Testimonials"
+        helpTopic="testimonials"
         description={
           status === "pending"
             ? "Member-submitted quotes awaiting your review."

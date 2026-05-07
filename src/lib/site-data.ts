@@ -14,20 +14,6 @@ export const HOLIDAY_CLOSURES = [
   { name: "Christmas Eve & Day", date: "December 24–25" },
 ] as const;
 
-export const BEGINNER_COHORT_DATES = [
-  {
-    label: "February 2026",
-    days: ["February 4", "February 5"],
-    status: "past",
-  },
-  { label: "June 2026", days: ["June 3", "June 4"], status: "filling" },
-  {
-    label: "September / October 2026",
-    days: ["September 30", "October 1"],
-    status: "open",
-  },
-] as const;
-
 export const CLASS_LEVELS = [
   {
     glyph: "始",

@@ -16,6 +16,7 @@ export default async function KioskSettingsPage() {
       <PageHeader
         title="Kiosk PIN"
         description="A short numeric PIN gates exit from kiosk mode so curious members can't drop themselves back into the admin area."
+        helpTopic="settings-kiosk"
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto pt-4">
