@@ -123,34 +123,12 @@ export default async function ClassesPage() {
           glyph="課"
         />
 
-        {/* Welcoming sessions — soonest first */}
+        {/* Welcoming sessions — soonest first. Heading removed per
+            founder request; the list is self-explanatory. */}
         <section
-          aria-labelledby="welcoming-title"
+          aria-label="Welcoming sessions"
           className="mx-auto max-w-7xl px-6 py-14 md:px-10 md:py-20"
         >
-          <div className="grid grid-cols-12 gap-x-6 gap-y-6 mb-8">
-            <div className="col-span-12 md:col-span-6">
-              <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
-                <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
-                Welcoming sessions
-              </p>
-              <h2
-                id="welcoming-title"
-                className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight"
-              >
-                Drop in,
-                <span className="block italic text-vermillion">observe.</span>
-              </h2>
-            </div>
-            <div className="col-span-12 md:col-span-6 md:pt-4">
-              <p className="text-lg text-foreground/75 leading-relaxed">
-                Specific upcoming sessions our instructors have marked open to
-                first-timers. Show up a few minutes early, watch from the side,
-                ask questions after. Soonest dates first.
-              </p>
-            </div>
-          </div>
-
           {welcoming.length === 0 ? (
             <div className="rounded-xl border border-foreground/10 bg-card p-7 text-foreground/75">
               <p>
