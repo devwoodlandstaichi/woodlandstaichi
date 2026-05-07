@@ -70,6 +70,7 @@ export default async function NewsAdminPage({
       <PageHeader
         title="News"
         description="Announcements shown on the public /news page."
+        helpTopic="news"
         action={
           <Link
             href="/admin/news/new"

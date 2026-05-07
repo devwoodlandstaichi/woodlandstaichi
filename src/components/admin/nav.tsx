@@ -8,6 +8,7 @@ import {
   CreditCard,
   ExternalLink,
   GraduationCap,
+  HelpCircle,
   Home,
   ListChecks,
   MessageSquareQuote,
@@ -104,6 +105,7 @@ const NAV: NavGroup[] = [
   },
   {
     items: [
+      { href: "/admin/help", label: "Help", icon: HelpCircle },
       {
         href: "/",
         label: "Public site",

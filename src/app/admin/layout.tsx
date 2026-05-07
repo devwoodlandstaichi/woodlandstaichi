@@ -1,6 +1,7 @@
 import { requireStaff } from "@/lib/auth/dal";
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { ToastProvider } from "@/components/admin/toast";
+import { HelpDrawer } from "@/components/admin/help/help-drawer";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,9 @@ export default async function AdminLayout({
           {children}
         </main>
       </div>
+      {/* Mounted once at the layout root so any admin PageHeader's
+          Help button can open it without per-page wiring. */}
+      <HelpDrawer />
     </ToastProvider>
   );
 }

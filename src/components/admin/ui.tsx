@@ -2,6 +2,8 @@ import * as React from "react";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HelpTrigger } from "@/components/admin/help/help-trigger";
+import type { HelpTopic } from "@/components/admin/help/registry";
 
 // Lightweight shadcn-style primitives scoped to admin + auth pages.
 // Keeps the public site's bespoke layout untouched.
@@ -161,6 +163,7 @@ export function PageHeader({
   description,
   action,
   back,
+  helpTopic,
 }: {
   title: string;
   description?: string;
@@ -169,6 +172,9 @@ export function PageHeader({
    *  vertical divider. Pass either a string href or `{ href, label }`
    *  when you want a screen-reader / tooltip label other than "Back". */
   back?: string | { href: string; label?: string };
+  /** When set, renders a "Help" button in the action row that opens
+   *  the help drawer for the given topic. */
+  helpTopic?: HelpTopic;
 }) {
   // Fixed-height strip that bottom-aligns with the sidebar's brand
   // strip across columns. Lives in flow as the first child of <main>'s
@@ -205,8 +211,11 @@ export function PageHeader({
           )}
         </div>
       </div>
-      {action && (
-        <div className="flex shrink-0 gap-2">{action}</div>
+      {(action || helpTopic) && (
+        <div className="flex shrink-0 items-center gap-2">
+          {helpTopic && <HelpTrigger topic={helpTopic} />}
+          {action}
+        </div>
       )}
     </header>
   );
