@@ -1,7 +1,12 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, PageHeader } from "@/components/admin/ui";
-import { formatDate, formatTimeRange, levelLabel } from "@/lib/format";
+import {
+  formatDate,
+  formatTimeRange,
+  levelLabel,
+  todayIsoInSchoolTz,
+} from "@/lib/format";
 import { Scanner } from "./scanner";
 import { KioskLaunchers } from "./kiosk-launchers";
 
@@ -72,18 +77,38 @@ export default async function ScanSessionPage({
     level: (m.level as string | null) ?? null,
   }));
 
+  // Past sessions become read-only history: a live camera scanner is
+  // useless once the class has ended. The roster card stays so admins
+  // can audit who actually attended.
+  const isPast = session.session_date < todayIsoInSchoolTz();
+
   return (
     <>
       <PageHeader
-        title="Scan attendance"
+        title={isPast ? "Attendance — past session" : "Scan attendance"}
         description={`${session.classes?.name ?? "—"} · ${formatDate(session.session_date)} · ${formatTimeRange(session.start_time, session.end_time)}`}
         back="/admin/attendance"
-        action={<KioskLaunchers sessionId={session.id} />}
+        action={isPast ? null : <KioskLaunchers sessionId={session.id} />}
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto pb-12 pt-6">
-      <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
-        <Scanner sessionId={session.id} roster={roster} />
+      <div className={isPast ? "" : "grid gap-6 lg:grid-cols-[1fr_420px]"}>
+        {isPast ? (
+          <div className="mb-6 rounded-md border border-foreground/10 bg-secondary/40 px-5 py-4 text-sm text-foreground/75">
+            <p className="font-medium text-foreground">
+              This session has ended.
+            </p>
+            <p className="mt-1 text-foreground/65">
+              The roster below is read-only. Live scanning is disabled
+              for past sessions; if a member was missed, edit their
+              attendance via{" "}
+              <span className="font-mono text-xs">/admin/members/[id]</span>{" "}
+              or contact a developer to backfill.
+            </p>
+          </div>
+        ) : (
+          <Scanner sessionId={session.id} roster={roster} />
+        )}
 
         <Card className="overflow-hidden">
           <div className="border-b border-foreground/10 px-5 py-4 flex items-baseline justify-between">
