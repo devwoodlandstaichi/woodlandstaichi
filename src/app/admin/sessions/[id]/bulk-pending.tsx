@@ -4,7 +4,7 @@ import { useActionState, useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, Hourglass, X } from "lucide-react";
 import { Badge, Button, Card } from "@/components/admin/ui";
-import { levelLabel } from "@/lib/format";
+import { formatDateTimeInSchoolTz, levelLabel } from "@/lib/format";
 import {
   bulkApproveRsvps,
   bulkRejectRsvps,
@@ -271,11 +271,7 @@ function PendingRowCard({
                     <span className="mx-2">·</span>
                   </>
                 )}
-                Requested{" "}
-                {new Date(row.requested_at).toLocaleString("en-US", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}
+                Requested {formatDateTimeInSchoolTz(row.requested_at)}
               </p>
               <p className="mt-1.5 text-[11px] uppercase tracking-[0.16em] text-foreground/55">
                 <span className="font-mono tabular-nums text-foreground/85">

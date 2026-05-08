@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, PageHeader } from "@/components/admin/ui";
 import {
   formatDate,
+  formatTimeInSchoolTz,
   formatTimeRange,
   levelLabel,
   todayIsoInSchoolTz,
@@ -134,7 +135,7 @@ export default async function ScanSessionPage({
                         : "—"}
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {new Date(a.scanned_at).toLocaleTimeString()}
+                      {formatTimeInSchoolTz(a.scanned_at)}
                       {" · "}
                       {a.method === "qr" ? "QR" : "Manual"}
                     </p>

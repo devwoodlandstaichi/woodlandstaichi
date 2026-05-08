@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
 import {
   formatDate,
+  formatDateTimeInSchoolTz,
   formatTimeRange,
   levelLabel,
   type DayOfWeek,
@@ -482,11 +483,7 @@ function RsvpCard({
                 <span className="mx-2">·</span>
               </>
             )}
-            Requested{" "}
-            {new Date(rsvp.requested_at).toLocaleString("en-US", {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })}
+            Requested {formatDateTimeInSchoolTz(rsvp.requested_at)}
             {rsvp.notified_at && (
               <>
                 <span className="mx-2">·</span>
@@ -612,12 +609,7 @@ function Stamp({ label, iso }: { label: string; iso: string | null }) {
     <div>
       <dt className="font-medium text-foreground/70">{label}</dt>
       <dd className="text-muted-foreground">
-        {iso
-          ? new Date(iso).toLocaleString("en-US", {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })
-          : "Never"}
+        {iso ? formatDateTimeInSchoolTz(iso) : "Never"}
       </dd>
     </div>
   );

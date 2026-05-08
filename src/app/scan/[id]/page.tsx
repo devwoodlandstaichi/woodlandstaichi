@@ -3,7 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/admin/ui";
-import { formatDate, formatTimeRange, levelLabel } from "@/lib/format";
+import {
+  formatDate,
+  formatTimeInSchoolTz,
+  formatTimeRange,
+  levelLabel,
+} from "@/lib/format";
 import { Scanner } from "@/app/admin/attendance/scan/[id]/scanner";
 import { ExitKiosk } from "./exit-kiosk";
 import { Clock } from "./clock";
@@ -282,9 +287,8 @@ export default async function KioskScanPage({
                   `${m.first_name[0] ?? ""}${m.last_name[0] ?? ""}`.toUpperCase();
                 const displayName = m.nickname ?? `${m.first_name} ${m.last_name}`;
                 const time = row.attendance
-                  ? new Date(row.attendance.scanned_at).toLocaleTimeString([], {
-                      hour: "numeric",
-                      minute: "2-digit",
+                  ? formatTimeInSchoolTz(row.attendance.scanned_at, {
+                      seconds: false,
                     })
                   : null;
                 return (
@@ -340,9 +344,8 @@ export default async function KioskScanPage({
                 const initials =
                   `${m.first_name[0] ?? ""}${m.last_name[0] ?? ""}`.toUpperCase();
                 const displayName = m.nickname ?? `${m.first_name} ${m.last_name}`;
-                const time = new Date(a.scanned_at).toLocaleTimeString([], {
-                  hour: "numeric",
-                  minute: "2-digit",
+                const time = formatTimeInSchoolTz(a.scanned_at, {
+                  seconds: false,
                 });
                 return (
                   <li

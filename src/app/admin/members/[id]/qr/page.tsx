@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Button, Card, PageHeader } from "@/components/admin/ui";
+import { formatDateTimeInSchoolTz } from "@/lib/format";
 import { issueQrForMember, revokeQr } from "./actions";
 import { qrPngDataUrl } from "@/lib/qr/image";
 import { createHmac } from "node:crypto";
@@ -103,12 +104,12 @@ export default async function MemberQrPage({
             </Row>
             {m.qr_issued_at && (
               <Row label="Issued">
-                {new Date(m.qr_issued_at).toLocaleString()}
+                {formatDateTimeInSchoolTz(m.qr_issued_at)}
               </Row>
             )}
             {m.qr_revoked_at && (
               <Row label="Revoked">
-                {new Date(m.qr_revoked_at).toLocaleString()}
+                {formatDateTimeInSchoolTz(m.qr_revoked_at)}
               </Row>
             )}
             <Row label="Email">

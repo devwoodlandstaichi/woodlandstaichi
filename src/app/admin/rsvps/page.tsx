@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, PageHeader } from "@/components/admin/ui";
 import {
   formatDate,
+  formatDateTimeInSchoolTz,
   formatTimeRange,
   levelLabel,
   todayIsoInSchoolTz,
@@ -223,11 +224,7 @@ function SessionGroup({ bucket }: { bucket: { sessionId: string; rsvps: RsvpRow[
                   <span className="mx-2">·</span>
                   {m.email}
                   <span className="mx-2">·</span>
-                  Requested{" "}
-                  {new Date(r.requested_at).toLocaleString("en-US", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
+                  Requested {formatDateTimeInSchoolTz(r.requested_at)}
                 </p>
               </div>
               <StatusBadge status={r.status} />

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Button, PageHeader } from "@/components/admin/ui";
+import { formatDateTimeInSchoolTz } from "@/lib/format";
 import { approveReactivation } from "./actions";
 import { RejectButton } from "./reject-button";
 
@@ -140,11 +141,7 @@ export default async function ReactivationsPage({
                       </h2>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         {r.email} ·{" "}
-                        Requested{" "}
-                        {new Date(r.requested_at).toLocaleString("en-US", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
+                        Requested {formatDateTimeInSchoolTz(r.requested_at)}
                         {m && (
                           <>
                             {" "}

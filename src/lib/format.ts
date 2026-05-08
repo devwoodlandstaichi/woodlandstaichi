@@ -130,6 +130,37 @@ export function addDaysIso(iso: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** Format a UTC timestamp as a wall-clock time (e.g. "5:17:44 PM") in
+ * the school's timezone. Use for any timestamptz value rendered on a
+ * server component — `Date.toLocaleTimeString()` without an explicit
+ * timeZone falls through to the server's TZ (UTC on Vercel) and shows
+ * the wrong clock face to a Texas reader. */
+export function formatTimeInSchoolTz(
+  iso: string | Date,
+  opts: { seconds?: boolean } = { seconds: true },
+): string {
+  const d = typeof iso === "string" ? new Date(iso) : iso;
+  return d.toLocaleTimeString("en-US", {
+    timeZone: SCHOOL_TZ,
+    hour: "numeric",
+    minute: "2-digit",
+    ...(opts.seconds ? { second: "2-digit" as const } : {}),
+    hour12: true,
+  });
+}
+
+/** "May 6, 2026, 5:17 PM" — date + time, school's timezone. Use for
+ * audit timestamps (created_at, requested_at, qr_issued_at, etc.) on
+ * any page so the founder sees Central time everywhere. */
+export function formatDateTimeInSchoolTz(iso: string | Date): string {
+  const d = typeof iso === "string" ? new Date(iso) : iso;
+  return d.toLocaleString("en-US", {
+    timeZone: SCHOOL_TZ,
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
 export function formatTimeRange(start: string, end: string) {
   // Postgres returns "08:00:00" — strip seconds and 12-hour format
   return `${formatTime(start)} – ${formatTime(end)}`;
