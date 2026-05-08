@@ -10,6 +10,7 @@ import { ReactivationsHelpContent } from "./reactivations-content";
 import { RegistrationsHelpContent } from "./registrations-content";
 import { RsvpsHelpContent } from "./rsvps-content";
 import { SessionsHelpContent } from "./sessions-content";
+import { StoreHelpContent } from "./store-content";
 import { SettingsKioskHelpContent } from "./settings-kiosk-content";
 import { SettingsRsvpsHelpContent } from "./settings-rsvps-content";
 import { TestimonialsHelpContent } from "./testimonials-content";
@@ -35,6 +36,7 @@ export type HelpTopic =
   | "orders"
   | "reactivations"
   | "news"
+  | "store"
   | "users"
   | "settings-rsvps"
   | "settings-kiosk";
@@ -129,6 +131,12 @@ export const HELP_REGISTRY: Record<HelpTopic, HelpEntry> = {
     description: "Write, edit, hide, and delete stories for the school website.",
     body: <NewsHelpContent />,
     fullPageHref: "/admin/help/news",
+  },
+  store: {
+    title: "Store",
+    description: "Manage products, photos, sizes, and prices.",
+    body: <StoreHelpContent />,
+    fullPageHref: "/admin/help/store",
   },
   users: {
     title: "Users",

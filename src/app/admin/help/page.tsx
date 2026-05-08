@@ -66,6 +66,7 @@ const GROUPS: Group[] = [
       { id: "testimonials", icon: MessageSquareQuote },
       { id: "news", icon: Newspaper },
       { id: "wtcd", icon: PartyPopper },
+      { id: "store", icon: ShoppingBag },
     ],
   },
   {
