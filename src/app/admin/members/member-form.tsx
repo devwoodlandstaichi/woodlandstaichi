@@ -11,9 +11,12 @@ import {
 import {
   MEMBER_LEVEL_LABELS,
   MEMBER_LEVEL_VALUES,
+  MEMBER_SEX_VALUES,
   MEMBER_STATUS_VALUES,
+  memberSexLabel,
   memberStatusLabel,
   type MemberLevel,
+  type MemberSex,
   type MemberStatus,
 } from "@/lib/format";
 import type { MemberFormState, MemberFormValues } from "./actions";
@@ -29,6 +32,7 @@ export type MemberFormDefaults = {
   state?: string | null;
   postal_code?: string | null;
   birthday?: string | null;
+  sex?: MemberSex | null;
   level?: MemberLevel;
   status?: MemberStatus;
   physical_limitations?: string | null;
@@ -131,14 +135,30 @@ export function MemberForm({
             />
           </Field>
         </div>
-        <Field label="Birthday" htmlFor="birthday" error={errors.birthday}>
-          <Input
-            id="birthday"
-            name="birthday"
-            type="date"
-            defaultValue={v("birthday", defaults.birthday)}
-          />
-        </Field>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Birthday" htmlFor="birthday" error={errors.birthday}>
+            <Input
+              id="birthday"
+              name="birthday"
+              type="date"
+              defaultValue={v("birthday", defaults.birthday)}
+            />
+          </Field>
+          <Field label="Sex" htmlFor="sex" error={errors.sex}>
+            <Select
+              id="sex"
+              name="sex"
+              defaultValue={v("sex", defaults.sex)}
+            >
+              <option value="">—</option>
+              {MEMBER_SEX_VALUES.map((value) => (
+                <option key={value} value={value}>
+                  {memberSexLabel(value)}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
       </fieldset>
 
       <fieldset className="grid gap-5">

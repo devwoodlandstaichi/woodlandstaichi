@@ -8,8 +8,10 @@ import { requireAdmin, requireStaff } from "@/lib/auth/dal";
 import { processMemberPhoto } from "@/lib/image/process-photo";
 import {
   MEMBER_LEVEL_VALUES,
+  MEMBER_SEX_VALUES,
   MEMBER_STATUS_VALUES,
   type MemberLevel,
+  type MemberSex,
   type MemberStatus,
 } from "@/lib/format";
 
@@ -30,6 +32,7 @@ export type MemberFormValues = {
   state: string;
   postal_code: string;
   birthday: string;
+  sex: string;
   level: string;
   status: string;
   physical_limitations: string;
@@ -68,6 +71,7 @@ function valuesFrom(formData: FormData): MemberFormValues {
     state: str(formData, "state"),
     postal_code: str(formData, "postal_code"),
     birthday: str(formData, "birthday"),
+    sex: str(formData, "sex"),
     level: str(formData, "level"),
     status: str(formData, "status"),
     physical_limitations: str(formData, "physical_limitations"),
@@ -94,6 +98,7 @@ type MemberPatch = {
   state: string | null;
   postal_code: string | null;
   birthday: string | null;
+  sex: MemberSex | null;
   level: MemberLevel;
   status: MemberStatus;
   physical_limitations: string | null;
@@ -107,6 +112,7 @@ type MemberPatch = {
 
 function parse(
   formData: FormData,
+  opts: { requireSex?: boolean } = {},
 ): { data: MemberPatch } | { errors: FieldErrors } {
   const errors: FieldErrors = {};
   const v = valuesFrom(formData);
@@ -123,6 +129,17 @@ function parse(
 
   if (v.birthday && !DATE_RE.test(v.birthday))
     errors.birthday = "Use YYYY-MM-DD.";
+
+  // Sex is required on create (matches the public registration form)
+  // but optional on edit so historical members imported without it
+  // (e.g. CSV imports) don't get blocked when staff fix something else
+  // on their row. When present, it must be a valid enum value.
+  if (opts.requireSex && !v.sex) {
+    errors.sex = "Pick one.";
+  }
+  if (v.sex && !(MEMBER_SEX_VALUES as readonly string[]).includes(v.sex)) {
+    errors.sex = "Invalid value.";
+  }
 
   if (v.emergency_phone && !PHONE_RE.test(v.emergency_phone))
     errors.emergency_phone = "Valid phone or leave blank.";
@@ -141,6 +158,7 @@ function parse(
       state: v.state || null,
       postal_code: v.postal_code || null,
       birthday: v.birthday || null,
+      sex: v.sex ? (v.sex as MemberSex) : null,
       level: v.level as MemberLevel,
       status: v.status as MemberStatus,
       physical_limitations: v.physical_limitations || null,
@@ -179,6 +197,58 @@ export async function updateMember(
   revalidatePath(`/admin/members/${id}`);
   revalidatePath(`/admin/members/${id}/edit`);
   redirect(`/admin/members/${id}`);
+}
+
+/** Admin-create — bypasses /classes/register. Used when staff enter a
+ * member from a paper form, an email, etc. Sex is required on create
+ * (matches the public registration shape). Email collision is detected
+ * up front so the founder gets a friendly "this person already exists"
+ * pointer instead of a Postgres unique-constraint error. */
+export async function createMember(
+  _prev: MemberFormState,
+  formData: FormData,
+): Promise<MemberFormState> {
+  await requireStaff();
+  const parsed = parse(formData, { requireSex: true });
+  if ("errors" in parsed) {
+    return { ok: false, errors: parsed.errors, values: valuesFrom(formData) };
+  }
+
+  const supabase = await createClient();
+
+  // Email collision check — case-insensitive. Block before INSERT and
+  // surface a message that points at the existing row, so the founder
+  // can edit there instead of accidentally double-creating.
+  const { data: existing } = await supabase
+    .from("members")
+    .select("id, first_name, last_name")
+    .ilike("email", parsed.data.email)
+    .maybeSingle();
+
+  if (existing) {
+    return {
+      ok: false,
+      message: `That email is already on file for ${existing.first_name} ${existing.last_name}. Open their profile at /admin/members/${existing.id} to edit.`,
+      errors: { email: "Already used by another member." },
+      values: valuesFrom(formData),
+    };
+  }
+
+  const { data: row, error } = await supabase
+    .from("members")
+    .insert(parsed.data)
+    .select("id")
+    .single();
+  if (error || !row) {
+    return {
+      ok: false,
+      message: error?.message ?? "Could not create member.",
+      values: valuesFrom(formData),
+    };
+  }
+
+  revalidatePath("/admin/members");
+  redirect(`/admin/members/${row.id}`);
 }
 
 async function setMemberStatus(id: string, status: MemberStatus) {

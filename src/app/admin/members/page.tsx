@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { Card, PageHeader } from "@/components/admin/ui";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -142,6 +144,12 @@ export default async function MembersPage({
         helpTopic="members"
         action={
           <>
+            <Link
+              href="/admin/members/new"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90"
+            >
+              <Plus size={14} aria-hidden /> Add member
+            </Link>
             <BulkIssueQrsButton />
             <BulkEmailQrsButton unsentCount={unsentQrs ?? 0} />
             {user?.role === "admin" && <DangerZoneButton />}

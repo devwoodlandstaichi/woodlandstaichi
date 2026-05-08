@@ -57,6 +57,16 @@ export type MemberLevel = (typeof MEMBER_LEVEL_VALUES)[number];
 export const MEMBER_STATUS_VALUES = ["active", "waitlist", "inactive"] as const;
 export type MemberStatus = (typeof MEMBER_STATUS_VALUES)[number];
 
+export const MEMBER_SEX_VALUES = ["male", "female"] as const;
+export type MemberSex = (typeof MEMBER_SEX_VALUES)[number];
+
+export const MEMBER_SEX_LABELS: Record<MemberSex, string> = {
+  male: "Male",
+  female: "Female",
+};
+export const memberSexLabel = (s: string) =>
+  MEMBER_SEX_LABELS[s as MemberSex] ?? s;
+
 const MEMBER_STATUS_LABELS: Record<MemberStatus, string> = {
   active: "Active",
   waitlist: "Waitlist",
