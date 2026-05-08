@@ -93,7 +93,18 @@ export default async function ScanSessionPage({
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto pb-12 pt-6">
-      <div className={isPast ? "" : "grid gap-6 lg:grid-cols-[1fr_420px]"}>
+      <div
+        className={
+          isPast
+            ? ""
+            : // Even split between scanner (camera + manual search) and
+              // the live Scanned list. The previous fixed 420px right
+              // column left a lot of empty space on wide monitors;
+              // 1fr/1fr lets both panels breathe and the scanned list
+              // shows ~10 rows above the fold instead of ~5.
+              "grid gap-6 lg:grid-cols-2"
+        }
+      >
         {isPast ? (
           <div className="mb-6 rounded-md border border-foreground/10 bg-secondary/40 px-5 py-4 text-sm text-foreground/75">
             <p className="font-medium text-foreground">
