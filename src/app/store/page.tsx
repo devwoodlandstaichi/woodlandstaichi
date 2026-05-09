@@ -50,17 +50,6 @@ export default async function StorePage() {
                   className="grid grid-cols-12 gap-x-6 gap-y-6 border-t border-foreground/10 pt-8"
                 >
                   <div className="col-span-12 md:col-span-4">
-                    {item.image_url && (
-                      <div className="mb-5 overflow-hidden rounded-xl border border-foreground/10 bg-secondary/40 aspect-square">
-                        <Image
-                          src={item.image_url}
-                          alt={item.name}
-                          width={400}
-                          height={400}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                    )}
                     {item.tagline && (
                       <p className="text-xs uppercase tracking-[0.3em] text-foreground/55">
                         {item.tagline}
@@ -73,6 +62,17 @@ export default async function StorePage() {
                       <p className="mt-6 text-base text-vermillion-600 font-medium">
                         {item.price_range_label}
                       </p>
+                    )}
+                    {item.image_url && (
+                      <div className="mt-6 overflow-hidden rounded-xl border border-foreground/10 bg-secondary/40 aspect-square">
+                        <Image
+                          src={item.image_url}
+                          alt={item.name}
+                          width={400}
+                          height={400}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
                     )}
                   </div>
 
