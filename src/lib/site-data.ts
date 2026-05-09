@@ -108,68 +108,10 @@ export const WAIVER_PARAGRAPHS = [
 // supabase/snippets/seed-wtcd-events.sql for the canonical seed values
 // and /admin/wtcd for the admin CRUD surface.
 
-export const STORE_ITEMS = [
-  {
-    slug: "shirt",
-    name: "WTC Shirt",
-    tagline: "The uniform",
-    body: "Required for all members — worn to practice and at events. Pre-shrunk, moisture-wicking, odor-fighting performance fabric. The shirt represents the equality of every player.",
-    sizes: [
-      { size: "XS", length: 26, width: 18 },
-      { size: "S", length: 28.5, width: 20 },
-      { size: "M", length: 29.5, width: 21.5 },
-      { size: "L", length: 30.5, width: 23 },
-      { size: "XL", length: 31.5, width: 24.5 },
-      { size: "2XL", length: 32.5, width: 26 },
-      { size: "3XL", length: 33, width: 28 },
-      { size: "4XL", length: 33.5, width: 30 },
-    ],
-    note: "Confirm your size — no exchanges.",
-    priceRange: "Included with registration",
-  },
-  {
-    slug: "jacket",
-    name: "Sport-Wick Fleece Jacket",
-    tagline: "For events",
-    body: "8-ounce, 100% polyester moisture-wicking fleece. Cadet collar, set-in sleeves, slash pockets, self-fabric cuffs and hem. Embroidered Woodlands Tai Chi logo. Special order.",
-    pricing: [
-      { size: "XS · chest 32–34″", price: 66 },
-      { size: "S · chest 35–37″", price: 67 },
-      { size: "M · chest 38–39″", price: 69 },
-      { size: "L · chest 39–41″", price: 72 },
-      { size: "XL · chest 42–44″", price: 75 },
-      { size: "2XL · chest 45–47″", price: 78 },
-      { size: "3XL · chest 48–51″", price: 80 },
-      { size: "4XL · chest 52–55″", price: 85 },
-    ],
-    priceRange: "$66 – $85",
-  },
-  {
-    slug: "fan",
-    name: "WTC Fan with Pouch",
-    tagline: "Used in fan forms",
-    body: "Branded fan and matching pouch — used in the Fan and Fan-18 forms.",
-    priceRange: "$15",
-  },
-  {
-    slug: "uniform",
-    name: "Tang Suit",
-    tagline: "Special-order event uniform",
-    body: "Worn for performances and special events. Special order only — speak to an instructor.",
-    priceRange: "Special order",
-  },
-  {
-    slug: "shoes",
-    name: "Recommended Shoes",
-    tagline: "Reference",
-    body: "We don't sell shoes, but we strongly recommend Feiyue (made specifically for Tai Chi, originating from Shanghai in the 1920s) or Fuego dance shoes. Look for: low ankle profile, no or minimal heel, no or limited traction.",
-    priceRange: "",
-    discount: {
-      label: "Fuego — 10% off with code WOODLANDSTAICHI10",
-      url: "https://fuegodance.com/discount/WOODLANDSTAICHI10",
-    },
-  },
-] as const;
+// STORE_ITEMS used to live here as the marketing-side product list —
+// moved to public.store_products in the DB and now read via
+// lib/store/db.ts. Admin manages products at /admin/store/products.
+// See git history for the original constant if needed for reference.
 
 export const RESOURCE_LINKS = [
   {

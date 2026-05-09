@@ -6,10 +6,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   PAYMENT_METHODS,
   SERVICE_FEE_CENTS,
-  SKU_INDEX,
   isPaymentMethod,
   methodHasServiceFee,
 } from "@/lib/store/catalog";
+import { composeLineItemName, fetchVariantsBySkus } from "@/lib/store/db";
 
 export type OrderState =
   | { status: "idle" }
@@ -47,16 +47,21 @@ export async function submitOrder(
   const email = ((formData.get("email") as string) ?? "").trim();
   const payment_method = ((formData.get("payment_method") as string) ?? "").trim();
 
-  // Quantities posted as q_<sku>=<n>
-  const items: { sku: string; quantity: number }[] = [];
+  // Quantities posted as q_<sku>=<n>. SKU validation happens against
+  // the live store_variants table — prices are fetched fresh so we
+  // never honour a stale price the client might have cached and so
+  // unknown SKUs are silently dropped.
+  const requested: { sku: string; quantity: number }[] = [];
   for (const [key, value] of formData.entries()) {
     if (!key.startsWith("q_") || typeof value !== "string") continue;
     const sku = key.slice(2);
     const qty = parseInt(value, 10);
     if (!Number.isFinite(qty) || qty <= 0) continue;
-    if (!SKU_INDEX.has(sku)) continue;
-    items.push({ sku, quantity: Math.min(qty, 99) });
+    requested.push({ sku, quantity: Math.min(qty, 99) });
   }
+
+  const resolved = await fetchVariantsBySkus(requested.map((r) => r.sku));
+  const items = requested.filter((r) => resolved.has(r.sku));
 
   const fieldErrors: Record<string, string> = {};
   if (!first_name) fieldErrors.first_name = "Required.";
@@ -82,13 +87,13 @@ export async function submitOrder(
 
   const method = payment_method as (typeof PAYMENT_METHODS)[number]["value"];
   const lines = items.map((it) => {
-    const cat = SKU_INDEX.get(it.sku)!;
+    const variant = resolved.get(it.sku)!;
     return {
-      sku: cat.sku,
-      name: cat.name,
-      unit_cents: cat.price_cents,
+      sku: variant.sku,
+      name: composeLineItemName(variant),
+      unit_cents: variant.price_cents,
       quantity: it.quantity,
-      line_cents: cat.price_cents * it.quantity,
+      line_cents: variant.price_cents * it.quantity,
     };
   });
   const subtotal = lines.reduce((sum, l) => sum + l.line_cents, 0);

@@ -3,22 +3,30 @@
 import { useActionState, useMemo, useState } from "react";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 import {
-  CATALOG,
-  CATEGORY_LABEL,
-  CATEGORY_ORDER,
   PAYMENT_METHODS,
   SERVICE_FEE_CENTS,
   formatUsd,
   methodHasServiceFee,
-  type CatalogCategory,
-  type CatalogItem,
   type PaymentMethod,
 } from "@/lib/store/catalog";
 import { submitOrder, type OrderState } from "./actions";
 
 const INITIAL: OrderState = { status: "idle" };
 
-export function OrderForm() {
+export type OrderFormVariant = {
+  sku: string;
+  size: string | null;
+  price_cents: number;
+};
+
+export type OrderFormProduct = {
+  id: string;
+  name: string;
+  category_label: string;
+  variants: OrderFormVariant[];
+};
+
+export function OrderForm({ products }: { products: OrderFormProduct[] }) {
   const [state, formAction, pending] = useActionState(submitOrder, INITIAL);
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
   const submitted = useMemo(
@@ -28,8 +36,16 @@ export function OrderForm() {
   const v = (key: string) =>
     typeof submitted[key] === "string" ? (submitted[key] as string) : "";
 
-  // Quantities keyed by SKU. Initialize from the previous form values
-  // so a validation error doesn't wipe their cart.
+  // Flatten the product → variant tree once so totals + summary
+  // can iterate in a single pass.
+  const allVariants = useMemo(() => {
+    return products.flatMap((p) =>
+      p.variants.map((vt) => ({ ...vt, productName: p.name })),
+    );
+  }, [products]);
+
+  // Quantities keyed by SKU. Initialize from previous form values so
+  // a validation error doesn't wipe their cart.
   const initialQty = useMemo(() => {
     const out: Record<string, number> = {};
     for (const [k, val] of Object.entries(submitted)) {
@@ -48,11 +64,11 @@ export function OrderForm() {
 
   const subtotal = useMemo(
     () =>
-      CATALOG.reduce(
+      allVariants.reduce(
         (sum, item) => sum + (qty[item.sku] ?? 0) * item.price_cents,
         0,
       ),
-    [qty],
+    [qty, allVariants],
   );
   const serviceFee = methodHasServiceFee(method) ? SERVICE_FEE_CENTS : 0;
   const total = subtotal + serviceFee;
@@ -139,10 +155,10 @@ export function OrderForm() {
           </p>
         )}
         <div className="grid gap-6">
-          {CATEGORY_ORDER.map((cat) => (
-            <CategoryGroup
-              key={cat}
-              category={cat}
+          {products.map((p) => (
+            <ProductGroup
+              key={p.id}
+              product={p}
               qty={qty}
               onInc={inc}
               onDec={dec}
@@ -200,20 +216,25 @@ export function OrderForm() {
           </p>
         ) : (
           <ul className="space-y-2 text-sm">
-            {CATALOG.filter((i) => (qty[i.sku] ?? 0) > 0).map((i) => (
-              <li
-                key={i.sku}
-                className="flex items-baseline justify-between gap-3 border-b border-foreground/10 pb-2"
-              >
-                <span>
-                  {i.name}{" "}
-                  <span className="text-foreground/55">× {qty[i.sku]}</span>
-                </span>
-                <span className="font-mono tabular-nums">
-                  {formatUsd((qty[i.sku] ?? 0) * i.price_cents)}
-                </span>
-              </li>
-            ))}
+            {allVariants
+              .filter((vt) => (qty[vt.sku] ?? 0) > 0)
+              .map((vt) => (
+                <li
+                  key={vt.sku}
+                  className="flex items-baseline justify-between gap-3 border-b border-foreground/10 pb-2"
+                >
+                  <span>
+                    {vt.productName}
+                    {vt.size ? ` — ${vt.size}` : ""}{" "}
+                    <span className="text-foreground/55">
+                      × {qty[vt.sku]}
+                    </span>
+                  </span>
+                  <span className="font-mono tabular-nums">
+                    {formatUsd((qty[vt.sku] ?? 0) * vt.price_cents)}
+                  </span>
+                </li>
+              ))}
             <li className="flex items-baseline justify-between gap-3 pt-2 text-foreground/70">
               <span>Subtotal</span>
               <span className="font-mono tabular-nums">
@@ -258,33 +279,33 @@ export function OrderForm() {
   );
 }
 
-function CategoryGroup({
-  category,
+function ProductGroup({
+  product,
   qty,
   onInc,
   onDec,
 }: {
-  category: CatalogCategory;
+  product: OrderFormProduct;
   qty: Record<string, number>;
   onInc: (sku: string) => void;
   onDec: (sku: string) => void;
 }) {
-  const items = CATALOG.filter((i) => i.category === category);
   return (
     <section className="rounded-2xl border border-foreground/10 bg-card overflow-hidden">
       <header className="px-6 py-4 border-b border-foreground/10 bg-secondary/30">
         <p className="text-xs uppercase tracking-[0.25em] text-foreground/55">
-          {CATEGORY_LABEL[category]}
+          {product.category_label}
         </p>
       </header>
       <ul className="divide-y divide-foreground/5">
-        {items.map((item) => (
+        {product.variants.map((variant) => (
           <ItemRow
-            key={item.sku}
-            item={item}
-            quantity={qty[item.sku] ?? 0}
-            onInc={() => onInc(item.sku)}
-            onDec={() => onDec(item.sku)}
+            key={variant.sku}
+            productName={product.name}
+            variant={variant}
+            quantity={qty[variant.sku] ?? 0}
+            onInc={() => onInc(variant.sku)}
+            onDec={() => onDec(variant.sku)}
           />
         ))}
       </ul>
@@ -293,12 +314,14 @@ function CategoryGroup({
 }
 
 function ItemRow({
-  item,
+  productName,
+  variant,
   quantity,
   onInc,
   onDec,
 }: {
-  item: CatalogItem;
+  productName: string;
+  variant: OrderFormVariant;
   quantity: number;
   onInc: () => void;
   onDec: () => void;
@@ -312,18 +335,18 @@ function ItemRow({
     >
       <input
         type="hidden"
-        name={`q_${item.sku}`}
+        name={`q_${variant.sku}`}
         value={quantity > 0 ? String(quantity) : ""}
       />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">
-          {item.size ? `Size ${item.size}` : item.name}
+          {variant.size ? `Size ${variant.size}` : productName}
         </p>
         <p className="text-xs text-foreground/55 mt-0.5">
-          {item.size ? item.name : ""}
-          {item.size ? " · " : ""}
+          {variant.size ? productName : ""}
+          {variant.size ? " · " : ""}
           <span className="font-mono tabular-nums text-foreground/70">
-            {formatUsd(item.price_cents)}
+            {formatUsd(variant.price_cents)}
           </span>
         </p>
       </div>
@@ -332,7 +355,7 @@ function ItemRow({
           type="button"
           onClick={onDec}
           disabled={quantity === 0}
-          aria-label={`Decrease ${item.name}`}
+          aria-label={`Decrease ${productName}${variant.size ? ` ${variant.size}` : ""}`}
           className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-foreground/15 hover:bg-foreground/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Minus size={14} aria-hidden />
@@ -343,7 +366,7 @@ function ItemRow({
         <button
           type="button"
           onClick={onInc}
-          aria-label={`Increase ${item.name}`}
+          aria-label={`Increase ${productName}${variant.size ? ` ${variant.size}` : ""}`}
           className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-foreground/15 hover:bg-foreground/5 transition-colors"
         >
           <Plus size={14} aria-hidden />

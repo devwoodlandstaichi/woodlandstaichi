@@ -1,20 +1,11 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
-import { STORE_ITEMS } from "@/lib/site-data";
-import { CATALOG, formatUsd } from "@/lib/store/catalog";
-
-// Per-size price lookup for items with a length/width chart. Sourced
-// from the canonical CATALOG so the chart never drifts from what the
-// /store/order form actually charges.
-const SHIRT_PRICE_BY_SIZE: Record<string, number> = Object.fromEntries(
-  CATALOG.filter((i) => i.category === "shirt" && i.size).map((i) => [
-    i.size as string,
-    i.price_cents,
-  ]),
-);
+import { fetchActiveStoreProducts } from "@/lib/store/db";
+import { formatUsd } from "@/lib/store/catalog";
 
 export const metadata: Metadata = {
   title: "Store — uniforms, jackets, fans, shoes",
@@ -22,7 +13,11 @@ export const metadata: Metadata = {
     "WTC shirts, fleece jackets, Tang Suit uniforms, fans, and recommended Tai Chi shoes for Woodlands Tai Chi members.",
 };
 
-export default function StorePage() {
+export const dynamic = "force-dynamic";
+
+export default async function StorePage() {
+  const products = await fetchActiveStoreProducts();
+
   return (
     <>
       <SiteHeader />
@@ -37,110 +32,150 @@ export default function StorePage() {
 
         <section className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-14">
           <ul className="space-y-8">
-            {STORE_ITEMS.map((item) => (
-              <li
-                key={item.slug}
-                id={item.slug}
-                className="grid grid-cols-12 gap-x-6 gap-y-6 border-t border-foreground/10 pt-8"
-              >
-                <div className="col-span-12 md:col-span-4">
-                  <p className="text-xs uppercase tracking-[0.3em] text-foreground/55">
-                    {item.tagline}
-                  </p>
-                  <h2 className="mt-2 font-display text-4xl md:text-5xl leading-[1.05] tracking-tight">
-                    {item.name}
-                  </h2>
-                  <p className="mt-6 text-base text-vermillion-600 font-medium">
-                    {item.priceRange}
-                  </p>
-                </div>
+            {products.map((item) => {
+              // Shirts have variants with size-chart dimensions; render
+              // the chart with prices. Other products with variants
+              // render a simple per-size price list. Products with no
+              // variants (Recommended Shoes) show the price-range
+              // label only.
+              const hasDimensions = item.variants.some(
+                (v) => v.length_inches !== null && v.width_inches !== null,
+              );
+              const hasVariants = item.variants.length > 0;
 
-                <div className="col-span-12 md:col-span-8 md:pl-8 space-y-6">
-                  <p className="text-lg text-foreground/85 leading-relaxed">
-                    {item.body}
-                  </p>
-
-                  {"sizes" in item && item.sizes && (
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.25em] text-foreground/55 mb-3">
-                        Size chart (inches) &amp; pricing
+              return (
+                <li
+                  key={item.slug}
+                  id={item.slug}
+                  className="grid grid-cols-12 gap-x-6 gap-y-6 border-t border-foreground/10 pt-8"
+                >
+                  <div className="col-span-12 md:col-span-4">
+                    {item.image_url && (
+                      <div className="mb-5 overflow-hidden rounded-xl border border-foreground/10 bg-secondary/40 aspect-square">
+                        <Image
+                          src={item.image_url}
+                          alt={item.name}
+                          width={400}
+                          height={400}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    )}
+                    {item.tagline && (
+                      <p className="text-xs uppercase tracking-[0.3em] text-foreground/55">
+                        {item.tagline}
                       </p>
-                      <div className="overflow-x-auto rounded-lg border border-foreground/10">
-                        <table className="w-full text-sm">
-                          <thead className="bg-secondary">
-                            <tr>
-                              <th className="text-left p-3 font-medium">Size</th>
-                              <th className="text-left p-3 font-medium">Length</th>
-                              <th className="text-left p-3 font-medium">Width</th>
-                              <th className="text-right p-3 font-medium">Price</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {item.sizes.map((s) => {
-                              // Today only the WTC shirt has a size chart;
-                              // if more items grow charts, extend the
-                              // lookup map at the top of the file.
-                              const cents =
-                                item.slug === "shirt"
-                                  ? SHIRT_PRICE_BY_SIZE[s.size]
-                                  : undefined;
-                              return (
-                                <tr key={s.size} className="border-t border-foreground/8">
-                                  <td className="p-3 font-medium">{s.size}</td>
-                                  <td className="p-3 tabular-nums">{s.length}″</td>
-                                  <td className="p-3 tabular-nums">{s.width}″</td>
+                    )}
+                    <h2 className="mt-2 font-display text-4xl md:text-5xl leading-[1.05] tracking-tight">
+                      {item.name}
+                    </h2>
+                    {item.price_range_label && (
+                      <p className="mt-6 text-base text-vermillion-600 font-medium">
+                        {item.price_range_label}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="col-span-12 md:col-span-8 md:pl-8 space-y-6">
+                    {item.body && (
+                      <p className="text-lg text-foreground/85 leading-relaxed">
+                        {item.body}
+                      </p>
+                    )}
+
+                    {hasVariants && hasDimensions && (
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.25em] text-foreground/55 mb-3">
+                          Size chart (inches) &amp; pricing
+                        </p>
+                        <div className="overflow-x-auto rounded-lg border border-foreground/10">
+                          <table className="w-full text-sm">
+                            <thead className="bg-secondary">
+                              <tr>
+                                <th className="text-left p-3 font-medium">Size</th>
+                                <th className="text-left p-3 font-medium">Length</th>
+                                <th className="text-left p-3 font-medium">Width</th>
+                                <th className="text-right p-3 font-medium">Price</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {item.variants.map((v) => (
+                                <tr
+                                  key={v.id}
+                                  className="border-t border-foreground/8"
+                                >
+                                  <td className="p-3 font-medium">
+                                    {v.size ?? "—"}
+                                  </td>
+                                  <td className="p-3 tabular-nums">
+                                    {v.length_inches !== null
+                                      ? `${v.length_inches}″`
+                                      : "—"}
+                                  </td>
+                                  <td className="p-3 tabular-nums">
+                                    {v.width_inches !== null
+                                      ? `${v.width_inches}″`
+                                      : "—"}
+                                  </td>
                                   <td className="p-3 text-right font-mono tabular-nums text-foreground/80">
-                                    {cents !== undefined ? formatUsd(cents) : "—"}
+                                    {formatUsd(v.price_cents)}
                                   </td>
                                 </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {item.note && (
+                          <p className="mt-3 text-sm text-vermillion-600 italic">
+                            {item.note}
+                          </p>
+                        )}
                       </div>
-                      {"note" in item && item.note && (
-                        <p className="mt-3 text-sm text-vermillion-600 italic">
-                          {item.note}
+                    )}
+
+                    {hasVariants && !hasDimensions && (
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.25em] text-foreground/55 mb-3">
+                          Sizes &amp; pricing
                         </p>
-                      )}
-                    </div>
-                  )}
+                        <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
+                          {item.variants.map((v) => (
+                            <li
+                              key={v.id}
+                              className="flex items-baseline justify-between border-b border-foreground/8 pb-2"
+                            >
+                              <span className="text-sm">
+                                {v.size ?? "—"}
+                              </span>
+                              <span className="font-mono tabular-nums text-foreground/80">
+                                {formatUsd(v.price_cents)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                        {item.note && (
+                          <p className="mt-3 text-sm text-vermillion-600 italic">
+                            {item.note}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
-                  {"pricing" in item && item.pricing && (
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.25em] text-foreground/55 mb-3">
-                        Sizes &amp; pricing
-                      </p>
-                      <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
-                        {item.pricing.map((p) => (
-                          <li
-                            key={p.size}
-                            className="flex items-baseline justify-between border-b border-foreground/8 pb-2"
-                          >
-                            <span className="text-sm">{p.size}</span>
-                            <span className="font-mono tabular-nums text-foreground/80">
-                              ${p.price}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {"discount" in item && item.discount && (
-                    <a
-                      href={item.discount.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 rounded-full border border-vermillion/30 bg-vermillion/5 px-5 py-2.5 text-sm font-medium text-vermillion-600 hover:bg-vermillion/10 transition-colors"
-                    >
-                      {item.discount.label}
-                      <span aria-hidden>↗</span>
-                    </a>
-                  )}
-                </div>
-              </li>
-            ))}
+                    {item.discount_url && item.discount_label && (
+                      <a
+                        href={item.discount_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded-full border border-vermillion/30 bg-vermillion/5 px-5 py-2.5 text-sm font-medium text-vermillion-600 hover:bg-vermillion/10 transition-colors"
+                      >
+                        {item.discount_label}
+                        <span aria-hidden>↗</span>
+                      </a>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
 
           <div className="mt-12 rounded-2xl border border-foreground/10 bg-secondary p-8 md:p-10">
