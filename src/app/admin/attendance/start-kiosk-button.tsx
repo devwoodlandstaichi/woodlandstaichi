@@ -49,12 +49,36 @@ export function StartKioskButton({
           <>
             <p>
               This will lock this device into kiosk mode for today&rsquo;s
-              sessions at <strong>{location}</strong>. The scanner will
-              auto-rotate between sessions as they open and close.
+              classes at <strong>{location}</strong>. Once started, here is
+              exactly what will happen:
             </p>
-            <p className="mt-2 text-foreground/60">
-              Exit requires the kiosk PIN if one is set. Start only on a
-              device you intend to leave at this location for the day.
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-foreground/80">
+              <li>
+                <strong>Check-in opens when a class starts.</strong>{" "}
+                Members can scan their QR or have their name typed in for
+                the first <strong>15 minutes</strong> of class.
+              </li>
+              <li>
+                <strong>After 15 minutes, check-in closes.</strong> The
+                kiosk shows a &ldquo;Class is closed for check-in&rdquo;
+                screen with a live countdown to the next class.
+              </li>
+              <li>
+                <strong>The next class opens automatically</strong> at its
+                start time. The kiosk switches over on its own — nobody
+                needs to touch it.
+              </li>
+              <li>
+                <strong>At the end of the day</strong>, the kiosk shows
+                &ldquo;All check-ins for today are complete&rdquo; and
+                stays there until tomorrow.
+              </li>
+            </ul>
+            <p className="mt-3 text-foreground/60">
+              To exit the kiosk before the day is over, you&rsquo;ll need
+              the kiosk PIN (if one is set). Only start this on a device
+              you intend to leave at <strong>{location}</strong> for the
+              day.
             </p>
           </>
         }
