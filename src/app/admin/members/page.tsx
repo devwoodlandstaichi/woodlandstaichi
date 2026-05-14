@@ -10,6 +10,7 @@ import {
 } from "@/lib/format";
 import { MemberFilters } from "./filters";
 import { MembersActionsMenu } from "./actions-menu";
+import { MembersSelectionProvider } from "./members-selection";
 import { getSessionUser } from "@/lib/auth/dal";
 import { MembersTable } from "./members-table";
 import {
@@ -135,7 +136,7 @@ export default async function MembersPage({
   );
 
   return (
-    <>
+    <MembersSelectionProvider>
       <PageHeader
         title="Members"
         description="Roster. Click a name to view details, edit, or change status."
@@ -177,6 +178,6 @@ export default async function MembersPage({
           {rows.length} {rows.length === 1 ? "member" : "members"}.
         </p>
       </div>
-    </>
+    </MembersSelectionProvider>
   );
 }

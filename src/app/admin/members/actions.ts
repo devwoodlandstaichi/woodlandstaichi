@@ -32,6 +32,7 @@ export type MemberFormValues = {
   state: string;
   postal_code: string;
   birthday: string;
+  joined_at: string;
   sex: string;
   level: string;
   status: string;
@@ -71,6 +72,7 @@ function valuesFrom(formData: FormData): MemberFormValues {
     state: str(formData, "state"),
     postal_code: str(formData, "postal_code"),
     birthday: str(formData, "birthday"),
+    joined_at: str(formData, "joined_at"),
     sex: str(formData, "sex"),
     level: str(formData, "level"),
     status: str(formData, "status"),
@@ -98,6 +100,7 @@ type MemberPatch = {
   state: string | null;
   postal_code: string | null;
   birthday: string | null;
+  joined_at: string | null;
   sex: MemberSex | null;
   level: MemberLevel;
   status: MemberStatus;
@@ -130,6 +133,12 @@ function parse(
   if (v.birthday && !DATE_RE.test(v.birthday))
     errors.birthday = "Use YYYY-MM-DD.";
 
+  // joined_at — admin-editable "member since" date, distinct from
+  // the system-managed created_at audit timestamp. Optional, but if
+  // present must be a valid date.
+  if (v.joined_at && !DATE_RE.test(v.joined_at))
+    errors.joined_at = "Use YYYY-MM-DD.";
+
   // Sex is required on create (matches the public registration form)
   // but optional on edit so historical members imported without it
   // (e.g. CSV imports) don't get blocked when staff fix something else
@@ -158,6 +167,7 @@ function parse(
       state: v.state || null,
       postal_code: v.postal_code || null,
       birthday: v.birthday || null,
+      joined_at: v.joined_at || null,
       sex: v.sex ? (v.sex as MemberSex) : null,
       level: v.level as MemberLevel,
       status: v.status as MemberStatus,

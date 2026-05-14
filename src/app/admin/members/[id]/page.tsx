@@ -56,6 +56,7 @@ type Member = {
   state: string | null;
   postal_code: string | null;
   birthday: string | null;
+  joined_at: string | null;
   level: MemberLevel;
   status: MemberStatus;
   bio: string | null;
@@ -157,9 +158,12 @@ export default async function MemberDetailPage({
     m.expectations && { label: "Expectations", value: m.expectations },
   ].filter(Boolean) as { label: string; value: string }[];
 
+  // Prefer the admin-editable joined_at (for paper-form historical
+  // joiners) over the system created_at audit timestamp.
+  const sinceIso = m.joined_at ?? m.created_at.slice(0, 10);
   const headerDescription = m.nickname
-    ? `“${m.nickname}” · Member since ${formatDate(m.created_at.slice(0, 10))}`
-    : `Member since ${formatDate(m.created_at.slice(0, 10))}${
+    ? `“${m.nickname}” · Member since ${formatDate(sinceIso)}`
+    : `Member since ${formatDate(sinceIso)}${
         cityState ? ` · ${cityState}` : ""
       }`;
 
@@ -273,7 +277,7 @@ export default async function MemberDetailPage({
                   <span className="italic">&ldquo;{m.nickname}&rdquo;</span>
                 ) : null}
                 {m.nickname ? <span className="mx-2">·</span> : null}
-                Member since {formatDate(m.created_at.slice(0, 10))}
+                Member since {formatDate(sinceIso)}
                 {cityState ? (
                   <>
                     <span className="mx-2">·</span>

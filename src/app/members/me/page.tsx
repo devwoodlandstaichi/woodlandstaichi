@@ -68,6 +68,7 @@ type Member = ProfileDefaults & {
   photo_url: string | null;
   photo_public: boolean | null;
   created_at: string | null;
+  joined_at: string | null;
   emergency_contact_name: string | null;
   emergency_contact_relationship: string | null;
   emergency_phone: string | null;
@@ -91,7 +92,7 @@ async function loadMember(): Promise<{
   const { data } = await supabase
     .from("members")
     .select(
-      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,birthday,bio,photo_url,photo_public,created_at,emergency_contact_name,emergency_contact_relationship,emergency_phone,physical_limitations,prior_experience,found_us_via,expectations",
+      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,birthday,bio,photo_url,photo_public,created_at,joined_at,emergency_contact_name,emergency_contact_relationship,emergency_phone,physical_limitations,prior_experience,found_us_via,expectations",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -106,7 +107,7 @@ async function loadMember(): Promise<{
   const { data: linked } = await admin
     .from("members")
     .select(
-      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,birthday,bio,photo_url,photo_public,created_at,emergency_contact_name,emergency_contact_relationship,emergency_phone,physical_limitations,prior_experience,found_us_via,expectations",
+      "id,first_name,last_name,email,level,status,user_id,nickname,phone,street,city,state,postal_code,birthday,bio,photo_url,photo_public,created_at,joined_at,emergency_contact_name,emergency_contact_relationship,emergency_phone,physical_limitations,prior_experience,found_us_via,expectations",
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -230,6 +231,7 @@ export default async function MyProfilePage() {
         bio={member.bio}
         photo_url={member.photo_url}
         created_at={member.created_at}
+        joined_at={member.joined_at}
         emergency_contact_name={member.emergency_contact_name}
         emergency_contact_relationship={member.emergency_contact_relationship}
         emergency_phone={member.emergency_phone}

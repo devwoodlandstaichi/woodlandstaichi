@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useState,
+  type Ref,
+} from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/admin/ui";
+
+export type ExportButtonHandle = { open: () => void };
 
 // Column definitions duplicated client-side so the dialog can show
 // labels without importing the server route's COLUMNS map (which would
@@ -126,13 +134,26 @@ const ALL_COLS: ColKey[] = GROUPS.flatMap((g) => g.cols.map((c) => c.key));
 
 export function ExportButton({
   renderTrigger,
+  ref,
+  selectedIds,
 }: {
   renderTrigger?: (open: () => void) => React.ReactNode;
+  /** When the component is mounted inside a parent dropdown, the
+   *  default trigger is hidden via `renderTrigger={() => null}` and
+   *  the parent drives the dialog via `ref.current.open()`. */
+  ref?: Ref<ExportButtonHandle>;
+  /** When provided + non-empty, the export scope flips from
+   *  filter-based (q/level/status) to id-based: the route is given
+   *  `?ids=...` and only those rows land in the CSV. Used when the
+   *  members table has rows selected at click time. */
+  selectedIds?: string[];
 } = {}) {
   const [open, setOpen] = useState(false);
   const [checked, setChecked] = useState<Set<ColKey>>(
     () => new Set(DEFAULT_CHECKED),
   );
+
+  useImperativeHandle(ref, () => ({ open: () => setOpen(true) }), []);
 
   useEffect(() => {
     if (!open) return;
@@ -170,21 +191,34 @@ export function ExportButton({
   // Compute the download URL on every render. Selected columns ride
   // in `cols`; we mirror the page's filter/sort params so the export
   // matches what the founder is currently looking at.
+  const hasSelection = !!selectedIds && selectedIds.length > 0;
+
   const href = useMemo(() => {
     if (typeof window === "undefined") return "/admin/members/export";
-    const pageParams = new URLSearchParams(window.location.search);
-    // Preserve only the params the export route reads.
     const out = new URLSearchParams();
-    for (const k of ["q", "level", "status", "sort", "dir"]) {
-      const v = pageParams.get(k);
-      if (v) out.set(k, v);
+
+    if (hasSelection) {
+      // Selection mode: scope by id only; ignore page filters so the
+      // user gets exactly what they checkboxed even if those rows
+      // wouldn't pass the current filter (e.g. waitlist member
+      // selected while viewing Active).
+      out.set("ids", selectedIds!.join(","));
+    } else {
+      // Filter mode: mirror the page's query so what you see is what
+      // you export.
+      const pageParams = new URLSearchParams(window.location.search);
+      for (const k of ["q", "level", "status", "sort", "dir"]) {
+        const v = pageParams.get(k);
+        if (v) out.set(k, v);
+      }
     }
+
     // Preserve the order in GROUPS so columns export left-to-right
     // in the visual order they appear in the dialog.
     const orderedCols = ALL_COLS.filter((c) => checked.has(c));
     if (orderedCols.length > 0) out.set("cols", orderedCols.join(","));
     return `/admin/members/export?${out.toString()}`;
-  }, [checked]);
+  }, [checked, hasSelection, selectedIds]);
 
   const openDialog = () => setOpen(true);
 
@@ -234,7 +268,9 @@ export function ExportButton({
                     Choose columns
                   </h2>
                   <p className="mt-2 text-sm leading-relaxed text-foreground/70">
-                    The CSV honours your current filters and sort.
+                    {hasSelection
+                      ? `Exporting the ${selectedIds!.length} member${selectedIds!.length === 1 ? "" : "s"} you have selected.`
+                      : "Exporting every member that matches the page's current filters and sort."}
                     {" "}
                     <button
                       type="button"
@@ -330,7 +366,9 @@ export function ExportButton({
                       }`}
                     >
                       <Download size={14} aria-hidden />
-                      Download CSV
+                      {hasSelection
+                        ? `Download ${selectedIds!.length} member${selectedIds!.length === 1 ? "" : "s"}`
+                        : "Download all"}
                     </a>
                   </div>
                 </div>

@@ -58,6 +58,7 @@ type MemberRow = {
   state: string | null;
   postal_code: string | null;
   birthday: string | null;
+  joined_at: string | null;
   sex: string | null;
   level: MemberLevel;
   status: MemberStatus;
@@ -101,7 +102,10 @@ export const COLUMNS: Record<
   status: { label: "Status", get: (m) => m.status },
   member_since: {
     label: "Member since",
-    get: (m) => (m.created_at ? m.created_at.slice(0, 10) : ""),
+    // Prefer admin-edited joined_at over the system created_at, same
+    // fallback rule the public/admin display surfaces use.
+    get: (m) =>
+      m.joined_at ?? (m.created_at ? m.created_at.slice(0, 10) : ""),
   },
   emergency_contact_name: {
     label: "Emergency contact name",
@@ -180,6 +184,16 @@ export async function GET(req: NextRequest) {
     .filter((c): c is ColKey => c.length > 0 && isColKey(c));
   const cols: ColKey[] = requested.length > 0 ? requested : DEFAULT_COLS;
 
+  // Selection-aware scope: when ?ids= is present, ignore the filter
+  // params and pull only those rows. Sort still applies so the CSV
+  // order is deterministic.
+  const idsRaw = searchParams.get("ids") ?? "";
+  const ids = idsRaw
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  const useIdScope = ids.length > 0;
+
   const q = (searchParams.get("q") ?? "").trim();
   const levelParam = searchParams.get("level") ?? "";
   const statusParam = searchParams.get("status") ?? "active";
@@ -212,19 +226,23 @@ export async function GET(req: NextRequest) {
       .order("first_name", { ascending: true });
   }
 
-  if (level) query = query.eq("level", level);
-  if (status) query = query.eq("status", status);
-  if (q) {
-    const safe = q.replace(/[,()*]/g, " ");
-    query = query.or(
-      [
-        `first_name.ilike.*${safe}*`,
-        `last_name.ilike.*${safe}*`,
-        `nickname.ilike.*${safe}*`,
-        `email.ilike.*${safe}*`,
-        `phone.ilike.*${safe}*`,
-      ].join(","),
-    );
+  if (useIdScope) {
+    query = query.in("id", ids);
+  } else {
+    if (level) query = query.eq("level", level);
+    if (status) query = query.eq("status", status);
+    if (q) {
+      const safe = q.replace(/[,()*]/g, " ");
+      query = query.or(
+        [
+          `first_name.ilike.*${safe}*`,
+          `last_name.ilike.*${safe}*`,
+          `nickname.ilike.*${safe}*`,
+          `email.ilike.*${safe}*`,
+          `phone.ilike.*${safe}*`,
+        ].join(","),
+      );
+    }
   }
 
   const { data, error } = await query;

@@ -32,6 +32,7 @@ export type MemberFormDefaults = {
   state?: string | null;
   postal_code?: string | null;
   birthday?: string | null;
+  joined_at?: string | null;
   sex?: MemberSex | null;
   level?: MemberLevel;
   status?: MemberStatus;
@@ -159,6 +160,19 @@ export function MemberForm({
             </Select>
           </Field>
         </div>
+        <Field
+          label="Member since"
+          htmlFor="joined_at"
+          error={errors.joined_at}
+          hint="When this person actually joined the school. Leave blank to fall back to the day their record was created."
+        >
+          <Input
+            id="joined_at"
+            name="joined_at"
+            type="date"
+            defaultValue={v("joined_at", defaults.joined_at)}
+          />
+        </Field>
       </fieldset>
 
       <fieldset className="grid gap-5">

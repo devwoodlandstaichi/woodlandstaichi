@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useImperativeHandle, useTransition, type Ref } from "react";
 import { QrCode } from "lucide-react";
 import { Button } from "@/components/admin/ui";
 import {
@@ -10,17 +10,23 @@ import {
 import { useToast } from "@/components/admin/toast";
 import { issueMissingQrs } from "./bulk-actions";
 
+export type BulkIssueQrsButtonHandle = { open: () => void };
+
 export function BulkIssueQrsButton({
   renderTrigger,
+  ref,
 }: {
   /** Override the default button. The callback exposes `open` so a
    *  custom trigger (e.g. dropdown menu item) can fire the confirm
    *  dialog without owning the dialog state itself. */
   renderTrigger?: (open: () => void) => React.ReactNode;
+  ref?: Ref<BulkIssueQrsButtonHandle>;
 } = {}) {
   const dialog = useConfirmDialog();
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
+
+  useImperativeHandle(ref, () => ({ open: dialog.show }), [dialog.show]);
 
   function onConfirm() {
     startTransition(async () => {

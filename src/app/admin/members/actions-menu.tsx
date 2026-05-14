@@ -9,16 +9,30 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/admin/ui";
-import { ExportButton } from "./export-button";
-import { BulkIssueQrsButton } from "./bulk-issue-button";
-import { BulkEmailQrsButton } from "./bulk-email-qrs-button";
-import { DangerZoneButton } from "./danger-zone";
+import {
+  ExportButton,
+  type ExportButtonHandle,
+} from "./export-button";
+import {
+  BulkIssueQrsButton,
+  type BulkIssueQrsButtonHandle,
+} from "./bulk-issue-button";
+import {
+  BulkEmailQrsButton,
+  type BulkEmailQrsButtonHandle,
+} from "./bulk-email-qrs-button";
+import {
+  DangerZoneButton,
+  type DangerZoneButtonHandle,
+} from "./danger-zone";
+import { useMembersSelection } from "./members-selection";
 
-// Folds the four header-row action buttons (Export CSV, Bulk issue QRs,
-// Bulk email QRs, Clear all members) into one dropdown to keep the
-// PageHeader uncluttered. Each underlying component still owns its own
-// modal — we just swap their default <Button> trigger for a menu item
-// via the renderTrigger render-prop.
+// Folds the four header-row action buttons into one dropdown. Each
+// underlying component stays mounted unconditionally — they own their
+// modal state internally — and we trigger them via imperative refs
+// from the menu items. Earlier version had the action components
+// inside `{open && ...}`, which unmounted them (and their dialog
+// state) the moment the menu closed; that's why clicks did nothing.
 
 export function MembersActionsMenu({
   unsentQrs,
@@ -30,8 +44,28 @@ export function MembersActionsMenu({
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // Click-outside + Escape to dismiss. We bind on next tick so the
-  // click that opened the menu doesn't immediately close it.
+  // Read selection from the shared context (populated by MembersTable).
+  // When empty, the export menu item labels itself "Export all
+  // members" and the route uses the page's filter/sort. When
+  // populated, the label becomes "Export N members" and the route is
+  // scoped via `?ids=...`.
+  const { selected } = useMembersSelection();
+  const selectedIds = [...selected];
+  const hasSelection = selectedIds.length > 0;
+  const exportLabel = hasSelection
+    ? `Export ${selectedIds.length} member${selectedIds.length === 1 ? "" : "s"}`
+    : "Export all members";
+
+  const exportRef = useRef<ExportButtonHandle>(null);
+  const bulkIssueRef = useRef<BulkIssueQrsButtonHandle>(null);
+  const bulkEmailRef = useRef<BulkEmailQrsButtonHandle>(null);
+  const dangerRef = useRef<DangerZoneButtonHandle>(null);
+
+  // Click-outside + Escape to dismiss the dropdown. Bound on next
+  // tick so the click that opened the menu doesn't immediately close
+  // it. We don't dismiss when the user clicks a menu item — that's
+  // handled explicitly in `runFromMenu` below, which also fires the
+  // underlying dialog *after* the dropdown has unmounted.
   useEffect(() => {
     if (!open) return;
     const onClick = (e: MouseEvent) => {
@@ -51,6 +85,15 @@ export function MembersActionsMenu({
     };
   }, [open]);
 
+  // Close the dropdown first, then fire the underlying dialog on the
+  // next tick so the dropdown's unmount completes before the modal's
+  // focus-trap kicks in. Without the deferral, the modal would briefly
+  // contend with the dropdown for keyboard focus.
+  function runFromMenu(action: () => void) {
+    setOpen(false);
+    setTimeout(action, 0);
+  }
+
   return (
     <div ref={rootRef} className="relative">
       <Button
@@ -69,73 +112,63 @@ export function MembersActionsMenu({
         />
       </Button>
 
+      {/* Action components stay mounted regardless of the dropdown's
+          open state so their internal dialog state survives a menu
+          close. Their default <Button> trigger is suppressed via
+          `renderTrigger={() => null}`; we open them imperatively. */}
+      <ExportButton
+        ref={exportRef}
+        renderTrigger={() => null}
+        selectedIds={hasSelection ? selectedIds : undefined}
+      />
+      <BulkIssueQrsButton ref={bulkIssueRef} renderTrigger={() => null} />
+      <BulkEmailQrsButton
+        unsentCount={unsentQrs}
+        ref={bulkEmailRef}
+        renderTrigger={() => null}
+      />
+      {canDelete && (
+        <DangerZoneButton ref={dangerRef} renderTrigger={() => null} />
+      )}
+
       {open && (
         <div
           role="menu"
           className="absolute right-0 top-full z-30 mt-2 min-w-[14rem] overflow-hidden rounded-xl border border-foreground/10 bg-card py-1 shadow-2xl"
         >
-          <ExportButton
-            renderTrigger={(openDialog) => (
-              <MenuItem
-                icon={<Download size={14} aria-hidden />}
-                onClick={() => {
-                  setOpen(false);
-                  openDialog();
-                }}
-              >
-                Export CSV
-              </MenuItem>
-            )}
-          />
+          <MenuItem
+            icon={<Download size={14} aria-hidden />}
+            onClick={() => runFromMenu(() => exportRef.current?.open())}
+          >
+            {exportLabel}
+          </MenuItem>
 
-          <BulkIssueQrsButton
-            renderTrigger={(openDialog) => (
-              <MenuItem
-                icon={<QrCode size={14} aria-hidden />}
-                onClick={() => {
-                  setOpen(false);
-                  openDialog();
-                }}
-              >
-                Bulk issue QRs
-              </MenuItem>
-            )}
-          />
+          <MenuItem
+            icon={<QrCode size={14} aria-hidden />}
+            onClick={() => runFromMenu(() => bulkIssueRef.current?.open())}
+          >
+            Bulk issue QRs
+          </MenuItem>
 
-          {/* BulkEmailQrsButton renders null when unsentCount === 0; the
-              menu item it provides simply won't appear in those cases. */}
-          <BulkEmailQrsButton
-            unsentCount={unsentQrs}
-            renderTrigger={(openDialog) => (
-              <MenuItem
-                icon={<Mail size={14} aria-hidden />}
-                onClick={() => {
-                  setOpen(false);
-                  openDialog();
-                }}
-              >
-                Email {unsentQrs} QR{unsentQrs === 1 ? "" : "s"}
-              </MenuItem>
-            )}
-          />
+          {unsentQrs > 0 && (
+            <MenuItem
+              icon={<Mail size={14} aria-hidden />}
+              onClick={() => runFromMenu(() => bulkEmailRef.current?.open())}
+            >
+              Email {unsentQrs} QR{unsentQrs === 1 ? "" : "s"}
+            </MenuItem>
+          )}
 
           {canDelete && (
             <>
               <div className="my-1 h-px bg-foreground/5" />
-              <DangerZoneButton
-                renderTrigger={(openDialog) => (
-                  <MenuItem
-                    destructive
-                    icon={<Trash2 size={14} aria-hidden />}
-                    onClick={() => {
-                      setOpen(false);
-                      openDialog();
-                    }}
-                  >
-                    Clear all members
-                  </MenuItem>
-                )}
-              />
+              <MenuItem
+                destructive
+                icon={<Trash2 size={14} aria-hidden />}
+                onClick={() => runFromMenu(() => dangerRef.current?.open())}
+              >
+                Clear all members
+              </MenuItem>
             </>
           )}
         </div>

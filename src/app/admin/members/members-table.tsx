@@ -33,6 +33,7 @@ import {
   deleteMembers,
 } from "./actions";
 import { bulkEmailQrToIds } from "./bulk-email-qrs";
+import { useMembersSelection } from "./members-selection";
 import {
   MEMBER_LEVEL_LABELS,
   MEMBER_LEVEL_VALUES,
@@ -91,8 +92,9 @@ export function MembersTable({
   const [pending, startTransition] = useTransition();
   const [pendingEmailQrIds, setPendingEmailQrIds] = useState<string[]>([]);
 
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [anchor, setAnchor] = useState<string | null>(null);
+  // Selection lives in a parent context so MembersActionsMenu can also
+  // read it (for selection-aware CSV export label + scope).
+  const { selected, setSelected, anchor, setAnchor } = useMembersSelection();
   const [menu, setMenu] = useState<{
     x: number;
     y: number;
@@ -141,12 +143,10 @@ export function MembersTable({
   }, [menu]);
 
   function toggleOne(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelected(next);
     setAnchor(id);
   }
 

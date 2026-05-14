@@ -1,17 +1,29 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useImperativeHandle,
+  useState,
+  type Ref,
+} from "react";
 import { Trash2 } from "lucide-react";
 import { Button, Input } from "@/components/admin/ui";
 import { clearAllMembers, type ClearState } from "./actions";
 
+export type DangerZoneButtonHandle = { open: () => void };
+
 export function DangerZoneButton({
   renderTrigger,
+  ref,
 }: {
   renderTrigger?: (open: () => void) => React.ReactNode;
+  ref?: Ref<DangerZoneButtonHandle>;
 } = {}) {
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState("");
+
+  useImperativeHandle(ref, () => ({ open: () => setOpen(true) }), []);
   const [state, action, pending] = useActionState<ClearState, FormData>(
     clearAllMembers,
     undefined,

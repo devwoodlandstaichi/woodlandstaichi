@@ -27,6 +27,7 @@ type MemberHeroProps = {
   bio: string | null;
   photo_url: string | null;
   created_at?: string | null;
+  joined_at?: string | null;
   emergency_contact_name?: string | null;
   emergency_contact_relationship?: string | null;
   emergency_phone?: string | null;
@@ -103,7 +104,9 @@ export function MemberHero(props: MemberHeroProps) {
   const subline = `${levelLabel(props.level)} · ${
     STATUS_COPY[props.status] ?? props.status
   }`;
-  const since = memberSinceYear(props.created_at ?? null);
+  // Prefer admin-edited joined_at (for paper-form historical joiners)
+  // over the auto-stamped created_at.
+  const since = memberSinceYear(props.joined_at ?? props.created_at ?? null);
   const birthday = formatBirthday(props.birthday);
   const location = formatLocation(
     props.street,

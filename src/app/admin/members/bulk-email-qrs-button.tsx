@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useImperativeHandle, useTransition, type Ref } from "react";
 import { Mail } from "lucide-react";
 import { Button } from "@/components/admin/ui";
 import {
@@ -10,16 +10,22 @@ import {
 import { useToast } from "@/components/admin/toast";
 import { bulkEmailQrUnsent } from "./bulk-email-qrs";
 
+export type BulkEmailQrsButtonHandle = { open: () => void };
+
 export function BulkEmailQrsButton({
   unsentCount,
   renderTrigger,
+  ref,
 }: {
   unsentCount: number;
   renderTrigger?: (open: () => void) => React.ReactNode;
+  ref?: Ref<BulkEmailQrsButtonHandle>;
 }) {
   const dialog = useConfirmDialog();
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
+
+  useImperativeHandle(ref, () => ({ open: dialog.show }), [dialog.show]);
 
   function onConfirm() {
     startTransition(async () => {
