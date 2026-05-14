@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, PageHeader } from "@/components/admin/ui";
+import { StartKioskButton } from "./start-kiosk-button";
 import {
   dayLabel,
   formatDate,
@@ -9,6 +10,11 @@ import {
   isoInSchoolTz,
   levelLabel,
 } from "@/lib/format";
+import {
+  KIOSK_CHECKIN_WINDOW_MINUTES,
+  sessionStartMs,
+  type KioskSession,
+} from "@/lib/kiosk/active-session";
 
 export const metadata = { title: "Attendance" };
 export const dynamic = "force-dynamic";
@@ -35,6 +41,15 @@ function isView(v: string | undefined): v is View {
 
 type SearchParams = Promise<{ view?: string }>;
 
+/** A session is considered "past" once now > start_time + 15min — same
+ * boundary as the kiosk's auto-close. Lets a session that ended at
+ * 9:45 today move off the Upcoming/Today list at 9:46 instead of
+ * hanging around until midnight. */
+function isPast(row: SessionRow, nowMs: number): boolean {
+  const startMs = sessionStartMs(row as KioskSession);
+  return nowMs > startMs + KIOSK_CHECKIN_WINDOW_MINUTES * 60 * 1000;
+}
+
 export default async function AttendanceLanding({
   searchParams,
 }: {
@@ -45,12 +60,13 @@ export default async function AttendanceLanding({
 
   const supabase = await createClient();
   const now = new Date();
+  const nowMs = now.getTime();
   const todayIso = isoInSchoolTz(now);
 
   if (view === "past") {
-    // Last ~60 days of past sessions (newest first). Cap is loose —
-    // realistic class roster is ~30 sessions/month so 60 days lands
-    // around ~60 rows max.
+    // Last ~60 days through end of today. Then JS-filter to only
+    // sessions whose check-in window has ended — today's still-live
+    // ones belong on the Upcoming tab.
     const sixtyAgo = new Date(now.getTime() - 60 * 86400_000)
       .toISOString()
       .slice(0, 10);
@@ -61,11 +77,13 @@ export default async function AttendanceLanding({
         "id,session_date,start_time,end_time,classes(name,level,location,day_of_week),attendance(count)",
       )
       .gte("session_date", sixtyAgo)
-      .lt("session_date", todayIso)
+      .lte("session_date", todayIso)
       .order("session_date", { ascending: false })
       .order("start_time", { ascending: false });
 
-    const past = (data ?? []) as unknown as SessionRow[];
+    const past = ((data ?? []) as unknown as SessionRow[]).filter((s) =>
+      isPast(s, nowMs),
+    );
 
     return (
       <>
@@ -102,8 +120,23 @@ export default async function AttendanceLanding({
     .order("start_time", { ascending: true });
 
   const sessions = (data ?? []) as unknown as SessionRow[];
-  const today = sessions.filter((s) => s.session_date === todayIso);
+  // Today: only sessions whose check-in window hasn't closed yet.
+  // Anything past start+15min moves to Past, even on the same day.
+  const today = sessions.filter(
+    (s) => s.session_date === todayIso && !isPast(s, nowMs),
+  );
   const upcoming = sessions.filter((s) => s.session_date !== todayIso);
+
+  // Distinct locations among Today's still-live sessions so the kiosk
+  // launcher can offer one button per location group. Most days have
+  // a single location → one button.
+  const todayLocations = Array.from(
+    new Set(
+      today
+        .map((s) => s.classes?.location)
+        .filter((x): x is string => !!x && x.length > 0),
+    ),
+  );
 
   return (
     <>
@@ -119,6 +152,7 @@ export default async function AttendanceLanding({
           title="Today"
           rows={today}
           emptyHint="No sessions today."
+          kioskLocations={todayLocations}
         />
 
         <div className="mt-8">
@@ -167,20 +201,39 @@ function SessionList({
   title,
   rows,
   emptyHint,
+  kioskLocations,
 }: {
   title: string;
   rows: SessionRow[];
   emptyHint: string;
+  /** When non-empty, render a "Start kiosk · LOCATION" launcher per
+   * entry in the section header. Used on the Today section only. */
+  kioskLocations?: string[];
 }) {
   return (
     <Card className="overflow-hidden">
-      <div className="border-b border-foreground/10 px-5 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-foreground/10 px-5 py-4">
         <h2 className="font-display text-lg font-medium tracking-tight">
           {title}
           <span className="ml-2 text-sm font-normal text-muted-foreground">
             ({rows.length})
           </span>
         </h2>
+        {kioskLocations && kioskLocations.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            {kioskLocations.map((loc) => (
+              <StartKioskButton
+                key={loc}
+                location={loc}
+                label={
+                  kioskLocations.length === 1
+                    ? "Start today's session"
+                    : `Start · ${loc}`
+                }
+              />
+            ))}
+          </div>
+        )}
       </div>
       {rows.length === 0 ? (
         <p className="px-5 py-6 text-sm text-muted-foreground">{emptyHint}</p>
