@@ -98,6 +98,15 @@ export const registrationSchema = z.object({
     .transform(() => true)
     .pipe(z.literal(true)),
   waiver_signature: requiredString("Signature", 200),
+
+  // Pre-submit acknowledgment that the shirt fee will be paid via the
+  // method picked above. Stops a registrant from clicking submit before
+  // they've genuinely committed to settling payment — the school relies
+  // on this to enroll without taking money on the website.
+  payment_acknowledged: z
+    .union([z.literal("on"), z.literal("true"), z.literal("1")])
+    .transform(() => true)
+    .pipe(z.literal(true)),
 });
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;

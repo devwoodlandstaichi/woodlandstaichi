@@ -26,6 +26,7 @@ export const CLASS_LEVELS = [
       "Attend the first 4 consecutive sessions",
       "Wear soft, flat-soled shoes (no sneakers, no bare feet)",
       "Bring your own bottled water",
+      "Children are not allowed to attend the beginner's classes",
     ],
   },
   {

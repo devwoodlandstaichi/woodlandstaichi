@@ -36,8 +36,9 @@ export function ContactSection({
               <span className="block italic text-vermillion">to start.</span>
             </h2>
             <p className="mt-8 max-w-xl text-lg text-foreground/75 leading-relaxed">
-              The next beginners classes open in <strong>June 2026</strong> and{" "}
-              <strong>October 2026</strong>. Register online — or{" "}
+              The next beginners classes starts in{" "}
+              <strong>February, June </strong> and <strong>October</strong>.
+              Register online — or{" "}
               <Link
                 href="/contact"
                 className="underline decoration-vermillion underline-offset-4 hover:text-vermillion transition-colors"

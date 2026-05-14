@@ -8,7 +8,11 @@ import {
   formatTimeRange,
   todayIsoInSchoolTz,
 } from "@/lib/format";
-import { RegistrationForm, type SessionOption } from "./registration-form";
+import {
+  RegistrationForm,
+  type SessionOption,
+  type ShirtPrice,
+} from "./registration-form";
 import { ReturningRegistrationForm } from "./returning-form";
 
 type Mode = "new" | "returning";
@@ -56,7 +60,32 @@ export default async function RegisterPage({
   // Returning-mode: still pick a recurring (non-beginner) class —
   // returning players know the rhythm and don't need date-picking.
   let sessions: SessionOption[] = [];
+  let shirtPrices: ShirtPrice[] = [];
   if (mode === "new") {
+    // Live shirt prices from store_variants — surfaced next to each
+    // size option in the registration form so the registrant knows
+    // exactly what they'll owe.
+    const { data: shirtRows } = await supabase
+      .from("store_variants")
+      .select(
+        "size,price_cents,store_products!inner(slug,active)",
+      )
+      .eq("active", true)
+      .eq("store_products.slug", "shirt")
+      .eq("store_products.active", true);
+
+    type ShirtRow = {
+      size: string | null;
+      price_cents: number;
+      store_products:
+        | { slug: string; active: boolean }
+        | { slug: string; active: boolean }[]
+        | null;
+    };
+    shirtPrices = ((shirtRows ?? []) as unknown as ShirtRow[])
+      .filter((r) => r.size)
+      .map((r) => ({ size: r.size!, price_cents: r.price_cents }));
+
     const { data } = await supabase
       .from("class_sessions")
       .select(
@@ -148,7 +177,10 @@ export default async function RegisterPage({
           ) : sessions.length === 0 ? (
             <EmptyState mode={mode} />
           ) : (
-            <RegistrationForm sessions={sessions} />
+            <RegistrationForm
+              sessions={sessions}
+              shirtPrices={shirtPrices}
+            />
           )}
         </section>
       </main>

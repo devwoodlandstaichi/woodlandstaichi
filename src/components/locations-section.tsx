@@ -13,6 +13,12 @@ const LOCATIONS = [
     city: "The Woodlands, TX",
     days: ["Thursday"],
   },
+  {
+    name: "Lone Star College",
+    address: "3200 College Park Drive",
+    city: "Conroe, TX",
+    days: [""],
+  },
 ];
 
 export function LocationsSection() {
@@ -43,7 +49,9 @@ export function LocationsSection() {
 
         <div className="col-span-12 md:col-span-7 md:pl-8 grid gap-6">
           {LOCATIONS.map((loc) => {
-            const query = encodeURIComponent(`${loc.name}, ${loc.address}, ${loc.city}`);
+            const query = encodeURIComponent(
+              `${loc.name}, ${loc.address}, ${loc.city}`,
+            );
             return (
               <a
                 key={loc.name}

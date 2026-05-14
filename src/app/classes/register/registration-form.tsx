@@ -32,12 +32,33 @@ function formatUsPhone(raw: string): string {
 }
 
 export type SessionOption = { value: string; label: string; sub?: string };
-
-const SHIRT_OPTIONS = SHIRT_SIZES.map((s) => ({ value: s, label: s }));
+export type ShirtPrice = { size: string; price_cents: number };
 
 const INITIAL: RegistrationState = { status: "idle" };
 
-export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
+function formatUsd(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+export function RegistrationForm({
+  sessions,
+  shirtPrices,
+}: {
+  sessions: SessionOption[];
+  shirtPrices: ShirtPrice[];
+}) {
+  // Per-size price lookup so the select labels can read e.g. "M — $49".
+  // Fallback to size-only label if the variant is missing for any reason.
+  const shirtPriceMap = new Map(
+    shirtPrices.map((p) => [p.size, p.price_cents]),
+  );
+  const shirtOptions = SHIRT_SIZES.map((s) => {
+    const cents = shirtPriceMap.get(s);
+    return {
+      value: s,
+      label: cents != null ? `${s} — ${formatUsd(cents)}` : s,
+    };
+  });
   const [state, formAction, pending] = useActionState(submitRegistration, INITIAL);
   const errors = state.status === "error" ? state.fieldErrors ?? {} : {};
 
@@ -276,7 +297,7 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           name="shirt_size"
           label="Shirt size"
           required
-          options={SHIRT_OPTIONS}
+          options={shirtOptions}
           hint="See the size chart on the Store page."
           defaultValue={v("shirt_size")}
           error={errors.shirt_size}
@@ -289,6 +310,11 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
           defaultValue={v("payment_method")}
           error={errors.payment_method}
         />
+        <p className="rounded-md border border-foreground/15 bg-secondary/40 px-4 py-3 text-sm text-foreground/80 leading-relaxed">
+          Zelle and Apple Cash to{" "}
+          <span className="font-mono">832 381 6078</span>. PayPal/Venmo add a
+          $5 service charge.
+        </p>
       </FormSection>
 
       <FormSection
@@ -438,7 +464,33 @@ export function RegistrationForm({ sessions }: { sessions: SessionOption[] }) {
         </a>
       </FormSection>
 
-      <div className="flex flex-col gap-4 border-t border-foreground/10 pt-8">
+      {/* Mandatory pre-submit acknowledgment. Written into its own
+          vermillion-bordered card so the registrant cannot miss it —
+          this is the only commitment to actually pay the shirt fee. */}
+      <div className="border-t border-foreground/10 pt-8">
+        <div className="rounded-lg border-2 border-vermillion bg-vermillion/5 p-5">
+          <p className="text-xs uppercase tracking-[0.32em] text-vermillion mb-3">
+            <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
+            Required acknowledgment
+          </p>
+          <p className="text-sm text-foreground/85 leading-relaxed mb-4">
+            The WTC shirt fee is your registration fee and your mandatory
+            uniform fee. Please settle payment right after submitting:
+            Zelle and Apple Cash to{" "}
+            <span className="font-mono font-medium">832 381 6078</span>.
+            PayPal/Venmo add a $5 service charge.
+          </p>
+          <Checkbox
+            name="payment_acknowledged"
+            label="I will settle the shirt fee using the payment method I selected above."
+            required
+            defaultChecked={checked("payment_acknowledged")}
+            error={errors.payment_acknowledged}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4 pt-2">
         <p className="text-sm text-foreground/60">
           You aren&apos;t enrolled until payment is received. We&apos;ll email
           you with the next steps right after submission.
