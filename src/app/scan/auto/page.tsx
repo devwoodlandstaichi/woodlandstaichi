@@ -90,13 +90,19 @@ export default async function KioskAutoPage({
       {state.kind === "active" && (
         <ActiveView
           session={state.session}
+          startsAtMs={state.startsAtMs}
           closesAtMs={state.closesAtMs}
+          nowMs={now}
           allToday={allToday}
           location={location}
         />
       )}
       {state.kind === "closed" && (
-        <ClosedView next={state.next} nextStartsAtMs={state.nextStartsAtMs} />
+        <ClosedView
+          next={state.next}
+          nextStartsAtMs={state.nextStartsAtMs}
+          nextOpensAtMs={state.nextOpensAtMs}
+        />
       )}
       {state.kind === "done" && <DoneView />}
     </KioskShell>
@@ -195,17 +201,27 @@ function KioskShell({
 
 async function ActiveView({
   session,
+  startsAtMs,
   closesAtMs,
+  nowMs,
   allToday,
   location,
 }: {
   session: KioskSession;
+  startsAtMs: number;
   closesAtMs: number;
+  nowMs: number;
   allToday: KioskSession[];
   location: string;
 }) {
-  void location; // accepted to preserve closure shape if we use it later
+  void location;
   void allToday;
+  // Two phases inside an active session:
+  //   pre-open (now < start) — check-in is open but class hasn't
+  //     started yet; show "Class starts in …"
+  //   grace (start ≤ now ≤ start + 15min) — class is running;
+  //     show "Check-in closes in …"
+  const preOpen = nowMs < startsAtMs;
   const supabase = await createClient();
 
   const [attRes, rsvpRes] = await Promise.all([
@@ -294,14 +310,22 @@ async function ActiveView({
           {session.classes?.level && (
             <Badge tone="cobalt">{levelLabel(session.classes.level)}</Badge>
           )}
-          <span className="font-mono text-sm tabular-nums text-foreground/70">
-            Check-in closes in{" "}
-            <Countdown
-              deadlineMs={closesAtMs}
-              expiredLabel="0:00"
-              tone="warning"
-            />
-          </span>
+          {preOpen ? (
+            <span className="font-mono text-sm tabular-nums text-foreground/70">
+              Class starts in{" "}
+              <Countdown deadlineMs={startsAtMs} expiredLabel="now" />{" "}
+              · check-in open early
+            </span>
+          ) : (
+            <span className="font-mono text-sm tabular-nums text-foreground/70">
+              Check-in closes in{" "}
+              <Countdown
+                deadlineMs={closesAtMs}
+                expiredLabel="0:00"
+                tone="warning"
+              />
+            </span>
+          )}
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
           {formatDate(session.session_date)} ·{" "}
@@ -503,13 +527,18 @@ function RosterCard({
 function ClosedView({
   next,
   nextStartsAtMs,
+  nextOpensAtMs,
 }: {
   next: KioskSession;
   nextStartsAtMs: number;
+  nextOpensAtMs: number;
 }) {
   return (
     <>
-      <KioskStateRefresher transitionAtMs={nextStartsAtMs} />
+      {/* Refresh at the moment the next session's check-in window
+          opens (20 min before its start), so the page flips to the
+          scanner exactly when members can start arriving. */}
+      <KioskStateRefresher transitionAtMs={nextOpensAtMs} />
 
       <section className="flex flex-1 flex-col items-center justify-center text-center px-4 py-12">
         <p className="text-xs uppercase tracking-[0.45em] text-muted-foreground mb-4">

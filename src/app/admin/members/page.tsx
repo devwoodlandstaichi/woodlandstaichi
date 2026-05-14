@@ -9,10 +9,7 @@ import {
   type MemberStatus,
 } from "@/lib/format";
 import { MemberFilters } from "./filters";
-import { DangerZoneButton } from "./danger-zone";
-import { BulkIssueQrsButton } from "./bulk-issue-button";
-import { BulkEmailQrsButton } from "./bulk-email-qrs-button";
-import { ExportButton } from "./export-button";
+import { MembersActionsMenu } from "./actions-menu";
 import { getSessionUser } from "@/lib/auth/dal";
 import { MembersTable } from "./members-table";
 import {
@@ -151,10 +148,10 @@ export default async function MembersPage({
             >
               <Plus size={14} aria-hidden /> Add member
             </Link>
-            <ExportButton />
-            <BulkIssueQrsButton />
-            <BulkEmailQrsButton unsentCount={unsentQrs ?? 0} />
-            {user?.role === "admin" && <DangerZoneButton />}
+            <MembersActionsMenu
+              unsentQrs={unsentQrs ?? 0}
+              canDelete={user?.role === "admin"}
+            />
           </>
         }
       />

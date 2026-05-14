@@ -10,7 +10,14 @@ import {
 import { useToast } from "@/components/admin/toast";
 import { issueMissingQrs } from "./bulk-actions";
 
-export function BulkIssueQrsButton() {
+export function BulkIssueQrsButton({
+  renderTrigger,
+}: {
+  /** Override the default button. The callback exposes `open` so a
+   *  custom trigger (e.g. dropdown menu item) can fire the confirm
+   *  dialog without owning the dialog state itself. */
+  renderTrigger?: (open: () => void) => React.ReactNode;
+} = {}) {
   const dialog = useConfirmDialog();
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
@@ -32,16 +39,20 @@ export function BulkIssueQrsButton() {
 
   return (
     <>
-      <Button
-        type="button"
-        onClick={dialog.show}
-        variant="outline"
-        size="sm"
-        disabled={pending}
-      >
-        <QrCode size={14} aria-hidden />
-        {pending ? "Issuing…" : "Bulk issue QRs"}
-      </Button>
+      {renderTrigger ? (
+        renderTrigger(dialog.show)
+      ) : (
+        <Button
+          type="button"
+          onClick={dialog.show}
+          variant="outline"
+          size="sm"
+          disabled={pending}
+        >
+          <QrCode size={14} aria-hidden />
+          {pending ? "Issuing…" : "Bulk issue QRs"}
+        </Button>
+      )}
 
       <ConfirmDialog
         open={dialog.open}

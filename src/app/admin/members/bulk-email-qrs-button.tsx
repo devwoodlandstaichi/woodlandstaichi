@@ -10,7 +10,13 @@ import {
 import { useToast } from "@/components/admin/toast";
 import { bulkEmailQrUnsent } from "./bulk-email-qrs";
 
-export function BulkEmailQrsButton({ unsentCount }: { unsentCount: number }) {
+export function BulkEmailQrsButton({
+  unsentCount,
+  renderTrigger,
+}: {
+  unsentCount: number;
+  renderTrigger?: (open: () => void) => React.ReactNode;
+}) {
   const dialog = useConfirmDialog();
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
@@ -37,18 +43,22 @@ export function BulkEmailQrsButton({ unsentCount }: { unsentCount: number }) {
 
   return (
     <>
-      <Button
-        type="button"
-        onClick={dialog.show}
-        variant="outline"
-        size="sm"
-        disabled={pending}
-      >
-        <Mail size={14} aria-hidden />
-        {pending
-          ? "Sending…"
-          : `Email ${unsentCount} QR${unsentCount === 1 ? "" : "s"}`}
-      </Button>
+      {renderTrigger ? (
+        renderTrigger(dialog.show)
+      ) : (
+        <Button
+          type="button"
+          onClick={dialog.show}
+          variant="outline"
+          size="sm"
+          disabled={pending}
+        >
+          <Mail size={14} aria-hidden />
+          {pending
+            ? "Sending…"
+            : `Email ${unsentCount} QR${unsentCount === 1 ? "" : "s"}`}
+        </Button>
+      )}
 
       <ConfirmDialog
         open={dialog.open}

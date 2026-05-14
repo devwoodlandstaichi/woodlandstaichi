@@ -54,19 +54,26 @@ export function StartKioskButton({
             </p>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-foreground/80">
               <li>
-                <strong>Check-in opens when a class starts.</strong>{" "}
-                Members can scan their QR or have their name typed in for
-                the first <strong>15 minutes</strong> of class.
+                <strong>Check-in opens 20 minutes before class.</strong>{" "}
+                Early arrivals can scan their QR or have their name typed
+                in as soon as they walk in — they don&rsquo;t have to wait
+                for class to start.
               </li>
               <li>
-                <strong>After 15 minutes, check-in closes.</strong> The
-                kiosk shows a &ldquo;Class is closed for check-in&rdquo;
-                screen with a live countdown to the next class.
+                <strong>Check-in stays open for 15 minutes after class
+                starts</strong> to catch latecomers. After that, the kiosk
+                stops accepting scans for that class.
               </li>
               <li>
-                <strong>The next class opens automatically</strong> at its
-                start time. The kiosk switches over on its own — nobody
-                needs to touch it.
+                <strong>Between classes</strong>, the kiosk shows a
+                &ldquo;Class is closed for check-in&rdquo; screen with a
+                live countdown to the next class.
+              </li>
+              <li>
+                <strong>The next class&rsquo;s check-in opens
+                automatically</strong> 20 minutes before its start time.
+                The kiosk switches over on its own — nobody needs to
+                touch it.
               </li>
               <li>
                 <strong>At the end of the day</strong>, the kiosk shows

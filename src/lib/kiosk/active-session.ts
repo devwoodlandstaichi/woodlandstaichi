@@ -2,15 +2,23 @@ import "server-only";
 import { SCHOOL_TZ } from "@/lib/format";
 
 // Auto-rotation rules for /scan/auto:
-//   - A session is "active" for check-in from its start time through
-//     start_time + KIOSK_CHECKIN_WINDOW_MINUTES. Admin physically starts
-//     the kiosk; we don't pre-activate before start_time.
-//   - Once a session passes its close moment, the kiosk transitions:
-//     either to the next session today at the same location, or to a
-//     "closed" page if the next one is some time away, or to a "done"
-//     page if there's nothing left today.
+//   - A session's check-in window is [start - KIOSK_PREOPEN_MINUTES,
+//     start + KIOSK_GRACE_MINUTES]. The early opening lets members
+//     scan as they arrive in the 20 minutes before class; the grace
+//     period catches latecomers in the first 15 minutes.
+//   - Once a session passes its close moment (start + grace), the
+//     kiosk transitions: either to the next session today at the same
+//     location (when its pre-open begins), or to a "closed" page with
+//     a countdown to that next session, or to a "done" page if there
+//     are no more sessions today.
 
-export const KIOSK_CHECKIN_WINDOW_MINUTES = 15;
+export const KIOSK_PREOPEN_MINUTES = 20;
+export const KIOSK_GRACE_MINUTES = 15;
+
+// Legacy alias — still imported by /admin/attendance/page.tsx for its
+// "is this session past?" filter, which uses the grace boundary. Kept
+// as a named constant so call-sites stay readable.
+export const KIOSK_CHECKIN_WINDOW_MINUTES = KIOSK_GRACE_MINUTES;
 
 export type KioskSession = {
   id: string;
@@ -25,11 +33,25 @@ export type KioskSession = {
 };
 
 export type KioskState =
-  | { kind: "active"; session: KioskSession; closesAtMs: number }
+  | {
+      kind: "active";
+      session: KioskSession;
+      /** Wall-clock start time. Before now, we're in the pre-open
+       * phase (scanner is live but class hasn't started yet). */
+      startsAtMs: number;
+      /** start + KIOSK_GRACE_MINUTES — when the scanner closes for
+       * this session. The page schedules its refresh to this moment. */
+      closesAtMs: number;
+    }
   | {
       kind: "closed";
       next: KioskSession;
+      /** Wall-clock start of the next session — what we count down
+       * to on the human-facing label. */
       nextStartsAtMs: number;
+      /** next.start - KIOSK_PREOPEN_MINUTES — the moment the kiosk
+       * flips into the active state. Page schedules its refresh here. */
+      nextOpensAtMs: number;
     }
   | { kind: "done" };
 
@@ -83,19 +105,23 @@ export function pickKioskState(
   sessions: KioskSession[],
   nowMs: number,
 ): KioskState {
-  const windowMs = KIOSK_CHECKIN_WINDOW_MINUTES * 60 * 1000;
+  const preOpenMs = KIOSK_PREOPEN_MINUTES * 60 * 1000;
+  const graceMs = KIOSK_GRACE_MINUTES * 60 * 1000;
 
-  // Find any session currently in its check-in window. If multiple
-  // overlap (unusual; back-to-back classes don't because the previous
-  // closes exactly when the next would start), prefer the one whose
-  // start_time is closest to `now`.
+  // Find any session whose open window contains `now`. Window is
+  // [start - preOpen, start + grace]. If multiple overlap (back-to-
+  // back classes can if the next pre-open begins before the previous
+  // grace expires), prefer the one whose start_time is closest to now
+  // — that's the session the member walking in expects to be checked
+  // into.
   let active: KioskSession | null = null;
   let activeDistance = Infinity;
   for (const s of sessions) {
     const startMs = sessionStartMs(s);
-    const closeMs = startMs + windowMs;
-    if (nowMs >= startMs && nowMs <= closeMs) {
-      const d = nowMs - startMs;
+    const openMs = startMs - preOpenMs;
+    const closeMs = startMs + graceMs;
+    if (nowMs >= openMs && nowMs <= closeMs) {
+      const d = Math.abs(nowMs - startMs);
       if (d < activeDistance) {
         active = s;
         activeDistance = d;
@@ -103,10 +129,12 @@ export function pickKioskState(
     }
   }
   if (active) {
+    const startsAtMs = sessionStartMs(active);
     return {
       kind: "active",
       session: active,
-      closesAtMs: sessionStartMs(active) + windowMs,
+      startsAtMs,
+      closesAtMs: startsAtMs + graceMs,
     };
   }
 
@@ -121,7 +149,12 @@ export function pickKioskState(
     }
   }
   if (nextSession) {
-    return { kind: "closed", next: nextSession, nextStartsAtMs };
+    return {
+      kind: "closed",
+      next: nextSession,
+      nextStartsAtMs,
+      nextOpensAtMs: nextStartsAtMs - preOpenMs,
+    };
   }
 
   return { kind: "done" };

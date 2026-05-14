@@ -109,6 +109,38 @@ export function MembersHelpContent() {
         </p>
       </Section>
 
+      <Section title="The Actions menu" anchor="actions-menu">
+        <p>
+          Most page-level bulk operations live behind one dropdown in
+          the top-right: the <Pill>Actions</Pill> button. Open it to
+          see everything that operates on more than one member at
+          once.
+        </p>
+        <p>What&rsquo;s inside:</p>
+        <Steps>
+          <Step n={1}>
+            <strong>Export CSV</strong> &mdash; download a spreadsheet
+            of the currently-filtered members. See &ldquo;Export to
+            spreadsheet&rdquo; below.
+          </Step>
+          <Step n={2}>
+            <strong>Bulk issue QRs</strong> &mdash; create QR codes
+            for every active or waitlist member who doesn&rsquo;t
+            already have one. Doesn&rsquo;t send any email.
+          </Step>
+          <Step n={3}>
+            <strong>Email N QRs</strong> &mdash; only appears when
+            there&rsquo;s a queue of people whose QRs haven&rsquo;t
+            been emailed yet. The number tells you how many are
+            waiting.
+          </Step>
+          <Step n={4}>
+            <strong>Clear all members</strong> (admin only, red) &mdash;
+            wipes the roster. Treat with respect.
+          </Step>
+        </Steps>
+      </Section>
+
       <Section title="Send QR badges to many members" anchor="qr-many">
         <p>Two ways to do this in batches.</p>
         <p>
@@ -117,14 +149,18 @@ export function MembersHelpContent() {
         </p>
         <Steps>
           <Step n={1}>
-            Look at the top of the page for the{" "}
-            <Pill>Email N QRs</Pill> button (the number tells you how
-            many are queued).
+            Open <Pill>Actions</Pill> at the top-right of the members
+            page.
           </Step>
-          <Step n={2}>Click it and confirm.</Step>
-          <Step n={3}>
-            We send up to 50 emails per click. If more are queued, click
-            again to send the next batch.
+          <Step n={2}>
+            Click <Pill>Email N QRs</Pill> (the number tells you how
+            many are queued). The item only appears when at least one
+            QR is waiting to be emailed.
+          </Step>
+          <Step n={3}>Confirm.</Step>
+          <Step n={4}>
+            We send up to 50 emails per click. If more are queued,
+            click again to send the next batch.
           </Step>
         </Steps>
         <p>
@@ -146,10 +182,47 @@ export function MembersHelpContent() {
       <Section title="Issue missing QRs (without emailing)" anchor="qr-issue">
         <p>
           Sometimes you want to make QR codes for everyone but not yet
-          email them. Click <Pill>Bulk issue QRs</Pill> at the top.
-          Every active or waitlist member who doesn&rsquo;t have a QR
-          gets one made. Members who already have one are not affected.
+          email them. Open <Pill>Actions</Pill> at the top-right and
+          click <Pill>Bulk issue QRs</Pill>. Every active or waitlist
+          member who doesn&rsquo;t have a QR gets one made. Members
+          who already have one are not affected.
         </p>
+      </Section>
+
+      <Section title="Export to spreadsheet" anchor="export-csv">
+        <p>
+          You can download the members list as a CSV (opens in Excel,
+          Numbers, Google Sheets &mdash; any spreadsheet app).
+        </p>
+        <Steps>
+          <Step n={1}>
+            Open <Pill>Actions</Pill> at the top-right.
+          </Step>
+          <Step n={2}>
+            Click <Pill>Export CSV</Pill>.
+          </Step>
+          <Step n={3}>
+            A dialog opens with checkboxes for every column we can
+            include. The most useful ones are checked for you (name,
+            email, phone, level, status, join date). Tick or untick
+            others to suit what you&rsquo;re building.
+          </Step>
+          <Step n={4}>
+            The shortcuts above the groups (Select all / Clear / Reset
+            defaults) help when you want everything or nothing.
+          </Step>
+          <Step n={5}>
+            Click <Pill>Download CSV</Pill>. The file lands in your
+            Downloads folder named{" "}
+            <span className="font-mono">members-YYYY-MM-DD.csv</span>.
+          </Step>
+        </Steps>
+        <Note>
+          The export honours your current filters and sort. If
+          you&rsquo;ve filtered to <strong>Active beginners</strong>
+          on the page, that&rsquo;s exactly who lands in the file.
+          Need everyone? Clear the filters first, then export.
+        </Note>
       </Section>
 
       <Section title="Delete a member" anchor="delete">

@@ -24,12 +24,20 @@ export function RegistrationsHelpContent() {
         </p>
       </Intro>
 
-      <Section title="The five tabs" anchor="tabs">
+      <Section title="The six views" anchor="tabs">
         <p>The dropdown at the top filters the list:</p>
         <Bullets>
           <li>
             <strong>Pending</strong> &mdash; new registrations awaiting
-            payment. <em>This is the main tab you&rsquo;ll work in.</em>
+            payment. <em>This is the main view you&rsquo;ll work in</em>
+            and it&rsquo;s the default when you open the page.
+          </li>
+          <li>
+            <strong>All</strong> &mdash; every registration ever, no
+            filter. Useful for audits or when you&rsquo;re looking for
+            a specific person but aren&rsquo;t sure what state their
+            row is in. Denied rows show up here too; you&rsquo;ll see
+            the &ldquo;denied&rdquo; badge in the Payment column.
           </li>
           <li>
             <strong>Paid</strong> &mdash; registrations whose payment has

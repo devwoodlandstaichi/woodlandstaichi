@@ -124,7 +124,11 @@ const DEFAULT_CHECKED: ReadonlySet<ColKey> = new Set<ColKey>([
 
 const ALL_COLS: ColKey[] = GROUPS.flatMap((g) => g.cols.map((c) => c.key));
 
-export function ExportButton() {
+export function ExportButton({
+  renderTrigger,
+}: {
+  renderTrigger?: (open: () => void) => React.ReactNode;
+} = {}) {
   const [open, setOpen] = useState(false);
   const [checked, setChecked] = useState<Set<ColKey>>(
     () => new Set(DEFAULT_CHECKED),
@@ -182,17 +186,23 @@ export function ExportButton() {
     return `/admin/members/export?${out.toString()}`;
   }, [checked]);
 
+  const openDialog = () => setOpen(true);
+
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => setOpen(true)}
-      >
-        <Download size={14} aria-hidden />
-        Export CSV
-      </Button>
+      {renderTrigger ? (
+        renderTrigger(openDialog)
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={openDialog}
+        >
+          <Download size={14} aria-hidden />
+          Export CSV
+        </Button>
+      )}
 
       {open && (
         <div

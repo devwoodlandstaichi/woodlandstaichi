@@ -5,7 +5,11 @@ import { Trash2 } from "lucide-react";
 import { Button, Input } from "@/components/admin/ui";
 import { clearAllMembers, type ClearState } from "./actions";
 
-export function DangerZoneButton() {
+export function DangerZoneButton({
+  renderTrigger,
+}: {
+  renderTrigger?: (open: () => void) => React.ReactNode;
+} = {}) {
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState("");
   const [state, action, pending] = useActionState<ClearState, FormData>(
@@ -37,18 +41,24 @@ export function DangerZoneButton() {
     setConfirm("");
   }
 
+  const openDialog = () => setOpen(true);
+
   return (
     <>
-      <Button
+      {renderTrigger ? (
+        renderTrigger(openDialog)
+      ) : (
+        <Button
         type="button"
         variant="outline"
         size="sm"
-        onClick={() => setOpen(true)}
+        onClick={openDialog}
         className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
       >
         <Trash2 size={14} aria-hidden />
         Clear all members
       </Button>
+      )}
 
       {open && (
         <div
