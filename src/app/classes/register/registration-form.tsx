@@ -464,33 +464,33 @@ export function RegistrationForm({
         </a>
       </FormSection>
 
-      {/* Mandatory pre-submit acknowledgment. Written into its own
-          vermillion-bordered card so the registrant cannot miss it —
-          this is the only commitment to actually pay the shirt fee. */}
-      <div className="border-t border-foreground/10 pt-8">
-        <div className="rounded-lg border-2 border-vermillion bg-vermillion/5 p-5">
-          <p className="text-xs uppercase tracking-[0.32em] text-vermillion mb-3">
-            <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
-            Required acknowledgment
-          </p>
-          <p className="text-sm text-foreground/85 leading-relaxed mb-4">
+      {/* Mandatory pre-submit acknowledgment. Styled like the waiver
+          card above so the rhythm of "read then check" is consistent
+          across the form. */}
+      <FormSection
+        number={8}
+        title="Payment acknowledgment"
+        description="Required — your commitment to settle the shirt fee."
+      >
+        <div className="rounded-md border border-foreground/15 bg-secondary p-5 text-sm text-foreground/80 leading-relaxed">
+          <p>
             The WTC shirt fee is your registration fee and your mandatory
             uniform fee. Please settle payment right after submitting:
             Zelle and Apple Cash to{" "}
             <span className="font-mono font-medium">832 381 6078</span>.
             PayPal/Venmo add a $5 service charge.
           </p>
-          <Checkbox
-            name="payment_acknowledged"
-            label="I will settle the shirt fee using the payment method I selected above."
-            required
-            defaultChecked={checked("payment_acknowledged")}
-            error={errors.payment_acknowledged}
-          />
         </div>
-      </div>
+        <Checkbox
+          name="payment_acknowledged"
+          label="I will settle the shirt fee using the payment method I selected above."
+          required
+          defaultChecked={checked("payment_acknowledged")}
+          error={errors.payment_acknowledged}
+        />
+      </FormSection>
 
-      <div className="flex flex-col gap-4 pt-2">
+      <div className="flex flex-col gap-4 border-t border-foreground/10 pt-8">
         <p className="text-sm text-foreground/60">
           You aren&apos;t enrolled until payment is received. We&apos;ll email
           you with the next steps right after submission.
