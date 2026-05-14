@@ -18,6 +18,7 @@ export const dynamic = "force-dynamic";
 
 const VIEW_OPTIONS = [
   "pending",
+  "all",
   "paid",
   "waived",
   "refunded",
@@ -82,6 +83,10 @@ export default async function RegistrationsPage({
 
   if (status === "denied") {
     query = query.not("denied_at", "is", null);
+  } else if (status === "all") {
+    // No filter — every registration, including denied. The Payment
+    // column already badges denied rows so they're visually obvious
+    // when they appear in the all view.
   } else {
     // Hide denied rows from the financial views — they're surfaced in
     // their own tab. Stops a denied registration from cluttering the
@@ -111,12 +116,15 @@ export default async function RegistrationsPage({
               doesn't reliably stack above <tbody> rows in tables. */}
           <thead className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
             <tr>
-              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Member</th>
-              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Class</th>
-              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Shirt</th>
-              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Method</th>
-              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Registered</th>
-              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">Payment</th>
+              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">
+                Member &amp; class
+              </th>
+              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">
+                Details
+              </th>
+              <th className="sticky top-0 z-[5] bg-background px-4 py-3 font-medium shadow-[inset_0_-1px_0_var(--border)]">
+                Payment
+              </th>
               <th className="sticky top-0 z-[5] bg-background px-4 py-3 shadow-[inset_0_-1px_0_var(--border)]" />
             </tr>
           </thead>
@@ -126,6 +134,9 @@ export default async function RegistrationsPage({
                 key={r.id}
                 className="border-b border-foreground/5 last:border-0 align-top"
               >
+                {/* Member + class stacked. Member identity sits on top
+                    as the row's primary handle; class info below in a
+                    visually quieter tone. */}
                 <td className="px-4 py-3">
                   {r.members ? (
                     <Link
@@ -142,33 +153,50 @@ export default async function RegistrationsPage({
                       {r.members.email}
                     </p>
                   )}
-                </td>
-                <td className="px-4 py-3">
-                  <p className="font-medium">{r.classes?.name ?? "—"}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {r.classes?.day_of_week
-                      ? dayLabel(r.classes.day_of_week)
-                      : "—"}
-                    {r.classes?.start_time && r.classes?.end_time
-                      ? ` · ${formatTimeRange(
-                          r.classes.start_time,
-                          r.classes.end_time,
-                        )}`
-                      : ""}
-                  </p>
-                  {r.classes?.level && (
-                    <p className="mt-1">
-                      <Badge tone="cobalt">{levelLabel(r.classes.level)}</Badge>
+                  <div className="mt-3 border-t border-foreground/5 pt-2">
+                    <p className="text-sm">{r.classes?.name ?? "—"}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {r.classes?.day_of_week
+                        ? dayLabel(r.classes.day_of_week)
+                        : "—"}
+                      {r.classes?.start_time && r.classes?.end_time
+                        ? ` · ${formatTimeRange(
+                            r.classes.start_time,
+                            r.classes.end_time,
+                          )}`
+                        : ""}
                     </p>
-                  )}
+                    {r.classes?.level && (
+                      <p className="mt-1">
+                        <Badge tone="cobalt">
+                          {levelLabel(r.classes.level)}
+                        </Badge>
+                      </p>
+                    )}
+                  </div>
                 </td>
-                <td className="px-4 py-3">{r.shirt_size ?? "—"}</td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {r.payment_method ?? "—"}
+
+                {/* Shirt / method / registered-date collapsed into one
+                    column. Two short rows: a shirt-and-method line on
+                    top, then the registration date below. */}
+                <td className="px-4 py-3 text-sm">
+                  <p className="text-foreground/85">
+                    Shirt{" "}
+                    <span className="font-medium">{r.shirt_size ?? "—"}</span>
+                    {r.payment_method ? (
+                      <>
+                        <span className="mx-1.5 text-foreground/30">·</span>
+                        <span className="text-muted-foreground">
+                          via {r.payment_method}
+                        </span>
+                      </>
+                    ) : null}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Registered {formatDate(r.registered_at.slice(0, 10))}
+                  </p>
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">
-                  {formatDate(r.registered_at.slice(0, 10))}
-                </td>
+
                 <td className="px-4 py-3">
                   <Badge tone={PAYMENT_TONE[r.payment_status]}>
                     {r.payment_status}
@@ -230,6 +258,11 @@ const EMPTY_COPY: Record<
     headline: "Inbox zero,",
     italic: "the queue is at rest.",
     sub: "Mark something paid and the member auto-activates. Until then, deep breaths.",
+  },
+  all: {
+    headline: "Nothing on the books,",
+    italic: "yet.",
+    sub: "Registrations from /classes/register and admin manual entries will appear here once they exist.",
   },
   paid: {
     headline: "All squared up,",

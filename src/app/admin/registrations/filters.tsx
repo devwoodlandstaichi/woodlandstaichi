@@ -4,8 +4,11 @@ import { X } from "lucide-react";
 
 // `pending | paid | waived | refunded` filter on payment_status.
 // `denied` is a virtual filter — registrations.denied_at IS NOT NULL.
+// `all` skips both filters — useful when the founder wants a global
+// audit view.
 const VIEW_OPTIONS = [
   "pending",
+  "all",
   "paid",
   "waived",
   "refunded",
@@ -13,7 +16,7 @@ const VIEW_OPTIONS = [
 ] as const;
 export type RegistrationView = (typeof VIEW_OPTIONS)[number];
 // Legacy alias kept so older imports compile.
-export type PaymentStatus = Exclude<RegistrationView, "denied">;
+export type PaymentStatus = Exclude<RegistrationView, "denied" | "all">;
 
 // Same pattern as the other admin filters: direct URL mutation via
 // window.location.href. No router, no form submit, no transitions.
