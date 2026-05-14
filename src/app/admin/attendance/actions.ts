@@ -103,6 +103,23 @@ export async function recordByMember(
   return writeAttendance(sessionId, memberId, "manual", user.id);
 }
 
+/** Remove a single attendance row. Used to fix mistakes — typically a
+ * manual entry where the founder picked the wrong name from the
+ * search list. Staff-only; idempotent. */
+export async function deleteAttendance(formData: FormData): Promise<void> {
+  await requireStaff();
+  const id = String(formData.get("id") ?? "");
+  const sessionId = String(formData.get("session_id") ?? "");
+  if (!id) return;
+
+  const supabase = await createClient();
+  await supabase.from("attendance").delete().eq("id", id);
+
+  if (sessionId) {
+    revalidatePath(`/admin/attendance/scan/${sessionId}`);
+  }
+}
+
 /** Type-to-search across name, nickname, email — used by the manual
  * fallback in the scanner UI when a member can't show their QR. */
 export async function searchMembers(

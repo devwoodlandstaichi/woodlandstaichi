@@ -170,6 +170,36 @@ export function AttendanceHelpContent() {
         </Note>
       </Section>
 
+      <Section title="Fix a mistake (remove someone)" anchor="remove">
+        <p>
+          Picked the wrong name from the search list, or scanned the
+          wrong member&rsquo;s QR? You can take a single person back off
+          the list from the scanner screen.
+        </p>
+        <Steps>
+          <Step n={1}>
+            On the <em>Scanned</em> list (right side of the scanner
+            screen), find the row with the wrong name.
+          </Step>
+          <Step n={2}>
+            Click the <Pill destructive>Remove</Pill> button at the
+            right edge of the row.
+          </Step>
+          <Step n={3}>
+            A confirm box shows the name. Click <Pill destructive>Remove</Pill>{" "}
+            again to take them off.
+          </Step>
+        </Steps>
+        <Note>
+          The <em>Remove</em>{" "}button only appears on the admin scanner
+          view, not in kiosk mode &mdash; so a student standing near
+          the tablet can&rsquo;t accidentally wipe their own check-in.
+          Past sessions are also read-only; if you need to undo
+          attendance for a class that already ended, contact a
+          developer.
+        </Note>
+      </Section>
+
       <Section title="Browse upcoming sessions" anchor="upcoming">
         <p>
           The <em>Upcoming</em> section below today shows the next 14

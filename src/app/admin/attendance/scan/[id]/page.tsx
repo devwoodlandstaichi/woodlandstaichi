@@ -10,6 +10,7 @@ import {
 } from "@/lib/format";
 import { Scanner } from "./scanner";
 import { KioskLaunchers } from "./kiosk-launchers";
+import { DeleteAttendanceButton } from "./delete-attendance-button";
 
 export const metadata = { title: "Scan attendance" };
 export const dynamic = "force-dynamic";
@@ -137,25 +138,35 @@ export default async function ScanSessionPage({
             </p>
           ) : (
             <ul className="divide-y divide-foreground/5 max-h-[24rem] overflow-y-auto">
-              {attendance.map((a) => (
-                <li key={a.id} className="px-5 py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">
-                      {a.members
-                        ? `${a.members.last_name}, ${a.members.first_name}`
-                        : "—"}
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {formatTimeInSchoolTz(a.scanned_at)}
-                      {" · "}
-                      {a.method === "qr" ? "QR" : "Manual"}
-                    </p>
-                  </div>
-                  {a.members?.level && (
-                    <Badge tone="cobalt">{levelLabel(a.members.level)}</Badge>
-                  )}
-                </li>
-              ))}
+              {attendance.map((a) => {
+                const memberLabel = a.members
+                  ? `${a.members.last_name}, ${a.members.first_name}`
+                  : "—";
+                return (
+                  <li key={a.id} className="px-5 py-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{memberLabel}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {formatTimeInSchoolTz(a.scanned_at)}
+                        {" · "}
+                        {a.method === "qr" ? "QR" : "Manual"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {a.members?.level && (
+                        <Badge tone="cobalt">{levelLabel(a.members.level)}</Badge>
+                      )}
+                      {!isPast && a.members && (
+                        <DeleteAttendanceButton
+                          attendanceId={a.id}
+                          sessionId={session.id}
+                          memberLabel={memberLabel}
+                        />
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Card>
