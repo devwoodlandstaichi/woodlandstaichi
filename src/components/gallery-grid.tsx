@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
+import { loadGalleryPage } from "@/app/admin/gallery/actions";
 
 export type GalleryPhoto = {
   id: string;
@@ -11,13 +12,67 @@ export type GalleryPhoto = {
   aspect: "landscape" | "portrait";
 };
 
-// Masonry-style column flow + click-to-open lightbox. The lightbox is
-// hand-rolled to fit the editorial-quiet aesthetic (no purple
-// gradient, no neon ring), and to skip the dependency cost of a
-// general-purpose library for a handful of photos.
+const PAGE_SIZE = 24;
 
-export function GalleryGrid({ photos }: { photos: GalleryPhoto[] }) {
+// Masonry-style column flow with infinite scroll + click-to-open
+// lightbox. The lightbox is hand-rolled to fit the editorial-quiet
+// aesthetic and skip the dependency cost of a general-purpose
+// library. Server pre-renders the first PAGE_SIZE photos; subsequent
+// pages stream in via a server action when the user scrolls near the
+// sentinel.
+
+export function GalleryGrid({
+  initialPhotos,
+  initialHasMore,
+}: {
+  initialPhotos: GalleryPhoto[];
+  initialHasMore: boolean;
+}) {
+  const [photos, setPhotos] = useState<GalleryPhoto[]>(initialPhotos);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [loading, setLoading] = useState(false);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
+
+  const loadMore = useCallback(async () => {
+    if (loadingRef.current || !hasMore) return;
+    loadingRef.current = true;
+    setLoading(true);
+    try {
+      const next = await loadGalleryPage(photos.length, PAGE_SIZE);
+      if (next.photos.length > 0) {
+        setPhotos((prev) => {
+          const seen = new Set(prev.map((p) => p.id));
+          const fresh = next.photos.filter((p) => !seen.has(p.id));
+          return [...prev, ...fresh];
+        });
+      }
+      setHasMore(next.hasMore);
+    } finally {
+      loadingRef.current = false;
+      setLoading(false);
+    }
+  }, [hasMore, photos.length]);
+
+  // Sentinel becomes visible → fetch next page. rootMargin pre-loads
+  // before the user actually hits the bottom so the scroll feels
+  // continuous.
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !hasMore) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          void loadMore();
+        }
+      },
+      { rootMargin: "600px 0px" },
+    );
+    obs.observe(node);
+    return () => obs.disconnect();
+  }, [hasMore, loadMore]);
 
   const close = useCallback(() => setOpenIdx(null), []);
   const prev = useCallback(
@@ -84,6 +139,25 @@ export function GalleryGrid({ photos }: { photos: GalleryPhoto[] }) {
         ))}
       </ul>
 
+      {/* Sentinel + loading indicator. Stays mounted while there are
+          more pages; once hasMore flips to false we remove it. */}
+      {hasMore && (
+        <div
+          ref={sentinelRef}
+          className="mt-6 flex items-center justify-center py-6 text-xs text-muted-foreground"
+          aria-live="polite"
+        >
+          {loading ? (
+            <span className="inline-flex items-center gap-2">
+              <Loader2 size={14} className="animate-spin" aria-hidden />
+              Loading more photos…
+            </span>
+          ) : (
+            <span className="opacity-0">Loading more photos…</span>
+          )}
+        </div>
+      )}
+
       {current && openIdx !== null && (
         <div
           role="dialog"
@@ -92,7 +166,6 @@ export function GalleryGrid({ photos }: { photos: GalleryPhoto[] }) {
           className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/90 backdrop-blur-sm"
           onClick={close}
         >
-          {/* Close */}
           <button
             type="button"
             onClick={close}
@@ -102,8 +175,6 @@ export function GalleryGrid({ photos }: { photos: GalleryPhoto[] }) {
             <X size={20} aria-hidden />
           </button>
 
-          {/* Prev / next — hidden visually under sm, swipe-by-arrow-keys
-              still works. */}
           {photos.length > 1 && (
             <>
               <button
@@ -131,7 +202,6 @@ export function GalleryGrid({ photos }: { photos: GalleryPhoto[] }) {
             </>
           )}
 
-          {/* Image — stopPropagation so clicks inside don't close. */}
           <figure
             className="relative max-h-[88vh] max-w-[92vw] sm:max-w-[80vw]"
             onClick={(e) => e.stopPropagation()}
@@ -152,6 +222,7 @@ export function GalleryGrid({ photos }: { photos: GalleryPhoto[] }) {
             )}
             <p className="mt-1 text-center text-xs tabular-nums text-background/55">
               {openIdx + 1} / {photos.length}
+              {hasMore && "+"}
             </p>
           </figure>
         </div>

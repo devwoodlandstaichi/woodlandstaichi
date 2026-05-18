@@ -5,6 +5,47 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireStaff } from "@/lib/auth/dal";
 
+export type PublicGalleryPhoto = {
+  id: string;
+  src: string;
+  alt: string;
+  aspect: "landscape" | "portrait";
+};
+
+/** Public-facing pager for /gallery's infinite scroll. Reads via the
+ * anon client (RLS scopes to active = true) — no auth required. */
+export async function loadGalleryPage(
+  offset: number,
+  limit: number,
+): Promise<{ photos: PublicGalleryPhoto[]; hasMore: boolean }> {
+  const safeOffset = Math.max(0, Math.floor(offset));
+  const safeLimit = Math.min(60, Math.max(1, Math.floor(limit)));
+
+  const supabase = await createClient();
+  const { data, count } = await supabase
+    .from("gallery_photos")
+    .select("id,image_url,alt,aspect", { count: "exact" })
+    .eq("active", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false })
+    .range(safeOffset, safeOffset + safeLimit - 1);
+
+  const photos = ((data ?? []) as Array<{
+    id: string;
+    image_url: string;
+    alt: string;
+    aspect: "landscape" | "portrait";
+  }>).map((r) => ({
+    id: r.id,
+    src: r.image_url,
+    alt: r.alt,
+    aspect: r.aspect,
+  }));
+
+  const total = count ?? safeOffset + photos.length;
+  return { photos, hasMore: safeOffset + photos.length < total };
+}
+
 const BUCKET = "gallery";
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB server-side cap
 const EXT_BY_MIME: Record<string, string> = {

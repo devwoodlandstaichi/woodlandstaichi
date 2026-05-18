@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
-import { GalleryGrid, type GalleryPhoto } from "@/components/gallery-grid";
-import { createClient } from "@/lib/supabase/server";
+import { GalleryGrid } from "@/components/gallery-grid";
+import { loadGalleryPage } from "@/app/admin/gallery/actions";
 
 export const metadata: Metadata = {
   title: "Gallery — moments from the dojo",
@@ -13,28 +13,10 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-type Row = {
-  id: string;
-  image_url: string;
-  alt: string;
-  aspect: "landscape" | "portrait";
-};
+const INITIAL_PAGE_SIZE = 24;
 
 export default async function GalleryPage() {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("gallery_photos")
-    .select("id,image_url,alt,aspect")
-    .eq("active", true)
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: false });
-
-  const photos: GalleryPhoto[] = ((data ?? []) as unknown as Row[]).map((r) => ({
-    id: r.id,
-    src: r.image_url,
-    alt: r.alt,
-    aspect: r.aspect,
-  }));
+  const { photos, hasMore } = await loadGalleryPage(0, INITIAL_PAGE_SIZE);
 
   return (
     <>
@@ -54,7 +36,7 @@ export default async function GalleryPage() {
               Photos coming soon.
             </p>
           ) : (
-            <GalleryGrid photos={photos} />
+            <GalleryGrid initialPhotos={photos} initialHasMore={hasMore} />
           )}
 
           <p className="mt-6 text-sm text-foreground/55 italic max-w-prose">

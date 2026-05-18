@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Card, PageHeader } from "@/components/admin/ui";
@@ -8,6 +10,7 @@ export const metadata = { title: "Gallery" };
 export const dynamic = "force-dynamic";
 
 const STORAGE_CAP_BYTES = 1024 * 1024 * 1024; // 1 GB free-tier total
+const PAGE_SIZE = 24;
 
 type Row = {
   id: string;
@@ -26,9 +29,6 @@ function formatBytes(n: number): string {
   return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
-// Sum file sizes across the gallery bucket. Storage admin client pages
-// through objects (no SQL aggregate exposed) — at our scale a single
-// list with 1000-item limit is plenty.
 async function bucketUsage(): Promise<{ bytes: number; files: number }> {
   const admin = createAdminClient();
   const { data, error } = await admin.storage
@@ -42,18 +42,40 @@ async function bucketUsage(): Promise<{ bytes: number; files: number }> {
   return { bytes, files: data.length };
 }
 
-export default async function GalleryAdminPage() {
+function parsePage(raw: string | undefined): number {
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 1 ? n : 1;
+}
+
+export default async function GalleryAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageRaw } = await searchParams;
+  const page = parsePage(pageRaw);
+  const offset = (page - 1) * PAGE_SIZE;
+
   const supabase = await createClient();
   const [photosRes, usage] = await Promise.all([
     supabase
       .from("gallery_photos")
-      .select("id,image_url,image_path,alt,aspect,sort_order,active")
+      .select("id,image_url,image_path,alt,aspect,sort_order,active", {
+        count: "exact",
+      })
       .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1),
     bucketUsage(),
   ]);
 
   const photos = (photosRes.data ?? []) as unknown as Row[];
+  const total = photosRes.count ?? photos.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const showingFrom = total === 0 ? 0 : offset + 1;
+  const showingTo = offset + photos.length;
+
   const usedPct = Math.min(100, (usage.bytes / STORAGE_CAP_BYTES) * 100);
   const tone =
     usedPct < 60
@@ -66,7 +88,7 @@ export default async function GalleryAdminPage() {
     <>
       <PageHeader
         title="Gallery"
-        description={`${photos.length} photo${photos.length === 1 ? "" : "s"} · ${usage.files} in bucket`}
+        description={`${total} photo${total === 1 ? "" : "s"} · ${usage.files} in bucket`}
         helpTopic="gallery"
       />
 
@@ -120,24 +142,80 @@ export default async function GalleryAdminPage() {
           <GalleryUploader />
 
           {/* Grid */}
-          {photos.length === 0 ? (
+          {total === 0 ? (
             <Card className="px-5 py-12 text-center text-sm text-muted-foreground">
               No photos yet. Add some from the uploader above.
             </Card>
           ) : (
-            <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {photos.map((p, i) => (
-                <PhotoTile
-                  key={p.id}
-                  photo={p}
-                  isFirst={i === 0}
-                  isLast={i === photos.length - 1}
-                />
-              ))}
-            </ul>
+            <>
+              <div className="flex items-center justify-between text-xs text-muted-foreground tabular-nums">
+                <span>
+                  Showing {showingFrom}–{showingTo} of {total}
+                </span>
+                {totalPages > 1 && (
+                  <span>
+                    Page {safePage} of {totalPages}
+                  </span>
+                )}
+              </div>
+              <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                {photos.map((p, i) => (
+                  <PhotoTile
+                    key={p.id}
+                    photo={p}
+                    // Reorder buttons disable at the absolute edges
+                    // (first row globally, last row globally) — not the
+                    // edges of the visible page. So pass disabled only
+                    // when offset/i match the global extreme.
+                    isFirst={offset + i === 0}
+                    isLast={offset + i === total - 1}
+                  />
+                ))}
+              </ul>
+
+              {totalPages > 1 && <Pager page={safePage} totalPages={totalPages} />}
+            </>
           )}
         </div>
       </div>
     </>
+  );
+}
+
+function Pager({ page, totalPages }: { page: number; totalPages: number }) {
+  const prev = page > 1 ? `/admin/gallery?page=${page - 1}` : null;
+  const next = page < totalPages ? `/admin/gallery?page=${page + 1}` : null;
+  const linkBase =
+    "inline-flex h-9 items-center gap-1.5 rounded-md border border-foreground/15 bg-card px-3 text-sm hover:bg-foreground/5";
+  const disabled =
+    "inline-flex h-9 items-center gap-1.5 rounded-md border border-foreground/10 px-3 text-sm text-foreground/40";
+
+  return (
+    <nav
+      aria-label="Gallery pages"
+      className="mt-4 flex items-center justify-between"
+    >
+      {prev ? (
+        <Link href={prev} className={linkBase}>
+          <ChevronLeft size={14} aria-hidden /> Previous
+        </Link>
+      ) : (
+        <span className={disabled}>
+          <ChevronLeft size={14} aria-hidden /> Previous
+        </span>
+      )}
+      <span className="text-xs text-muted-foreground tabular-nums">
+        {page} / {totalPages}
+      </span>
+      {next ? (
+        <Link href={next} className={linkBase}>
+          Next <ChevronRight size={14} aria-hidden />
+        </Link>
+      ) : (
+        <span className={disabled}>
+          Next <ChevronRight size={14} aria-hidden />
+        </span>
+      )}
+    </nav>
   );
 }
