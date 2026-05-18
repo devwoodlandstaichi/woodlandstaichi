@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { AttendanceHelpContent } from "./attendance-content";
 import { ClassesHelpContent } from "./classes-content";
+import { GalleryHelpContent } from "./gallery-content";
 import { InstructorsHelpContent } from "./instructors-content";
 import { MembersHelpContent } from "./members-content";
 import { NewsHelpContent } from "./news-content";
@@ -37,6 +38,7 @@ export type HelpTopic =
   | "reactivations"
   | "news"
   | "store"
+  | "gallery"
   | "users"
   | "settings-rsvps"
   | "settings-kiosk";
@@ -137,6 +139,12 @@ export const HELP_REGISTRY: Record<HelpTopic, HelpEntry> = {
     description: "Manage products, photos, sizes, and prices.",
     body: <StoreHelpContent />,
     fullPageHref: "/admin/help/store",
+  },
+  gallery: {
+    title: "Gallery",
+    description: "Upload, reorder, and manage photos on /gallery.",
+    body: <GalleryHelpContent />,
+    fullPageHref: "/admin/help/gallery",
   },
   users: {
     title: "Users",

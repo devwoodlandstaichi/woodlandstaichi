@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageHeader } from "@/components/page-header";
-import { GALLERY_PHOTOS } from "@/lib/site-data";
+import { GalleryGrid, type GalleryPhoto } from "@/components/gallery-grid";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Gallery — moments from the dojo",
@@ -11,7 +11,31 @@ export const metadata: Metadata = {
     "Photos from Woodlands Tai Chi practice and World Tai Chi Day events through the years.",
 };
 
-export default function GalleryPage() {
+export const dynamic = "force-dynamic";
+
+type Row = {
+  id: string;
+  image_url: string;
+  alt: string;
+  aspect: "landscape" | "portrait";
+};
+
+export default async function GalleryPage() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("gallery_photos")
+    .select("id,image_url,alt,aspect")
+    .eq("active", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  const photos: GalleryPhoto[] = ((data ?? []) as unknown as Row[]).map((r) => ({
+    id: r.id,
+    src: r.image_url,
+    alt: r.alt,
+    aspect: r.aspect,
+  }));
+
   return (
     <>
       <SiteHeader />
@@ -25,29 +49,13 @@ export default function GalleryPage() {
         />
 
         <section className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-14">
-          <ul className="columns-1 sm:columns-2 lg:columns-3 gap-6 [&>li]:break-inside-avoid [&>li]:mb-6">
-            {GALLERY_PHOTOS.map((photo, i) => (
-              <li
-                key={photo.src}
-                className="overflow-hidden rounded-xl border border-foreground/10 bg-card"
-              >
-                <div
-                  className={`relative w-full ${
-                    photo.aspect === "portrait" ? "aspect-[3/4]" : "aspect-[4/3]"
-                  }`}
-                >
-                  <Image
-                    src={photo.src}
-                    alt={photo.alt}
-                    fill
-                    sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
-                    className="object-cover"
-                    priority={i < 3}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
+          {photos.length === 0 ? (
+            <p className="text-sm text-foreground/60 italic max-w-prose">
+              Photos coming soon.
+            </p>
+          ) : (
+            <GalleryGrid photos={photos} />
+          )}
 
           <p className="mt-6 text-sm text-foreground/55 italic max-w-prose">
             More photos to come — if you have practice photos you&apos;d like
