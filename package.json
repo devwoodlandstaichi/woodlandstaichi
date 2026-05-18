@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "dev:next": "next dev",
+    "dev": "next dev -p 3200",
+    "dev:next": "next dev -p 3200",
     "dev:db": "set -a; [ -f .env.local ] && . ./.env.local; set +a; supabase start && supabase status",
     "dev:all": "concurrently --kill-others-on-fail --names \"DB,NEXT\" --prefix-colors \"green,cyan\" \"npm:dev:db\" \"npm:dev:next\"",
     "db:start": "set -a; [ -f .env.local ] && . ./.env.local; set +a; supabase start",
