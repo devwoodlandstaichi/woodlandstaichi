@@ -13,7 +13,7 @@ Guidance for Claude Code working in this repository. A new instance should be ab
 This repo is a ground-up rebuild of <https://woodlandstaichi.com> (currently WordPress). The founder owns the domain and will repoint DNS once the new site is signed off.
 
 **Stakeholders:**
-- Tom Gutz — building this; his wife attends classes there.
+- The original developer — built the site; no longer maintaining it. Contact via the GitHub org for handover questions.
 - The school's founder — ultimate stakeholder, will sign off.
 - **Sifu Sesco Saegusa** — chief instructor (referenced throughout testimonials).
 - Lineage: **Master George Ling Hu** — practice teachings derive from his writings.
