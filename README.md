@@ -98,6 +98,45 @@ Database access goes through Supabase Row-Level Security — every table denies
 by default and grants explicit access via policies. QR-code tokens are
 HMAC-signed (see `QR_TOKEN_SECRET`) so they cannot be forged.
 
-## Contributing
+## Handover
 
-Currently a private/solo build. Founder of Woodlands Tai Chi is the stakeholder.
+A school-owned email `dev@woodlandstaichi.com` has been created for this purpose. All infrastructure accounts should be created under that address so the school owns everything outright — no transfers between personal accounts needed.
+
+### Service ownership target state
+
+| Service | What it does | Target account | Action needed |
+|---|---|---|---|
+| **GitHub** | Source code + deployment trigger | `dev@woodlandstaichi.com` | Create school GitHub org → original developer transfers repo |
+| **Vercel** | Hosts the website, runs Next.js | `dev@woodlandstaichi.com` | Create Vercel account → connect to school's GitHub org |
+| **Supabase** | Database, Auth, Storage, pg_cron | `dev@woodlandstaichi.com` | Create Supabase org → original developer transfers project (Settings → General → Transfer) |
+| **Resend** | Transactional email | `dev@woodlandstaichi.com` | Create Resend account → verify woodlandstaichi.com sender domain |
+| **Hostinger** (woodlandstaichi.com domain) | DNS | Sesco (founder) | No change — Sesco already owns this |
+
+### Critical: QR_TOKEN_SECRET
+
+`QR_TOKEN_SECRET` signs every member's QR attendance token. If it changes, **all existing QR codes stop working** and every member needs a new one re-emailed.
+
+- Copy the current value from Vercel → Project → Settings → Environment Variables **before doing anything**.
+- Paste the same value into the new Vercel project's env vars at the end.
+- Do not regenerate it unless you intentionally want to invalidate all member QR codes.
+
+### Setup order
+
+Do it in this order to minimize downtime:
+
+1. **Supabase** — create org under `dev@woodlandstaichi.com`; original developer transfers the existing project. Database, member records, and connection strings stay intact.
+2. **Resend** — create account under `dev@woodlandstaichi.com`; verify the woodlandstaichi.com sender domain (adds SPF/DKIM records in Hostinger — ~10 min). Generate a new API key.
+3. **GitHub** — create school org under `dev@woodlandstaichi.com`; original developer transfers the repo.
+4. **Vercel** — create account under `dev@woodlandstaichi.com`; import project from school's GitHub org; paste all env vars (see "Deployment" section above), using the preserved `QR_TOKEN_SECRET` and the new Resend API key.
+5. **Hostinger** — update DNS A/CNAME records to Vercel's values; add Resend's SPF/DKIM/DMARC records for email authentication.
+
+### Adding a new admin user (production)
+
+1. Have the person sign up at https://woodlandstaichi.vercel.app/login
+2. Go to Supabase dashboard → Table editor → `user_roles`
+3. Insert: `{ user_id: <their auth.users id>, role: 'admin' }`
+4. They'll see the admin sidebar on next login.
+
+---
+
+## Need help?
