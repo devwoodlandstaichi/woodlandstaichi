@@ -39,6 +39,10 @@ export function MembersHelpContent() {
             Intermediate, Advanced, etc.).
           </Step>
         </Steps>
+        <Note>
+          The list shows members of <em>every</em> status by default, so
+          nobody is hidden until you pick a Status filter.
+        </Note>
       </Section>
 
       <Section title="Edit one member" anchor="edit">

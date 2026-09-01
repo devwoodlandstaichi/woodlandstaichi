@@ -173,9 +173,16 @@ export function RegistrationsHelpContent() {
 
         <FaqItem q="Can I delete a registration entirely?">
           <p>
-            Use Deny instead. It keeps the audit trail (when, by whom,
-            what reason). If you really need to wipe a row, do it from
-            the Member&rsquo;s detail page.
+            Use Deny for legitimate rejections &mdash; it keeps the
+            audit trail (when, by whom, what reason).
+          </p>
+          <p>
+            For genuine garbage (test rows, spam, duplicates), each row
+            in the list has a <Pill destructive>Delete</Pill> button, and
+            the registration&rsquo;s detail page has one in the{" "}
+            <em>Danger zone</em> at the bottom. Either removes the row
+            entirely. Admin-only &mdash; instructors won&rsquo;t be able
+            to complete the delete.
           </p>
         </FaqItem>
 
