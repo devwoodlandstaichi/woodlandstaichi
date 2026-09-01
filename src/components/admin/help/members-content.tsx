@@ -62,6 +62,37 @@ export function MembersHelpContent() {
         </Note>
       </Section>
 
+      <Section title="Add a photo & the public directory" anchor="photo">
+        <p>
+          On the member&rsquo;s edit page there&rsquo;s a photo panel at
+          the top:
+        </p>
+        <Steps>
+          <Step n={1}>
+            Click <Pill>Choose photo</Pill>, pick a square headshot, then
+            click <Pill primary>Upload</Pill>. To swap an existing one,
+            choose a different file &mdash; the old photo is replaced.
+          </Step>
+          <Step n={2}>
+            Use the eye toggle to control <strong>whether the photo is
+            public</strong>. Private stays admin-only; public is allowed
+            to appear on the site.
+          </Step>
+        </Steps>
+        <p>
+          Separately, the member&rsquo;s detail page has a{" "}
+          <strong>Show in directory</strong> toggle. Turn it on to list
+          the member on the public members directory; off keeps them off
+          it. The two controls are independent &mdash; a member can be in
+          the directory with or without a photo.
+        </p>
+        <Note>
+          Directory listing and a public photo are opt-in. If in doubt,
+          leave them off &mdash; nothing about a member appears publicly
+          unless you switch it on.
+        </Note>
+      </Section>
+
       <Section title="Change status or level for many at once" anchor="bulk">
         <p>
           Useful when a graduating class moves from Beginners to

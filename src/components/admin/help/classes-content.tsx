@@ -23,6 +23,30 @@ export function ClassesHelpContent() {
         </p>
       </Intro>
 
+      <Section title="Find a class" anchor="find">
+        <p>The bar above the list narrows what&rsquo;s shown:</p>
+        <Bullets>
+          <li>
+            <strong>Search</strong> &mdash; type part of a class name or
+            location.
+          </li>
+          <li>
+            <strong>Level</strong> &mdash; filter to one level
+            (Beginners, Intermediate, and so on).
+          </li>
+          <li>
+            <strong>Day</strong> &mdash; show only classes on a given
+            day of the week.
+          </li>
+          <li>
+            <strong>Status</strong> &mdash; <em>Active</em>,{" "}
+            <em>Archived</em>, or <em>All</em>. Defaults to Active, so
+            hidden/archived classes stay out of the way until you ask
+            for them.
+          </li>
+        </Bullets>
+      </Section>
+
       <Section title="Add a new class" anchor="new">
         <Steps>
           <Step n={1}>

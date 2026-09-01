@@ -75,6 +75,44 @@ export function OrdersHelpContent() {
         </p>
       </Section>
 
+      <Section title="Cancel an order" anchor="cancel">
+        <p>
+          If an order falls through (the member changed their mind, a
+          duplicate, etc.), open the order and click{" "}
+          <Pill>Cancel order</Pill>. It moves to the{" "}
+          <strong>Cancelled</strong> tab &mdash; kept for the record
+          rather than erased.
+        </p>
+      </Section>
+
+      <Section title="Add internal notes" anchor="notes">
+        <p>
+          On the order detail page there&rsquo;s an{" "}
+          <strong>Internal notes</strong> box &mdash; jot anything
+          staff-facing (e.g. &ldquo;picked up at Saturday class&rdquo;),
+          then click <Pill primary>Save notes</Pill>. These are separate
+          from the customer&rsquo;s own notes on the order and are never
+          shown publicly.
+        </p>
+      </Section>
+
+      <Section title="Delete an order" anchor="delete">
+        <p>
+          On the order detail page, <Pill destructive>Delete</Pill>{" "}
+          permanently removes an order. Use this only for genuine junk
+          rows &mdash; for real orders that didn&rsquo;t go through,
+          prefer <em>Cancel order</em> so the history stays intact.
+        </p>
+      </Section>
+
+      <Section title="Find an order" anchor="find">
+        <p>
+          Use the <strong>Search</strong> box above the list to match by
+          customer name or email, or the <strong>Status</strong> filter
+          to jump between Unpaid / Paid / Cancelled / All.
+        </p>
+      </Section>
+
       <Section title="Common questions" anchor="faq">
         <FaqItem q="Where does a new order come from?">
           <p>

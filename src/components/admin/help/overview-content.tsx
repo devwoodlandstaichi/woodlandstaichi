@@ -63,6 +63,33 @@ export function OverviewHelpContent() {
         </p>
       </Section>
 
+      <Section title="Membership lifecycle" anchor="lifecycle">
+        <p>
+          Below the action tiles is a <strong>Lifecycle</strong> panel
+          that counts how membership shifted over a period &mdash; how
+          many members newly became Active, Waitlist, No-show, Dropped
+          out, or Inactive, plus registrations newly put on hold. Unlike
+          the tiles above (which are &ldquo;right now&rdquo; counts),
+          these numbers move with the time range.
+        </p>
+        <Bullets>
+          <li>
+            Use the range control to switch between <strong>Week</strong>,{" "}
+            <strong>Month</strong>, <strong>YTD</strong> (year to date),
+            or a <strong>Custom</strong> from/to range.
+          </li>
+          <li>
+            Click a lifecycle number to jump to the matching filtered
+            list (e.g. the members who changed status in that window).
+          </li>
+        </Bullets>
+        <Note>
+          This is your &ldquo;how are we trending&rdquo; view &mdash;
+          good for spotting a run of drop-outs or a healthy stretch of
+          new sign-ups.
+        </Note>
+      </Section>
+
       <Section title="Attendance trend chart" anchor="chart">
         <p>
           The chart shows attendance counts for sessions over the last

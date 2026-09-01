@@ -63,7 +63,31 @@ export function NewsHelpContent() {
           <Step n={4}>
             Type your story in the <strong>Body</strong> box. Write it
             like you would write an email &mdash; full sentences,
-            paragraphs. Long stories are fine.
+            paragraphs. Long stories are fine. The small toolbar above
+            the box lets you format as you go:
+            <Bullets>
+              <li>
+                <strong>Bold</strong> and <strong>Italic</strong> for
+                emphasis.
+              </li>
+              <li>
+                <strong>Heading</strong> and <strong>Sub-heading</strong>{" "}
+                to break a long story into sections.
+              </li>
+              <li>
+                <strong>Bullet list</strong> for a quick list of points.
+              </li>
+              <li>
+                <strong>Link</strong> &mdash; select some words, click
+                the link button, and paste a web address. Click it again
+                with the text selected to remove the link.
+              </li>
+              <li>
+                <strong>Undo / Redo</strong> if you change your mind.
+              </li>
+            </Bullets>
+            Select the text first, then click a button &mdash; just like
+            in Word or Google Docs.
           </Step>
           <Step n={5}>
             <strong>Optional:</strong> add a <em>cover image</em>. Click

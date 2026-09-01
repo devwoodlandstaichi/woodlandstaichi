@@ -76,6 +76,52 @@ export function UsersHelpContent() {
         </Steps>
       </Section>
 
+      <Section title="Set or reset someone's password" anchor="password">
+        <p>
+          If a user is locked out and the email flow isn&rsquo;t working
+          (spam issues, wrong address on file), you can set a password
+          for them directly:
+        </p>
+        <Steps>
+          <Step n={1}>
+            On their row, click <Pill>Change password</Pill> (the key
+            icon).
+          </Step>
+          <Step n={2}>
+            Type a new password &mdash; the show/hide eye lets you check
+            it &mdash; and confirm.
+          </Step>
+          <Step n={3}>
+            Tell them the new password over the phone or in person; they
+            can change it later from their own account.
+          </Step>
+        </Steps>
+        <Note>
+          Prefer the <em>Forgot password</em> flow when it works &mdash;
+          it lets the person choose their own password without you ever
+          seeing it. Setting one here is the fallback for when they
+          can&rsquo;t receive email.
+        </Note>
+      </Section>
+
+      <Section title="Find a user" anchor="find">
+        <p>The bar above the list narrows and orders it:</p>
+        <Bullets>
+          <li>
+            <strong>Search</strong> &mdash; type part of an email
+            address.
+          </li>
+          <li>
+            <strong>Role</strong> &mdash; show only Admins, Instructors,
+            or those with no role.
+          </li>
+          <li>
+            <strong>Sort</strong> &mdash; reorder the list, and use the
+            arrow beside it to flip ascending/descending.
+          </li>
+        </Bullets>
+      </Section>
+
       <Section title="Delete a user" anchor="delete">
         <Steps>
           <Step n={1}>Open the user&rsquo;s card.</Step>

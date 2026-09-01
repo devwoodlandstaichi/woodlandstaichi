@@ -38,8 +38,8 @@ export function InstructorsHelpContent() {
               </li>
               <li>
                 <strong>Tier</strong> &mdash; Founder, Senior,
-                Instructor, or Assistant. Sets visual styling on the
-                public page.
+                Instructor, or In Training Instructor. Sets visual
+                styling on the public page.
               </li>
               <li>
                 <strong>Photo</strong> &mdash; upload a square headshot.
@@ -100,6 +100,23 @@ export function InstructorsHelpContent() {
           <em>display order</em>. Lower shows first. Edit any
           instructor to change the number.
         </p>
+      </Section>
+
+      <Section title="Find an instructor" anchor="find">
+        <p>The bar above the grid narrows the list:</p>
+        <Bullets>
+          <li>
+            <strong>Search</strong> &mdash; type any part of a name.
+          </li>
+          <li>
+            <strong>Tier</strong> &mdash; show only Founder, Senior,
+            Instructor, or In Training Instructor.
+          </li>
+          <li>
+            <strong>Status</strong> &mdash; <em>Active</em>,{" "}
+            <em>Hidden</em>, or <em>All</em>.
+          </li>
+        </Bullets>
       </Section>
 
       <Section title="Common questions" anchor="faq">

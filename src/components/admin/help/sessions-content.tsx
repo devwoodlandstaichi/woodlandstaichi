@@ -136,6 +136,47 @@ export function SessionsHelpContent() {
         </Warning>
       </Section>
 
+      <Section title="Delete a whole range of sessions" anchor="bulk-delete">
+        <p>
+          To clear many dates at once &mdash; e.g. sessions generated
+          for a term that got cancelled &mdash; use the bulk tool
+          instead of deleting one by one.
+        </p>
+        <Steps>
+          <Step n={1}>
+            Click <Pill destructive>Delete a range</Pill> at the top of
+            the page.
+          </Step>
+          <Step n={2}>
+            Set the <strong>From</strong> and <strong>To</strong> dates.
+            Every session in that window is removed.
+          </Step>
+          <Step n={3}>Confirm.</Step>
+        </Steps>
+        <Warning>
+          Same caution as a single delete, multiplied: any attendance
+          scanned on those dates goes with the sessions. Double-check
+          the date range before confirming.
+        </Warning>
+      </Section>
+
+      <Section title="Find a session" anchor="find">
+        <p>The bar above the table narrows the list:</p>
+        <Bullets>
+          <li>
+            <strong>Search</strong> &mdash; type part of a class name or
+            location.
+          </li>
+          <li>
+            <strong>Level</strong> &mdash; filter to one level.
+          </li>
+          <li>
+            <strong>Period</strong> &mdash; <em>Upcoming</em>,{" "}
+            <em>Past</em>, or <em>All</em>.
+          </li>
+        </Bullets>
+      </Section>
+
       <Section title="Common questions" anchor="faq">
         <FaqItem q="A session is missing from the public schedule. Why?">
           <p>The most common causes:</p>
