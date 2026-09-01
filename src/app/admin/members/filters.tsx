@@ -31,7 +31,7 @@ export function MemberFilters({
 }: {
   q: string;
   level: MemberLevel | null;
-  status: MemberStatus;
+  status: MemberStatus | "";
 }) {
   const [text, setText] = useState(q);
 
@@ -55,7 +55,7 @@ export function MemberFilters({
     );
   }
 
-  const hasFilter = !!q || !!level || status !== "active";
+  const hasFilter = !!q || !!level || !!status;
 
   return (
     <div
@@ -112,6 +112,7 @@ export function MemberFilters({
             className="bg-transparent text-sm focus:outline-none"
             aria-label="Filter by status"
           >
+            <option value="">All statuses</option>
             {MEMBER_STATUS_VALUES.map((v) => (
               <option key={v} value={v}>
                 {memberStatusLabel(v)}

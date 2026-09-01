@@ -57,7 +57,7 @@ export default async function MembersPage({
   const params = await searchParams;
   const q = (params.q ?? "").trim();
   const level = isLevel(params.level) ? params.level : null;
-  const status = isStatus(params.status) ? params.status : "active";
+  const status = isStatus(params.status) ? params.status : "";
   const sort: SortColumn = isSortColumn(params.sort) ? params.sort : "last_name";
   const dir: SortDir = isSortDir(params.dir) ? params.dir : "asc";
 

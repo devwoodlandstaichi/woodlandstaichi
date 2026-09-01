@@ -12,6 +12,7 @@ import {
   markWaived,
 } from "./actions";
 import { RegistrationFilters, type RegistrationView, type PaymentStatus } from "./filters";
+import { DeleteRegistrationButton } from "./delete-registration-button";
 
 export const metadata = { title: "Registrations" };
 export const dynamic = "force-dynamic";
@@ -227,6 +228,7 @@ export default async function RegistrationsPage({
                     status={r.payment_status}
                     denied={!!r.denied_at}
                     memberStatus={r.members?.status ?? null}
+                    memberName={r.members ? `${r.members.first_name} ${r.members.last_name}` : undefined}
                   />
                 </td>
               </tr>
@@ -308,11 +310,13 @@ function ActionButtons({
   status,
   denied,
   memberStatus,
+  memberName,
 }: {
   id: string;
   status: PaymentStatus;
   denied: boolean;
   memberStatus: string | null;
+  memberName?: string;
 }) {
   // A denied registration shouldn't pretend to be approvable — collapse
   // to "Reverse denial" until the admin un-denies. Keeps the surface
@@ -326,6 +330,7 @@ function ActionButtons({
             Reverse denial
           </Button>
         </form>
+        <DeleteRegistrationButton id={id} memberName={memberName} />
       </div>
     );
   }
@@ -387,6 +392,7 @@ function ActionButtons({
           Deny
         </Button>
       </form>
+      <DeleteRegistrationButton id={id} memberName={memberName} />
     </div>
   );
 }

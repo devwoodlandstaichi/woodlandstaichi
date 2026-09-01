@@ -255,6 +255,19 @@ export async function markDenied(formData: FormData) {
   revalidatePath(`/admin/members/${row.member_id}`);
 }
 
+/** Hard-delete a registration row. Admin-only. Use for genuine garbage
+ * (test rows, spam, exact duplicates) — use Deny for legitimate rejections
+ * so the audit trail stays. */
+export async function deleteRegistration(formData: FormData) {
+  await requireStaff();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const supabase = await createClient();
+  await supabase.from("registrations").delete().eq("id", id);
+  revalidatePath("/admin/registrations");
+  revalidatePath("/admin/members");
+}
+
 /** Clear an existing denial — admin changed their mind / mis-clicked.
  * No email (we already sent the denial; no need to confuse the member
  * unless and until we approve them, at which point markPaid covers it). */

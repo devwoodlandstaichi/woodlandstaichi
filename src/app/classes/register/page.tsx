@@ -131,12 +131,18 @@ export default async function RegisterPage({
         const locationLine = s.classes?.location ?? "";
         const spotsLine =
           cap !== null ? `${remaining} of ${cap} spots open` : null;
+        const sessionDt = new Date(s.session_date + "T00:00:00");
+        const monthLabel = sessionDt.toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        });
         return {
           id: s.id,
           option: {
             value: s.id,
             label: `${formatDate(s.session_date)} · ${formatTimeRange(s.start_time, s.end_time)}`,
             sub: [locationLine, spotsLine].filter(Boolean).join(" · "),
+            month: monthLabel,
           } satisfies SessionOption,
           atCapacity: cap !== null && approved >= cap,
         };

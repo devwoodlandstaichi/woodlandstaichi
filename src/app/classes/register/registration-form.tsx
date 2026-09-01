@@ -31,7 +31,7 @@ function formatUsPhone(raw: string): string {
   return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 }
 
-export type SessionOption = { value: string; label: string; sub?: string };
+export type SessionOption = { value: string; label: string; sub?: string; month: string };
 export type ShirtPrice = { size: string; price_cents: number };
 
 const INITIAL: RegistrationState = { status: "idle" };
@@ -67,6 +67,10 @@ export function RegistrationForm({
   // form on every failed-submit transition. That forces React to remount
   // all inputs, and the replayed `defaultValue`s from `state.values` take
   // effect — keeping everything the user already typed.
+  const months = Array.from(new Map(sessions.map((s) => [s.month, s.month])).keys());
+  const [selectedMonth, setSelectedMonth] = useState<string>(months[0] ?? "");
+  const visibleSessions = sessions.filter((s) => s.month === selectedMonth);
+
   const [submitCount, setSubmitCount] = useState(0);
   const [lastState, setLastState] = useState(state);
   if (state !== lastState) {
@@ -253,11 +257,30 @@ export function RegistrationForm({
         title="Pick your first session"
         description="Pick from upcoming dates our instructors have marked welcoming for newcomers. Show up, observe, ask questions — that's the whole assignment."
       >
+        {months.length > 1 && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {months.map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setSelectedMonth(m)}
+                className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
+                  m === selectedMonth
+                    ? "border-foreground bg-foreground text-background font-medium"
+                    : "border-foreground/20 text-foreground/65 hover:border-foreground/40 hover:text-foreground"
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        )}
         <Listbox
+          key={selectedMonth}
           name="session_id"
           label="Session"
           required
-          options={sessions}
+          options={visibleSessions}
           defaultValue={v("session_id")}
           error={errors.session_id}
           hint="Listed earliest first."

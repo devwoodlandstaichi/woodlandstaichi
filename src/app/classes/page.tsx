@@ -125,6 +125,9 @@ export default async function ClassesPage() {
           intro="Beginner classes are free of charge and open to anyone — no prior fitness or martial-arts background required. The Yang 8-step form is the foundation of every form that follows."
           glyph="課"
         />
+        <p className="mx-auto -mt-6 max-w-2xl px-6 text-sm italic text-foreground/55 md:px-10">
+          No prior fitness required. No prerequisites. Show up and breathe.
+        </p>
 
         {/* Welcoming sessions — soonest first. Heading removed per
             founder request; the list is self-explanatory. */}
@@ -389,6 +392,59 @@ export default async function ClassesPage() {
                   ))}
                 </ul>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Footwear */}
+        <section
+          aria-labelledby="footwear-title"
+          className="mx-auto max-w-7xl px-6 pb-14 md:px-10 md:pb-20"
+        >
+          <div className="grid grid-cols-12 gap-x-6 gap-y-6">
+            <div className="col-span-12 md:col-span-5">
+              <p className="text-xs uppercase tracking-[0.45em] text-foreground/55 mb-6">
+                <span className="inline-block h-px w-8 align-middle bg-vermillion mr-3" />
+                What to wear
+              </p>
+              <h2
+                id="footwear-title"
+                className="font-display text-4xl md:text-5xl leading-[1.05] tracking-tight"
+              >
+                The right
+                <span className="block italic text-vermillion">shoes.</span>
+              </h2>
+              <p className="mt-6 text-lg text-foreground/75 leading-relaxed max-w-md">
+                Tai Chi requires flat, thin-soled shoes with little to no tread
+                — so your foot can pivot freely and you can feel the ground
+                beneath you. Running shoes and thick soles work against the form.
+              </p>
+            </div>
+            <div className="col-span-12 md:col-span-7 md:pl-8 flex flex-col gap-4">
+              <a
+                href="https://www.amazon.com/s?k=feiyue+shoes"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col gap-1 rounded-xl border border-foreground/10 bg-card p-5 transition-colors hover:border-foreground/25"
+              >
+                <span className="font-medium group-hover:text-vermillion transition-colors">Feiyue</span>
+                <span className="text-sm text-foreground/65">
+                  The classic kung fu shoe. Lightweight canvas, flat rubber sole,
+                  very affordable. What most of our students wear.
+                </span>
+              </a>
+              <a
+                href="https://www.yinyangparadise.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col gap-1 rounded-xl border border-foreground/10 bg-card p-5 transition-colors hover:border-foreground/25"
+              >
+                <span className="font-medium group-hover:text-vermillion transition-colors">Yin Yang Paradise</span>
+                <span className="text-sm text-foreground/65">
+                  Tai Chi and martial arts specialty store. Wider selection of
+                  styles including embroidered and split-sole options.
+                </span>
+              </a>
             </div>
           </div>
         </section>
